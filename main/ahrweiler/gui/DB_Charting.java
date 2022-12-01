@@ -53,7 +53,7 @@ public class DB_Charting extends JFrame {
 		pGenFields.setBorder(BorderFactory.createTitledBorder("General Parameters"));
 		pGenFields.setLayout(null);
 		JPanel pAddComp = new JPanel();
-		pAddComp.setBounds(10, 140, 380, 380);
+		pAddComp.setBounds(10, 140, 380, 360);
 		pAddComp.setBorder(BorderFactory.createTitledBorder("Add Component"));
 		pAddComp.setLayout(null);
 		JPanel pPopout = new JPanel();
@@ -133,7 +133,7 @@ public class DB_Charting extends JFrame {
 		cbExchange.setBounds(150, 230, 200, 25);
 		rbIndex.setBounds(10, 260, 120, 25);
 		cbIndex.setBounds(150, 260, 200, 25);
-		bAddComp.setBounds(10, 310, 360, 40);
+		bAddComp.setBounds(10, 305, 360, 40);
 		lbNormDate.setBounds(10, 20, 150, 25);				//Popout Panel
 		tfNormDate.setBounds(170, 20, 100, 25);
 		bNormGraph.setBounds(285, 20, 80, 30);
@@ -178,178 +178,6 @@ public class DB_Charting extends JFrame {
 		}
 
 		//listener functionality
-/*
-		ActionListener alAddStock = new ActionListener() {//adds stock lvl info to main chart
-			public void actionPerformed(ActionEvent e){
-
-			}
-		};
-		ActionListener alAddSecInd = new ActionListener(){
-			public void actionPerformed(ActionEvent e){
-
-			}
-		};		
-		ActionListener alExchange = new ActionListener() {//adds exchange lvl info to main chart panel
-			public void actionPerformed(ActionEvent e){
-				int xdim = 980;
-				int ydim = 680;
-				String dataPath = "./../data/r/rdata/db_chart.csv";	//ggplot friendly format
-				String plotPath = "./../resources/db_chart.png";
-				String scriptPath = "./../data/r/rscripts/db_chart.R";
-				tfNormDate.setText(tfSDate.getText());
-				int sma = Integer.parseInt(tfSMA.getText());
-				//input params
-				String sdate = tfSDate.getText();
-				String edate = tfEDate.getText();
-				String fname = cbExchange.getSelectedItem().toString();
-				//column names
-				String dbColName = "";
-				String csvColName = fname;
-				//set legend name and database path
-				int indIdx = cbMarketInds.getSelectedIndex();
-				String dbPath = "./../../DB_Intrinio/Main/M_Base/"+fname+".txt";
-				if(indIdx > 1){
-					dbPath = "./../../DB_Intrinio/Main/M_Norm/"+fname+".txt";
-				}
-				//set column from path to extract data from
-				dbColName = "close";
-				if(indIdx == 1){
-					dbColName = "market_cap";
-					csvColName += ".MC";
-				}else if(indIdx > 1){
-					dbColName = "ind" + String.valueOf(indIdx-2);
-					csvColName += "." + indList[indIdx-2];
-				}
-				if(sma > 1){
-					csvColName += ".sma"+String.valueOf(sma);
-				}
-				FCI fciDB = new FCI(false, dbPath);
-				int colIdx = fciDB.getIdx(dbColName);
-				//retrieve relv data from DB, acc for date range and SMA, update, write back to file
-				ArrayList<ArrayList<String>> newData = retrieveNewDataForPlot(dbPath, sdate, edate, colIdx, sma);
-				ArrayList<String> newHeader = new ArrayList<String>();
-				newHeader.add("date");
-				newHeader.add(csvColName);
-				newData.add(0, newHeader);
-				if(fr_data.exists()){
-					ArrayList<ArrayList<String>> oldData = AhrIO.scanFile(dataPath, ",");
-					newData = AhrDTF.addToMelt(oldData, newData);
-					AhrIO.writeToFile(dataPath, newData, ",");
-				}else{
-					AhrIO.writeToFile(dataPath, AhrDTF.melt(newData, "date"), ",");
-				}
-				//gen and run R code
-				rcode.setTitle("Stock Market Charting");
-				rcode.setXLabel("Date");
-				rcode.setYLabel("Value");
-				rcode.createTimeSeries(dataPath, plotPath, xdim, ydim);
-				//rcode.printCode();
-				rcode.writeCode(scriptPath);
-				rcode.runScript(scriptPath);
-				//update GUI
-				cbListSeries.addItem(csvColName);
-				ImageIcon ii = new ImageIcon(plotPath);
-				lbPlot.setIcon(ii);
-				setVisible(true);
-				ii.getImage().flush();
-			}
-		};
-		ActionListener alAddIndex = new ActionListener() {//adds industry lvl info to main chart
-			public void actionPerformed(ActionEvent e){
-				int xdim = 980;
-				int ydim = 680;
-				String dataPath = "./../data/r/rdata/db_chart.csv";
-				String plotPath = "./../resources/db_chart.png";
-				String scriptPath = "./../data/r/rscripts/db_chart.R";
-				tfNormDate.setText(tfSDate.getText());
-				int sma = Integer.parseInt(tfSMA.getText());
-				//get inputs from GUI
-				String sdate = tfSDate.getText();
-				String edate = tfEDate.getText();
-				String fname = cbSector.getSelectedItem().toString();
-				//set up vars for use in chart
-				String csvColName = "";
-				ArrayList<ArrayList<String>> newData = new ArrayList<ArrayList<String>>();
-				//get data according to what option is selected
-				if(rbExisting.isSelected()){
-					csvColName = cbExisting.getSelectedItem().toString();
-					csvColName = csvColName.replaceAll("\\s+", "").split("-")[0];
-					String dbPath = "./../../DB_Intrinio/Main/S_Base/"+csvColName+".txt";
-					FCI fciSB = new FCI(false, "./../../DB_Intrinio/Main/S_Base/");
-					newData = retrieveNewDataForPlot(dbPath, sdate, edate, fciSB.getIdx("close"), sma);
-				}else if(rbFilter.isSelected()){
-					String sfName = cbFilter.getSelectedItem().toString() + ".txt";
-					StockFilter sf = new StockFilter("./../data/filters/"+sfName);
-					//itr thru all dates, calc price of filter by starting at 100 and calcing agg %s
-					ArrayList<String> dates = AhrDate.getDatesBetween(sdate, edate);
-					for(int i = 0; i < dates.size(); i++){
-						
-					}
-				}else if(rbCustom.isSelected()){
-
-				}else{
-					System.out.println("ERR: No Index Option Selected."); 
-				}
-				if(sma > 1){
-					csvColName += ".sma"+String.valueOf(sma);
-				}
-
-
-				//set column values
-				String dbColName = "";											//File Col Name
-				String csvColName = clList[cbSector.getSelectedIndex()];		//CSV/Chart/Legend Name
-				fname = fname.split("\\s+")[0];
-				System.out.println("--> Sector File Name = " + fname);
-				int indIdx = cbSectorInds.getSelectedIndex();
-				String dbPath = "./../../DB_Intrinio/Main/I_Base/"+fname+".txt";
-				if(indIdx > 1){
-					dbPath = "./../../DB_Intrinio/Main/I_Norm/"+fname+".txt";
-				}
-				dbColName = "close";
-				if(indIdx == 1){
-					dbColName = "market_cap";
-					csvColName += ".MC";
-				}else if(indIdx > 1){
-					dbColName = "ind" + String.valueOf(indIdx-2);
-					csvColName += "." + indList[indIdx-2];
-				}
-				if(sma > 1){
-					csvColName += ".sma"+String.valueOf(sma);
-				}
-				FCI fciDB = new FCI(false, dbPath);
-				int colIdx = fciDB.getIdx(dbColName);
-				//retrieve relv data from DB, account for date range and SMA
-				ArrayList<ArrayList<String>> newData = retrieveNewDataForPlot(dbPath, sdate, edate, colIdx, sma);
-
-				ArrayList<String> header = new ArrayList<String>();
-				header.add("date");
-				header.add(csvColName);
-				newData.add(0, header);
-				//if db_chart.csv exists , append new info upon the old
-				if(fr_data.exists()){//add only newest data to existing file
-					ArrayList<ArrayList<String>> oldData = AhrIO.scanFile(dataPath, ",");
-					newData = AhrDTF.addToMelt(oldData, newData);
-					AhrIO.writeToFile(dataPath, newData, ",");
-				}else{				//rewrite whole file
-					AhrIO.writeToFile(dataPath, AhrDTF.melt(newData, "date"), ",");	
-				}
-				//gen and run R code
-				rcode.setTitle("Stock Market Charting");
-				rcode.setXLabel("Date");
-				rcode.setYLabel("Value");
-				rcode.createTimeSeries(dataPath, plotPath, xdim, ydim);
-				//rcode.printCode();
-				rcode.writeCode(scriptPath);
-				rcode.runScript(scriptPath);			
-				//update GUI
-				cbListSeries.addItem(csvColName);
-				ImageIcon ii = new ImageIcon(plotPath);
-				lbPlot.setIcon(ii);
-				setVisible(true);
-				ii.getImage().flush();
-			}
-		};
-*/
 		ActionListener alChangeComp = new ActionListener(){
 			public void actionPerformed(ActionEvent e){
 				if(rbStock.isSelected()){
