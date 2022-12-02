@@ -1,0 +1,147 @@
+errNT~errNT~605~101
+Financial Services~Asset Management~388~201
+Financial Services~Banks-Regional~426~202
+Financial Services~Financial Data & Stock Exchanges~10~203
+Financial Services~Shell Companies~187~204
+Financial Services~Capital Markets~48~205
+Financial Services~Credit Services~57~206
+Financial Services~Mortgage Finance~18~207
+Financial Services~Insurance-Diversified~17~208
+Financial Services~Insurance-Life~23~209
+Financial Services~Insurance-Property & Casualty~52~210
+Financial Services~Insurance-Specialty~18~211
+Financial Services~Insurance Brokers~13~212
+Financial Services~Banks-Diversified~22~213
+Financial Services~Financial Conglomerates~4~214
+Financial Services~Insurance-Reinsurance~7~215
+Healthcare~Biotechnology~568~301
+Healthcare~Medical Care Facilities~42~302
+Healthcare~Drug Manufacturers-Specialty & Generic~85~303
+Healthcare~Medical Instruments & Supplies~52~304
+Healthcare~Medical Devices~109~305
+Healthcare~Diagnostics & Research~82~306
+Healthcare~Drug Manufacturers-General~16~307
+Healthcare~Medical Distribution~7~308
+Healthcare~Healthcare Plans~9~309
+Healthcare~Health Information Services~35~310
+Healthcare~Medical Appliances & Equipment~1~311
+Healthcare~Pharmaceutical Retailers~8~312
+Technology~Communication Equipment~64~401
+Technology~Information Technology Services~61~402
+Technology~Semiconductor Equipment & Materials~31~403
+Technology~Software-Application~169~404
+Technology~Semiconductors~64~405
+Technology~Electronic Components~36~406
+Technology~Consumer Electronics~15~407
+Technology~Computer Hardware~26~408
+Technology~Electronics & Computer Distribution~7~409
+Technology~Software-Infrastructure~89~410
+Technology~Scientific & Technical Instruments~34~411
+Technology~Solar~16~412
+Industrials~Rental & Leasing Services~27~501
+Industrials~Aerospace & Defense~46~502
+Industrials~Building Products & Equipment~32~503
+Industrials~Waste Management~22~504
+Industrials~Security & Protection Services~21~505
+Industrials~Tools & Accessories~13~506
+Industrials~Electrical Equipment & Parts~34~507
+Industrials~Specialty Business Services~35~508
+Industrials~Industrial Distribution~18~509
+Industrials~Engineering & Construction~38~510
+Industrials~Conglomerates~10~511
+Industrials~Staffing & Employment Services~28~512
+Industrials~Railroads~14~513
+Industrials~Integrated Freight & Logistics~17~514
+Industrials~Infrastructure Operations~1~515
+Industrials~Business Equipment & Supplies~9~516
+Industrials~Farm & Heavy Construction Machinery~21~517
+Industrials~Airlines~18~518
+Industrials~Specialty Industrial Machinery~81~519
+Industrials~Metal Fabrication~14~520
+Industrials~Pollution & Treatment Controls~11~521
+Industrials~Marine Shipping~34~522
+Industrials~Airports & Air Services~6~523
+Industrials~Consulting Services~16~524
+Industrials~Trucking~18~525
+Consumer Cyclical~Restaurants~50~601
+Consumer Cyclical~Luxury Goods~8~602
+Consumer Cyclical~Leisure~29~603
+Consumer Cyclical~Apparel Manufacturing~24~604
+Consumer Cyclical~Specialty Retail~43~605
+Consumer Cyclical~Internet Retail~32~606
+Consumer Cyclical~Auto Parts~42~607
+Consumer Cyclical~Auto & Truck Dealerships~18~608
+Consumer Cyclical~Gambling~12~609
+Consumer Cyclical~Apparel Retail~29~610
+Consumer Cyclical~Textile Manufacturing~5~611
+Consumer Cyclical~Packaging & Containers~21~612
+Consumer Cyclical~Resorts & Casinos~20~613
+Consumer Cyclical~Personal Services~13~614
+Consumer Cyclical~Residential Construction~21~615
+Consumer Cyclical~Footwear & Accessories~12~616
+Consumer Cyclical~Department Stores~5~617
+Consumer Cyclical~Travel Services~14~618
+Consumer Cyclical~Lodging~12~619
+Consumer Cyclical~Furnishings, Fixtures & Appliances~26~620
+Consumer Cyclical~Recreational Vehicles~14~621
+Consumer Cyclical~Auto Manufacturers~17~622
+Consumer Cyclical~Home Improvement Retail~6~623
+Energy~Oil & Gas Integrated~17~701
+Energy~Oil & Gas E&P~103~702
+Energy~Oil & Gas Midstream~70~703
+Energy~Uranium~7~704
+Energy~Oil & Gas Equipment & Services~60~705
+Energy~Thermal Coal~10~706
+Energy~Oil & Gas Drilling~8~707
+Energy~Oil & Gas Refining & Marketing~24~708
+Real Estate~REIT-Residential~21~801
+Real Estate~REIT-Hotel & Motel~22~802
+Real Estate~Real Estate-Development~10~803
+Real Estate~REIT-Diversified~33~804
+Real Estate~REIT-Office~29~805
+Real Estate~REIT-Retail~37~806
+Real Estate~Real Estate Services~33~807
+Real Estate~Real Estate-Diversified~6~808
+Real Estate~REIT-Specialty~18~809
+Real Estate~REIT-Mortgage~44~810
+Real Estate~REIT-Healthcare Facilities~18~811
+Real Estate~REIT-Industrial~22~812
+Communication Services~Telecom Services~68~901
+Communication Services~Advertising Agencies~28~902
+Communication Services~Internet Content & Information~63~903
+Communication Services~Broadcasting~32~904
+Communication Services~Publishing~11~905
+Communication Services~Entertainment~42~906
+Communication Services~Electronic Gaming & Multimedia~17~907
+Basic Materials~Gold~39~1001
+Basic Materials~Silver~7~1002
+Basic Materials~Other Industrial Metals & Mining~27~1003
+Basic Materials~Other Precious Metals & Mining~10~1004
+Basic Materials~Agricultural Inputs~16~1005
+Basic Materials~Specialty Chemicals~52~1006
+Basic Materials~Steel~22~1007
+Basic Materials~Paper & Paper Products~10~1008
+Basic Materials~Aluminum~5~1009
+Basic Materials~Chemicals~20~1010
+Basic Materials~Lumber & Wood Production~5~1011
+Basic Materials~Building Materials~14~1012
+Basic Materials~Copper~4~1013
+Basic Materials~Coking Coal~3~1014
+Consumer Defensive~Household & Personal Products~26~1101
+Consumer Defensive~Education & Training Services~40~1102
+Consumer Defensive~Food Distribution~11~1103
+Consumer Defensive~Packaged Foods~55~1104
+Consumer Defensive~Beverages-Brewers~7~1105
+Consumer Defensive~Grocery Stores~10~1106
+Consumer Defensive~Farm Products~22~1107
+Consumer Defensive~Discount Stores~9~1108
+Consumer Defensive~Tobacco~6~1109
+Consumer Defensive~Beverages-Non-Alcoholic~13~1110
+Consumer Defensive~Beverages-Wineries & Distilleries~5~1111
+Consumer Defensive~Confectioners~4~1112
+Utilities~Utilities-Renewable~11~1201
+Utilities~Utilities-Regulated Electric~37~1202
+Utilities~Utilities-Diversified~22~1203
+Utilities~Utilities-Independent Power Producers~5~1204
+Utilities~Utilities-Regulated Gas~13~1205
+Utilities~Utilities-Regulated Water~14~1206
