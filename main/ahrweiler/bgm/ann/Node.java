@@ -11,7 +11,7 @@ public class Node {
 	private ArrayList<Double> weights;
 
 	//----------- CONSTRUCTORS ---------------
- 	public Node(int nid, int lid, int plSize){
+	public Node(int nid, int lid, int plSize){
 		this.nodeID = nid;
 		this.layerID = lid;
 		this.value = 0.0;

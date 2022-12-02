@@ -4,19 +4,19 @@ import java.lang.Math;
 import java.io.*;
 
 public class Network {
-    //Network is comprised of nodes (input, hidden, and output)
+	//Network is comprised of nodes (input, hidden, and output)
 
-    //Attributes of Network
-    public ArrayList<Node> inputLayer;
-    public ArrayList<ArrayList<Node>> hiddenLayers;
-    public ArrayList<Node> outputLayer;
-    private int totalNodes;
+	//Attributes of Network
+	public ArrayList<Node> inputLayer;
+	public ArrayList<ArrayList<Node>> hiddenLayers;
+	public ArrayList<Node> outputLayer;
+	private int totalNodes;
 	private int totalLayers;
 	private double totalError;
-    private int iteration = 0;
+	private int iteration = 0;
 
-    //---------- CONSTRUCTORS -------------
-    public Network(int inNum, ArrayList<Integer> hiddenNums, int outNum){
+	//---------- CONSTRUCTORS -------------
+	public Network(int inNum, ArrayList<Integer> hiddenNums, int outNum){
 		//initialize values
 		inputLayer = new ArrayList<Node>();
 		hiddenLayers = new ArrayList<ArrayList<Node>>();
@@ -64,7 +64,7 @@ public class Network {
 		this.totalNodes = nTotal;
 		this.totalLayers = lCount;
 		System.out.println("Hidden Layers: " + hiddenLayers.size());
-    }
+	}
 	public Network(String fpath){//TODO change to read in struct files correctly, w/ bias and val
 		this.totalError = 0.0;
 		//read in info from ./../out/ann/structure/ file
@@ -196,8 +196,8 @@ public class Network {
 		this.iteration = itrVal;
 	}
 
-    //------------- CLASS FUNCTIONS ---------------
-    public void printFULL(){
+	//------------- CLASS FUNCTIONS ---------------
+	public void printFULL(){
 		System.out.println("Iteration: " + this.iteration);
 		System.out.print("   ->IL   :  ");
 		for(int i = 0; i < inputLayer.size(); i++){
@@ -259,7 +259,7 @@ public class Network {
 		}
 	}
 
-    public void feedForward(ArrayList<String> dataLine){
+	public void feedForward(ArrayList<String> dataLine){
 		//convert to double
 		ArrayList<Double> dline = new ArrayList<Double>();
 		for(int i = 0; i < dataLine.size(); i++){
@@ -306,7 +306,7 @@ public class Network {
     }
 
 	//backprop algo that computes (1) HL node error, (2)
-    public void backpropagation(double learnRate){
+	public void backpropagation(double learnRate){
 		//calc errors in hidden layers
 		for(int i = (hiddenLayers.size()-1); i >= 0; i--){
 			ArrayList<Node> nextLayer = this.getLayer(i+2);
@@ -480,9 +480,5 @@ public class Network {
 			outputLayer.get(x).setError(err);
 		}
 		return totError;
-	}
-
-	public void saveToFile(String fpath){
-
 	}
 }
