@@ -11,8 +11,8 @@ import java.io.FileNotFoundException;
 
 public class AhrIO {
 
-    //File scanner that returns all file contents packed in a nested arraylist
-    public static ArrayList<ArrayList<String>> scanFile(String path, String delim){
+	//File scanner that returns all file contents packed in a nested arraylist
+	public static ArrayList<ArrayList<String>> scanFile(String path, String delim){
 		ArrayList<ArrayList<String>> contents = new ArrayList<ArrayList<String>>();
 		String pLine = "";			//reads txt file into this string to be manipulated
 		try{
@@ -33,10 +33,10 @@ public class AhrIO {
 			System.out.println("IOException: " + e.getMessage());
 		}	
 		return contents;
-    }
+	}
 
-    //prints 2D array of strings to a file
-    public static void writeToFile(String path, ArrayList<ArrayList<String>> pts, String delim){
+	//prints 2D array of strings to a file
+	public static void writeToFile(String path, ArrayList<ArrayList<String>> pts, String delim){
 		//check if file exists
 		File f = new File(path);
 		//Write any 2D array list to file
@@ -54,7 +54,7 @@ public class AhrIO {
 		}catch(IOException e){
 	    	System.out.println("IOException: " + e.getMessage());
 		}
-    }
+	}
 
 	//File scanner that returns a row with specified 1st col val
 	public static ArrayList<String> scanRow(String path, String delim, String rowName){
@@ -194,8 +194,8 @@ public class AhrIO {
 		return cellStr;
 	}
 
-    //File scanner that returns one column in a file alongside the inputs index col
-    public static ArrayList<ArrayList<String>> scanColWithIndex(String path, String delim, int colIdx){
+	//File scanner that returns one column in a file alongside the inputs index col
+	public static ArrayList<ArrayList<String>> scanColWithIndex(String path, String delim, int colIdx){
 		ArrayList<ArrayList<String>> contents = new ArrayList<ArrayList<String>>();
 		String pLine = "";			//reads txt file into this string to be manipulated
 		try{
@@ -215,10 +215,10 @@ public class AhrIO {
 			System.out.println("IOException: " + e.getMessage());
 		}	
 		return contents;
-    }
+	}
 
-    //File scanner that returns one column in a file in a 1D AL
-    public static ArrayList<String> scanCol(String path, String delim, int colIdx){
+	//File scanner that returns one column in a file in a 1D AL
+	public static ArrayList<String> scanCol(String path, String delim, int colIdx){
 		ArrayList<String> contents = new ArrayList<String>();
 		String pLine = "";			//reads txt file into this string to be manipulated
 		try{
@@ -235,68 +235,28 @@ public class AhrIO {
 			System.out.println("IOException: " + e.getMessage());
 		}	
 		return contents;
-    }
+	}
 
-    //get list of tickers from a certain file path
-    //TODO get names by reading before period not by static 4 chars
-    public static ArrayList<String> getNamesInPath(String path){
+	//get list of tickers from a certain file path
+	//TODO get names by reading before period not by static 4 chars
+	public static ArrayList<String> getNamesInPath(String path){
 		File folder = new File(path);
 		File[] lof = folder.listFiles();
 		ArrayList<String> names = new ArrayList<String>();
-		for(int a = 0; a < lof.length; a++)
-		    names.add(lof[a].getName().substring(0, lof[a].getName().length()-4));
+		for(int a = 0; a < lof.length; a++){
+			names.add(lof[a].getName().substring(0, lof[a].getName().length()-4));
+		}
 		return names;
     }
-    //get list of tickers from a certain file path
-    public static ArrayList<String> getFilesInPath(String path){
+	//get list of tickers from a certain file path
+	public static ArrayList<String> getFilesInPath(String path){
 		File folder = new File(path);
 		File[] lof = folder.listFiles();
 		ArrayList<String> names = new ArrayList<String>();
-		for(int a = 0; a < lof.length; a++)
-		    names.add(lof[a].getName());
+		for(int a = 0; a < lof.length; a++){
+			names.add(lof[a].getName());
+		}
 		return names;
-    }
+	}
     
-    //better shorter way to print 2D ALs
-	public static void printSAL(ArrayList<ArrayList<String>> al){
-		for(int i = 0; i < al.size(); i++){
-			System.out.println(al.get(i));
-		}
-	}
-	public static void printDAL(ArrayList<ArrayList<Double>> al){
-		for(int i = 0; i < al.size(); i++){
-			System.out.println(al.get(i));
-		}
-	}
-	public static void printIAL(ArrayList<ArrayList<Integer>> al){
-		for(int i = 0; i < al.size(); i++){
-			System.out.println(al.get(i));
-		}
-	}
-	public static void printSARR(String[][] arr){
-		for(int i = 0; i < arr.length; i++){
-			System.out.print("[");
-			for(int j = 0; j < arr[i].length; j++){
-				if(j == arr[i].length-1){
-					System.out.println(arr[i][j]+"]");
-				}else{
-					System.out.print(arr[i][j]+", ");
-				}
-			}
-		}
-	}
-	public static void printIARR(int[][] arr){
-		for(int i = 0; i < arr.length; i++){
-			System.out.print("[");
-			for(int j = 0; j < arr[i].length; j++){
-				if(j == arr[i].length-1){
-					System.out.println(String.valueOf(arr[i][j])+"]");
-				}else{
-					System.out.print(String.valueOf(arr[i][j])+", ");
-				}
-			}
-		}
-	}
-
-
 }

@@ -4,32 +4,32 @@ import ahrweiler.support.FCI;
 import java.util.ArrayList;
 
 
-//Responsibilites : Data Transforamtion and manipulation of ALs and 
+//Responsibilites : Data Transformation and manipulation of ALs and 
 // 					other data structs 
 
 public class AhrDTF {
 
-    //transposes a 2D matrix of strings
-    public static ArrayList<ArrayList<String>> transpose(ArrayList<ArrayList<String>> in){
-        ArrayList<ArrayList<String>> out = new ArrayList<ArrayList<String>>();
-        //test for inconsistencies
-        int lineSize = in.get(0).size();
-        for(int i = 0; i < in.size(); i++){
-            if(in.get(i).size() != lineSize){
-                System.out.println("Line Size: " + lineSize+"  |  Line at "+ i +" : "+ in.get(i).size());
-            }
-        }
-        if(!in.isEmpty()){
-            for(int i = 0; i < in.get(0).size(); i++){
-                ArrayList<String> line = new ArrayList<String>();
-                for(int j = 0; j < in.size(); j++){
-                    line.add(in.get(j).get(i));
-                }
-                out.add(line);
-            }
-        }
-        return out;
-    }
+	//transposes a 2D matrix of strings
+	public static ArrayList<ArrayList<String>> transpose(ArrayList<ArrayList<String>> in){
+		ArrayList<ArrayList<String>> out = new ArrayList<ArrayList<String>>();
+		//test for inconsistencies
+		int lineSize = in.get(0).size();
+		for(int i = 0; i < in.size(); i++){
+			if(in.get(i).size() != lineSize){
+				System.out.println("Line Size: " + lineSize+"  |  Line at "+ i +" : "+ in.get(i).size());
+			}
+		}
+		if(!in.isEmpty()){
+			for(int i = 0; i < in.get(0).size(); i++){
+				ArrayList<String> line = new ArrayList<String>();
+				for(int j = 0; j < in.size(); j++){
+					line.add(in.get(j).get(i));
+				}
+				out.add(line);
+			}
+		}
+		return out;
+	}
 
 	//mimics R funct melt(), combines all cols into single col with header name as a col also
 	public static ArrayList<ArrayList<String>> melt(ArrayList<ArrayList<String>> al, String rowName){

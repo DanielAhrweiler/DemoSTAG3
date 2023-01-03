@@ -58,9 +58,9 @@ public class AhrDate {
 		return dates;	//returns least recent to most recent 
 	}
 
-    //compare two dates and return code for which is the more recent, or if they are equal
-    //return -1 if date1 is >, 0 if they are equal, 1 if date2 >
-    public static int compareDates(String date1, String date2){
+	//compare two dates and return code for which is the more recent, or if they are equal
+	//return -1 if date1 is >, 0 if they are equal, 1 if date2 >
+	public static int compareDates(String date1, String date2){
 		int comparer;
 		String[] parts1 = date1.split("-");
 		int y1 = Integer.parseInt(parts1[0]);
@@ -86,7 +86,7 @@ public class AhrDate {
 	    	comparer = 1;
 		}
 		return comparer;
-    }
+	}
 
 	//boolean for if a date is within a period of 2 other dates
 	public static boolean isDateInPeriod(String itrDate, String sdate, String edate){
