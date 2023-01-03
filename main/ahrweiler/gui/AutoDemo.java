@@ -1,4 +1,5 @@
 package ahrweiler.gui;
+import javax.swing.*;
 
 public class AutoDemo extends JFrame {
 

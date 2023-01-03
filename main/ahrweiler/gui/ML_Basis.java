@@ -301,7 +301,7 @@ public class ML_Basis extends JFrame {
 						}
 					}
 					System.out.println("***** All Keys *****");
-					AhrIO.printSAL(allKeys);
+					AhrAL.print(allKeys);
 					System.out.println("--> allKeys size = " + allKeys.size());
 					for(int i = 0; i < allKeys.size(); i++){
 						int keyID = Integer.parseInt(allKeys.get(i).get(2));

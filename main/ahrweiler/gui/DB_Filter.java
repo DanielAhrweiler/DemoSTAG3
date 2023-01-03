@@ -408,7 +408,7 @@ public class DB_Filter extends JFrame {
 	//update the text in taFilterDetails according to state of a StockFilter obj
 	public String updateFilterDetailsText(ArrayList<ArrayList<String>> al){
 		System.out.println("--> In updateFilter ...");
-		AhrIO.printSAL(al);
+		AhrAL.print(al);
 		System.out.println("=======================");
 		String fdText = "";
 		String[] fdInit = {"========== General ==========", "--> Market Cap: ", "--> Sectors: ", "--> Industries: ",

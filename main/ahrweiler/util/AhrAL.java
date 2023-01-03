@@ -107,4 +107,11 @@ public class AhrAL {
 		return cuniq;
 	}
 
+    //better shorter way to print 2D ALs
+	public static void print(ArrayList<ArrayList<String>> al){
+		for(int i = 0; i < al.size(); i++){
+			System.out.println(al.get(i));
+		}
+	}
+
 }

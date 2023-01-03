@@ -395,7 +395,7 @@ public class ML_CreateAK extends JFrame {
 			}
 		}
 		System.out.println("==> Matching SKs ...");
-		AhrIO.printSAL(goodLines);
+		AhrAL.print(goodLines);
 		return goodLines;
 	}
 
@@ -430,7 +430,7 @@ public class ML_CreateAK extends JFrame {
 			}
 		});
 		System.out.println("==> Sorted Matched Keys ...");
-		AhrIO.printSAL(msData);
+		AhrAL.print(msData);
 		//get rid of redundant keys
 		ArrayList<ArrayList<String>> allmKeys = new ArrayList<ArrayList<String>>();
 		ArrayList<String> masks = new ArrayList<String>();
@@ -459,7 +459,7 @@ public class ML_CreateAK extends JFrame {
 			prevCovBuf = coverage;
 		}
 		System.out.println("==> After Redundancy Check ...");
-		AhrIO.printSAL(allmKeys);	
+		AhrAL.print(allmKeys);	
 		
 		return allmKeys;
 	}

@@ -1,6 +1,5 @@
 package ahrweiler.gui;
 import ahrweiler.Globals;
-import ahrweiler.DB_Manager;
 import ahrweiler.util.*;
 import ahrweiler.support.FCI;
 import ahrweiler.support.RCode;
@@ -82,66 +81,23 @@ public class DB_DataIntegrity extends JFrame {
 		//listener functionality
 		bAbnormalMC.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e){
-				DB_Manager dbm = new DB_Manager();
-				dbm.checkAbnormalMC(false);
+				//TODO put function somewhere in demo java file
+				//DB_Manager dbm = new DB_Manager();
+				//dbm.checkAbnormalMC(false);
 			}
 		});
 		bDateMC.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e){
 				String date = tfDateMC.getText().replaceAll("\\s+", "");
-				DB_Manager dbm = new DB_Manager();
-				ArrayList<ArrayList<String>> mc = dbm.singleDayMC(date);
-				AhrIO.printSAL(mc);
+				ArrayList<ArrayList<String>> mc = new ArrayList<ArrayList<String>>();
+				//TODO put function somewhere in demo java file
+				//DB_Manager dbm = new DB_Manager();
+				//ArrayList<ArrayList<String>> mc = dbm.singleDayMC(date);
+				AhrAL.print(mc);
 			}
 		});
 		bPlotSB.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e){
-				String ticker = tfTickerSB.getText().replaceAll("\\s+", "");
-				String sdate = tfSDateSB.getText().replaceAll("\\s+", "");
-				String edate = tfEDateSB.getText().replaceAll("\\s+", "");
-				FCI fciIT = new FCI(false, "./../../DB_Intrinio/Main/Intrinio/");
-				ArrayList<ArrayList<String>> fc = AhrIO.scanFile("./../../DB_Intrinio/Main/Intrinio/"+ticker+".txt","~");
-				ArrayList<ArrayList<String>> passed = new ArrayList<ArrayList<String>>();
-				for(int i = 0; i < fc.size(); i++){
-					if(AhrDate.isDateInPeriod(fc.get(i).get(fciIT.getIdx("date")), sdate, edate)){
-						passed.add(fc.get(i));
-					}
-				}
-				ArrayList<String> dates = AhrAL.getCol(passed, fciIT.getIdx("date"));
-				ArrayList<String> close = AhrAL.getCol(passed, fciIT.getIdx("adj_close"));
-				DB_Manager dbm = new DB_Manager();
-				ArrayList<ArrayList<String>> mcIntrinio = dbm.callIntrinioMC(ticker, sdate, edate);
-				ArrayList<ArrayList<String>> mcScraper = dbm.scraperMC(ticker, sdate, edate);
-				ArrayList<ArrayList<String>> mc = AhrDate.mergeByDate(mcIntrinio, mcScraper, false);
-				ArrayList<String> header = AhrAL.toAL(new String[]{"date", "mc_intrinio", "mc_scraper"});
-				mc.add(0, header);
-				//R init data
-				int xdim = 800;
-				int ydim = 600;
-				String dataPath = "./../data/r/rdata/test_sbase.csv";
-				String plotPath = "./../resources/test_sbase.png";
-				String scriptPath = "./../data/r/rscripts/test_sbase.R";
-				AhrIO.writeToFile(dataPath, AhrDTF.melt(mc, "date"), ",");
-				//gen R plot
-				RCode rcode = new RCode();
-				rcode.setTitle(ticker+" : Intrinio DS vs Scraper DS");
-				rcode.setXLabel("Date");
-				rcode.setYLabel("Market Cap (in millions $)");
-				rcode.createTimeSeries(dataPath, plotPath, xdim, ydim);
-				rcode.writeCode(scriptPath);
-				rcode.runScript(scriptPath);
-				//show plot on new popout frame
-				JFrame rframe = new JFrame();
-				rframe.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-				rframe.setTitle("Compare MC Datastreams");
-				JLabel lbPlot = new JLabel();
-				lbPlot.setPreferredSize(new Dimension(xdim, ydim));
-				ImageIcon ii = new ImageIcon(plotPath);
-				lbPlot.setIcon(ii);
-				rframe.getContentPane().add(lbPlot, BorderLayout.CENTER);
-				rframe.pack();
-				rframe.setVisible(true);
-				ii.getImage().flush();			
 			}
 		});
 

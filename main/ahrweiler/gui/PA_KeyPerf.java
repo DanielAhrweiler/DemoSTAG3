@@ -565,7 +565,7 @@ public class PA_KeyPerf extends JFrame {
 				}else{
 					ArrayList<ArrayList<String>> fc = AhrIO.scanFile("./../data/filters/"+sfName+".txt", "~");
 					System.out.println("===== Active Filters for "+sfName+" ====="); 
-					AhrIO.printSAL(fc);
+					AhrAL.print(fc);
 				}
 			}
 		});

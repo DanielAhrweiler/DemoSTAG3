@@ -239,7 +239,7 @@ public class ML_CreateSK extends JFrame {
 		JLabel lbIndMask2 = new JLabel("Indicator Mask");
 		JTextArea taIndMask2 = new JTextArea(defIndMask, 2, 40);
 		Button bListSLI2 = new Button("List");
-		Button bCalcSK2 = new Button("Calculate SK");//Calc SK Button
+		Button bCalcSK2 = new Button("Calculate SK");	//Calc SK Button
 		
 		//bounds of components
 		lbBgm2.setBounds(10, 10, 80, 25);
@@ -282,107 +282,10 @@ public class ML_CreateSK extends JFrame {
 			cbTVar2.addItem(tvarList[i]);
 		}
 		taIndMask2.setLineWrap(true);
+		bListSLI2.setEnabled(false);
+		bCalcSK2.setEnabled(false);
 		
 		//button functionality
-		bListSLI2.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e){
-				for(int i = 0; i < indList.length; i++){
-					String printInd = String.valueOf(i);
-					if(printInd.length() == 1){
-						printInd = "0" + printInd;
-					}
-					printInd += " - " + indList[i];
-					System.out.println(printInd);
-				}
-			}
-		});
-		bCalcSK2.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				String bgmUC = cbBgm2.getSelectedItem().toString();
-				String bgmLC = bgmUC.toLowerCase();
-				System.out.println("--> Calulate SK for "+bgmUC);
-				//set up algo info
-				FCI fciKS = new FCI(true, "./../out/ml/"+bgmLC+"/keys_struct.txt");
-				ArrayList<ArrayList<String>> keys = AhrIO.scanFile("./../out/ml/"+bgmLC+"/keys_struct.txt", ",");
-				int maxID = -1;
-				if(keys.size() > 1){
-					for(int i = 1; i < keys.size(); i++){
-						int itrKey = Integer.parseInt(keys.get(i).get(fciKS.getIdx("key_num")));
-						if(itrKey > maxID){
-							maxID = itrKey;
-						}
-					}
-				}
-				int id = maxID + 1;
-				if(bgmUC.equals("GAD2")){
-					GAD2 algo = new GAD2(id);
-					algo.setGen(0);
-					algo.setSDate(tfSDate2.getText());
-					algo.setEDate(tfEDate2.getText());
-					algo.setCall(rbLong2.isSelected());
-					algo.setPopSize(Integer.parseInt(tfPop2.getText()));
-					algo.setSPD(Integer.parseInt(tfSPD2.getText()));
-					algo.setTVI(cbTVar2.getSelectedIndex());
-					algo.setPlateau(Double.parseDouble(tfPlateau2.getText()));
-					algo.setFitFunct(cbFit2.getSelectedItem().toString());
-					algo.setMsMask(tfMsMask2.getText());
-					algo.setNarMask(tfNarMask2.getText());
-					String[] actInds = taIndMask2.getText().split(",");
-					algo.setActIndNum(actInds.length);
-					ArrayList<Integer> actIndInts = new ArrayList<Integer>();
-					for(int i = 0 ; i < actInds.length; i++){
-						actIndInts.add(Integer.parseInt(actInds[i]));
-					}
-					String indMask = "";
-					for(int i = 0 ; i < indList.length; i++){
-						if(actIndInts.contains(i)){
-							indMask += "1";
-							algo.addActInd(indList[i]);
-						}else{
-							indMask += "0";
-						}
-					}
-					algo.setIndMask(indMask);
-					algo.calcSK();
-				}else if(bgmUC.equals("GAB3")){
-					GAB3 algo = new GAB3(id);
-					algo.setGen(0);
-					algo.setSDate(tfSDate2.getText());
-					algo.setEDate(tfEDate2.getText());
-					algo.setCall(rbLong2.isSelected());
-					algo.setPopSize(Integer.parseInt(tfPop2.getText()));
-					algo.setSPD(Integer.parseInt(tfSPD2.getText()));
-					algo.setTVI(cbTVar2.getSelectedIndex());
-					algo.setPlateau(Double.parseDouble(tfPlateau2.getText()));
-					algo.setFitFunct(cbFit2.getSelectedItem().toString());
-					algo.setMsMask(tfMsMask2.getText());
-					algo.setNarMask(tfNarMask2.getText());
-					String[] actInds = taIndMask2.getText().split(",");
-					algo.setActIndNum(actInds.length);
-					ArrayList<Integer> actIndInts = new ArrayList<Integer>();
-					for(int i = 0 ; i < actInds.length; i++){
-						actIndInts.add(Integer.parseInt(actInds[i]));
-					}
-					String indMask = "";
-					for(int i = 0 ; i < indList.length; i++){
-						if(actIndInts.contains(i)){
-							indMask += "1";
-							algo.addActInd(indList[i]);
-						}else{
-							indMask += "0";
-						}
-					}
-					algo.setIndMask(indMask);
-					algo.calcSK();
-				}else{
-					System.out.println("ERR: BGM "+bgmUC+" not recognized.");
-				}
-				//create basis file, calc BIM/SOM and write all to file
-				BGM_Manager skey = new BGM_Manager(bgmUC, id);
-				skey.genBasisSK(id);
-				skey.bsoPerfToFile(true, false);	//save BIM/SOM perf to keys_perf
-			}
-		});
 
 		//add everything
 		pBasic1.add(lbMethod1);

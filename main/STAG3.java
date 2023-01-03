@@ -13,7 +13,6 @@ import ahrweiler.bgm.BGM_Manager;
 import ahrweiler.gui.DB_Charting;
 import ahrweiler.gui.DB_Filter;
 import ahrweiler.gui.DB_DataIntegrity;
-import ahrweiler.gui.DB_IndAnalysis;
 import ahrweiler.gui.ML_CreateSK;
 import ahrweiler.gui.ML_CreateAK;
 import ahrweiler.gui.ML_Basis;
@@ -48,7 +47,6 @@ public class STAG3 extends Frame{
 		JLabel lbDB = new JLabel("Database");
 		Button bCharting = new Button("Stock & Indicator Charting");
 		Button bFilter = new Button("Stock Filter");
-		Button bIntegrity = new Button("Data Integrity");
 		JLabel lbML = new JLabel("Machine Learning");
 		Button bCreateSK = new Button("Create SK");
 		Button bCreateAK = new Button("Create AK");
@@ -61,18 +59,17 @@ public class STAG3 extends Frame{
 
 		//component bounds
 		lbDB.setBounds(10, 20, 160, 35);
-		bCharting.setBounds(40, 600, 200, 35);
+		bCharting.setBounds(40, 60, 200, 35);
 		bFilter.setBounds(40, 100, 200, 35);
-		bIntegrity.setBounds(40, 140, 200, 35);
-		lbML.setBounds(10, 180, 160, 35);
-		bCreateSK.setBounds(40, 220, 200, 35);
-		bCreateAK.setBounds(40, 260, 200, 35);
-		bBasis.setBounds(40, 300, 200, 35);
-		lbPA.setBounds(10, 340, 160, 35);
-		bBuyInOpt.setBounds(40, 380, 200, 35);
-		bKeyPerf.setBounds(40, 420, 200, 35);
-		bDemo.setBounds(10, 470, 250, 45);
-		bOther.setBounds(10, 530, 250, 45);
+		lbML.setBounds(10, 140, 160, 35);
+		bCreateSK.setBounds(40, 180, 200, 35);
+		bCreateAK.setBounds(40, 220, 200, 35);
+		bBasis.setBounds(40, 260, 200, 35);
+		lbPA.setBounds(10, 300, 160, 35);
+		bBuyInOpt.setBounds(40, 340, 200, 35);
+		bKeyPerf.setBounds(40, 380, 200, 35);
+		bDemo.setBounds(10, 430, 250, 45);
+		bOther.setBounds(10, 480, 250, 45);
 
 		//component funtionality
 		bCharting.addActionListener(new ActionListener() {
@@ -83,11 +80,6 @@ public class STAG3 extends Frame{
 		bFilter.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e){
 				DB_Filter dbfilter = new DB_Filter();
-			}
-		});
-		bIntegrity.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e){
-				DB_DataIntegrity dbintegrity = new DB_DataIntegrity();
 			}
 		});
 		bCreateSK.addActionListener(new ActionListener() {
@@ -129,7 +121,6 @@ public class STAG3 extends Frame{
 		mframe.add(lbDB);
 		mframe.add(bCharting);
 		mframe.add(bFilter);
-		mframe.add(bIndAnalysis);
 		mframe.add(lbML);
 		mframe.add(bCreateSK);
 		mframe.add(bCreateAK);
@@ -313,7 +304,7 @@ public class STAG3 extends Frame{
 			}
 		}
 		System.out.println("--> All SKs not in score_percentiles.txt");
-		AhrIO.printSAL(allSK);
+		AhrAL.print(allSK);
 		//itr thru all new SKs, write percentiles to file
 		ArrayList<ArrayList<String>> tf = AhrIO.scanFile("./../out/score_percentiles.txt", ",");
 		String skbPath = "./../baseis/single/";

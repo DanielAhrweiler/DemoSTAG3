@@ -462,7 +462,7 @@ public class BGM_Manager {
 	}
 	private ArrayList<ArrayList<String>> makePred_GAD2(int skID, String date, int inSPD){
 		//redacted
-		return new Array<ArrayList<String>>();
+		return new ArrayList<ArrayList<String>>();
 	}
 	private ArrayList<ArrayList<String>> makePred_GAB3(int skID, String date, int inSPD){
 		//redacted

@@ -313,7 +313,7 @@ public class OrderSim {	//simulates ordering in reality
 						stockBuf = AhrAL.addArrayToAL(stockBuf, clArr);
 						stockBuf = AhrAL.addArrayToAL(stockBuf, clArr);
 					}else{
-						//AhrIO.printSAL(stockBuf);
+						//AhrAL.print(stockBuf);
 						if(stockBuf.size() < this.techLen){
 							stockBuf = AhrAL.addArrayToAL(stockBuf, clArr);
 						}else{

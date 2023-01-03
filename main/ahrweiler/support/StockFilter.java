@@ -109,7 +109,7 @@ public class StockFilter {
 		//sort out the filter lines
 		ArrayList<ArrayList<String>> filters = AhrIO.scanFile(fpath, "~");
 		System.out.println("--> In StockFilter(fpath) constructor, filters are ...");
-		AhrIO.printSAL(filters);
+		AhrAL.print(filters);
 		for(int i = 0; i < filters.size(); i++){
 			if(filters.get(i).get(0).contains("ind") && !filters.get(i).get(0).equals("industry")){
 				this.ind_ranges.add(new NameAndRange(filters.get(i)));
@@ -261,7 +261,7 @@ public class StockFilter {
 		}
 		//print scode data
 		System.out.println("--> Ticker / SCode after applySecIndFilter() ... ");
-		AhrIO.printSAL(this.scodes);
+		AhrAL.print(this.scodes);
 	}
 
 	//apply all filter lines and return all stocks that fall within all ranges
@@ -335,7 +335,7 @@ public class StockFilter {
 		//print out results
 		//System.out.println("==> Error Ticks on "+date+" ("+errTicks.size()+" total): "+errTicks);
 		System.out.println("--> Final Results ... ");
-		AhrIO.printSAL(this.results);
+		AhrAL.print(this.results);
 	}
 
 	//return single string of filter data

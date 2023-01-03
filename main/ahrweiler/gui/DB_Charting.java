@@ -424,7 +424,7 @@ public class DB_Charting extends JFrame {
 					}
 				}
 				oldData = oldDataTmp;
-				//AhrIO.printSAL(oldData);
+				//AhrAL.print(oldData);
 				//go thru col names to find (native) SMA vals
 				Collections.reverse(uniqVars);
 				System.out.println("--> UniqVars = " + uniqVars);
