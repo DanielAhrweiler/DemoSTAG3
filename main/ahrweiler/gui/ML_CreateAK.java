@@ -275,7 +275,7 @@ public class ML_CreateAK extends JFrame {
 				int newID = maxID + 1;
 				//write new AK to log_agg
 				ArrayList<String> akLine = new ArrayList<String>();
-				akLine.add(String.valueOf(newID));							//[0]  basis_num
+				akLine.add(String.valueOf(newID));							//[0]  ak_num
 				akLine.add(bgm);											//[1]  bgm
 				akLine.add("IT");											//[2]  db_used
 				akLine.add(AhrDate.getTodaysDate());						//[3]  date_ran
@@ -286,11 +286,21 @@ public class ML_CreateAK extends JFrame {
 				}else{
 					akLine.add("0");
 				}
-				akLine.add(tfTVI.getText());								//[7]  tvi
-				akLine.add(tfNarMask.getText());							//[8]  nar_mask
-				akLine.add(bestKeys);										//[9]  best_keys
-				akLine.add(skBimSom);										//[10] sk_bim_som
-				akLine.add("ph");											//[11] ak_bim_som
+				akLine.add(tfSPD.getText());								//[7]  spd
+				akLine.add(tfTVI.getText());								//[8]  tvi
+				akLine.add(tfIndMask.getText());							//[9]  ind_mask
+				akLine.add(tfNarMask.getText());							//[10] nar_mask
+				akLine.add(bestKeys);										//[11] best_keys
+				akLine.add(skBimSom);										//[12] sk_bso
+				akLine.add("ph");											//[13] ak_bso
+				akLine.add("ph");											//[14] bso_train_apapt
+				akLine.add("ph");											//[15] bso_test_apapt
+				akLine.add("ph");											//[16] bso_train_posp
+				akLine.add("ph");											//[17] bso_test_posp
+				akLine.add("ph");											//[18] true_train_apapt
+				akLine.add("ph");											//[19] true_test_apapt
+				akLine.add("ph");											//[20] true_train_posp
+				akLine.add("ph");											//[21] true_test_posp
 				aggLog.add(akLine);
 				AhrIO.writeToFile(laPath, aggLog, ",");
 				//write basis file
@@ -298,19 +308,18 @@ public class ML_CreateAK extends JFrame {
 				System.out.print("--> Generating Basis File ... ");
 				akey.genBasisAK();
 				System.out.println("DONE");
-				//calc ak_bim_som and replace in agg_log
-				System.out.print("--> Calc BSO Multiple ... ");
-				ArrayList<String> bsoData = akey.bsoMultiple(tfSDate.getText(), tfEDate.getText(), "010", true, false);
-				String akBimSom = bsoData.get(0)+"|"+bsoData.get(1);
-				akLine.set(11, akBimSom);
-				aggLog = AhrIO.scanFile(laPath, ",");
-				int rowIdx = AhrAL.getRowIdx(aggLog, String.valueOf(newID));
-				aggLog.set(rowIdx, akLine);
-				AhrIO.writeToFile(laPath, aggLog, ",");
+				//calc basic perf data
+				System.out.print("--> Calculating Basic AK Performance ... ");
+				String basisPath = "./../baseis/aggregated/ann/ANN_"+String.valueOf(newID)+".txt";
+				ArrayList<String> perf = akey.perfFromBasisFile(basisPath);
+				akey.perfToFileAK(perf);
 				System.out.println("DONE");
-				System.out.println("--> BSO Data for AK"+newID+" : "+bsoData);
+				//calc ak_bim_som and replace in agg_log
+				System.out.print("--> Calculating BSO AK Performance ... ");
+				akey.bsoPerfToFileAK(true, false);
+				System.out.println("DONE");				
 				//add all SKs in AK to score_percentiles
-				System.out.print("--> Adding SKs to score_percentile.txt ... ");
+				System.out.print("--> Calculating Score Percentiles ... ");
 				akey.calcScorePercentiles();
 				System.out.println("DONE");
 				System.out.println("***** AK Creation DONE *****");

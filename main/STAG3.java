@@ -19,6 +19,7 @@ import ahrweiler.gui.ML_Basis;
 import ahrweiler.gui.PA_BimSomOpt;
 import ahrweiler.gui.PA_KeyPerf;
 import ahrweiler.gui.AutoDemo;
+import ahrweiler.gui.TestSwing;
 import java.io.*;
 import java.net.*;
 import java.util.*;
@@ -29,11 +30,32 @@ import java.nio.channels.*;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 
-public class STAG3 extends Frame{
+public class STAG3 {
 
 	public static void main(String[] args){
 		STAG3 stag3 = new STAG3();
+		stag3.init();
 		stag3.mainGUI();
+	}
+
+	public void init(){
+		System.out.print("--> Initializing Data ... ");
+		//remove lines from rnd keys_perf
+		String kpPath = "./../out/ml/rnd/keys_perf.txt";
+		ArrayList<String> kpLine = AhrIO.scanRow(kpPath, ",", 0);
+		ArrayList<ArrayList<String>> kpFile = new ArrayList<ArrayList<String>>();
+		kpFile.add(kpLine);
+		AhrIO.writeToFile(kpPath, kpFile, ",");
+		//remove rnd tmp basis files
+		String rbPath = "./../baseis/single/rnd/";
+		ArrayList<String> rndFiles = AhrIO.getFilesInPath(rbPath);
+		for(int i = 0; i < rndFiles.size(); i++){
+			File file = new File(rbPath+rndFiles.get(i));
+			if(file.exists()){
+				file.delete();
+			}
+		}
+		System.out.println("DONE");
 	}
 
 	public void mainGUI(){
@@ -110,6 +132,7 @@ public class STAG3 extends Frame{
 		bDemo.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e){
 				AutoDemo demo = new AutoDemo();
+				//TestSwing tswing = new TestSwing();
 			}
 		});
 		bOther.addActionListener(new ActionListener() {

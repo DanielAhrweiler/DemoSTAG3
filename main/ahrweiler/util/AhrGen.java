@@ -136,21 +136,6 @@ public class AhrGen {
 		return all_states_met;
 	}
 
-	//get list opf dates that passes market mask
-	public static ArrayList<String> getDatesThatPassMarketMask(ArrayList<String> dates, String msMask){
-		ArrayList<String> mdates = new ArrayList<String>();
-		ArrayList<ArrayList<String>> mstates = AhrIO.scanFile("./../in/mstates.txt", ",");
-		FCI fciMS = new FCI(false, "./../in/mstates.txt");
-		for(int i = 0; i < mstates.size(); i++){
-			String itrDate = mstates.get(i).get(fciMS.getIdx("date"));
-			String itrMask = mstates.get(i).get(fciMS.getIdx("ms_mask"));
-			if(dates.contains(itrDate) && compareMasks(msMask, itrMask)){
-				mdates.add(itrDate);
-			}
-		}
-		return mdates;
-	}
-
 	//simple contains function for string array
 	public static boolean contains(String[] arr, String ele){
 		boolean is_ele_in_array = false;

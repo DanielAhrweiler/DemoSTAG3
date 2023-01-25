@@ -42,32 +42,34 @@ public class BGM_Manager {
 		this.is_ak = true;
 		this.id = idVal;
 		//get info from agg basis log file
-		ArrayList<ArrayList<String>> aggLog = AhrIO.scanFile("./../baseis/log/ak_log.txt", ",");
-		ArrayList<String> aggLine = new ArrayList<String>();
-		FCI fciAL = new FCI(true, "./../baseis/log/ak_log.txt");
-		for(int i = 1; i < aggLog.size(); i++){
-			int bnum = Integer.parseInt(aggLog.get(i).get(fciAL.getIdx("basis_num")));
-			if(bnum == this.id){
-				this.bgm = aggLog.get(i).get(fciAL.getIdx("bgm"));
-				aggLine = aggLog.get(i);
+		ArrayList<ArrayList<String>> laFile = AhrIO.scanFile("./../baseis/log/ak_log.txt", ",");
+		ArrayList<String> laRow = new ArrayList<String>();
+		FCI fciLA = new FCI(true, "./../baseis/log/ak_log.txt");
+		for(int i = 1; i < laFile.size(); i++){
+			int akNum = Integer.parseInt(laFile.get(i).get(fciLA.getIdx("ak_num")));
+			if(akNum == this.id){
+				laRow = laFile.get(i);
+				this.bgm = laRow.get(fciLA.getIdx("bgm"));
 			}
 		}
 		String bgmLC = this.bgm.toLowerCase();
 		//set call
-		String callChar = aggLine.get(fciAL.getIdx("call"));
+		String callChar = laRow.get(fciLA.getIdx("call"));
 		this.is_long = false;
 		if(callChar.equals("1")){
 			this.is_long = true;
 		}
 		//set list of best single keys for this agg key
-		String[] bestSKstr = aggLine.get(fciAL.getIdx("best_keys")).split("~");
+		String[] bestSKstr = laRow.get(fciLA.getIdx("best_keys")).split("~");
+		System.out.println("--> In BGM_Manager(), best_keys = "+laRow.get(fciLA.getIdx("best_keys")));
 		this.bestSK = new int[bestSKstr.length];
 		for(int i = 0; i < bestSKstr.length; i++){
 			this.bestSK[i] = Integer.parseInt(bestSKstr[i]);
 		}
 		//set best BIM/SOM for each best single key (if calced yet)
-		if(!aggLine.get(fciAL.getIdx("sk_bim_som")).equals("ph")){
-			String[] skBimSom = aggLine.get(fciAL.getIdx("sk_bim_som")).split("~");
+		System.out.println("--> In BGM_Manager(), sk_bso = "+laRow.get(fciLA.getIdx("sk_bso")));
+		if(!laRow.get(fciLA.getIdx("sk_bso")).equals("ph")){
+			String[] skBimSom = laRow.get(fciLA.getIdx("sk_bso")).split("~");
 			this.skBuyIn = new double[skBimSom.length][2];
 			for(int i = 0; i < skBimSom.length; i++){
 				String[] skPair = skBimSom[i].split("\\|");
@@ -76,8 +78,9 @@ public class BGM_Manager {
 			}
 		}
 		//set best BIM/SOM for agg key in general (if calced yet)
-		if(!aggLine.get(fciAL.getIdx("ak_bim_som")).equals("ph")){
-			String[] akPair = aggLine.get(fciAL.getIdx("ak_bim_som")).split("\\|");
+		System.out.println("--> In BGM_Manager(), ak_bso = "+laRow.get(fciLA.getIdx("ak_bso")));
+		if(!laRow.get(fciLA.getIdx("ak_bso")).equals("ph")){
+			String[] akPair = laRow.get(fciLA.getIdx("ak_bso")).split("\\|");
 			this.akBuyIn = new double[2];
 			this.akBuyIn[0] = Double.parseDouble(akPair[0]);
 			this.akBuyIn[1] = Double.parseDouble(akPair[1]);
@@ -86,7 +89,7 @@ public class BGM_Manager {
 		this.statesSK = new ArrayList<ArrayList<String>>();
 		ArrayList<ArrayList<String>> ksFile = AhrIO.scanFile("./../out/ml/"+bgmLC+"/keys_struct.txt", ",");
 		FCI fciKS = new FCI(true, "./../out/ml/"+bgmLC+"/keys_struct.txt");
-		ArrayList<String> ksKeyCol = AhrIO.scanCol("./../out/ml/"+bgmLC+"/keys_struct.txt", ",", fciKS.getIdx("key_num"));
+		ArrayList<String> ksKeyCol = AhrIO.scanCol("./../out/ml/"+bgmLC+"/keys_struct.txt", ",", fciKS.getIdx("sk_num"));
 		for(int i = 0; i < bestSK.length; i++){
 			ArrayList<String> stateLine = new ArrayList<String>();
 			stateLine.add(String.valueOf(bestSK[i]));
@@ -102,6 +105,7 @@ public class BGM_Manager {
 	
 		//focus on a single key (also inits a BGM algo)
 		if(bestSK.length > 0){
+			System.out.println("--> BGM Initialized w/ SK"+bestSK[0]);
 			setFocusSK(bestSK[0]); 
 		}else{
 			System.out.println("ERROR in constructor : no SKs found");
@@ -242,6 +246,13 @@ public class BGM_Manager {
 			return this.ann.getEDate();
 		}else{
 			return "";
+		}
+	}
+	public double getPlateau(){
+		if(this.bgm.equals("ANN") && this.ann != null){
+			return this.ann.getPlateau();
+		}else{
+			return -1.0;
 		}
 	}
 	public String getMsMask(){
@@ -791,24 +802,71 @@ public class BGM_Manager {
 		Basic Key Perf Related Functions
 	---------------------------------------------------------------------------------------*/
 
-	//calcs basics perf values to write to keys_perf file right after SK is generated
-	public void keyPerfToFile(){
-		String bgmLC = this.bgm.toLowerCase();
-		String kpPath = "./../out/ml/"+bgmLC+"/keys_perf.txt";
-		FCI fciKP = new FCI(true, kpPath);
-		ArrayList<ArrayList<String>> kpFile = AhrIO.scanFile(kpPath, ",");
-		ArrayList<String> kpRow = AhrAL.getRow(kpFile, String.valueOf(id));
-		ArrayList<String> perf = keyPerformance();
-		kpRow.set(fciKP.getIdx("train_p_apapt"), perf.get(0));
-		kpRow.set(fciKP.getIdx("test_p_apapt"), perf.get(3));
-		kpRow.set(fciKP.getIdx("train_t_apapt"), perf.get(1));
-		kpRow.set(fciKP.getIdx("test_t_apapt"), perf.get(4));
-		kpRow.set(fciKP.getIdx("train_posp"), perf.get(2));
-		kpRow.set(fciKP.getIdx("test_posp"), perf.get(5));
-		int rowIdx = AhrAL.getRowIdx(kpFile, String.valueOf(id));
-		kpFile.set(rowIdx, kpRow);
-		AhrIO.writeToFile(kpPath, kpFile, ",");
+	//get performance data from reading it in from basis file
+	public ArrayList<String> perfFromBasisFile(String path){
+		FCI fciBS;
+		if(path.contains("aggregated")){
+			fciBS = new FCI(false, "./../baseis/aggregated/");
+		}else{
+			fciBS = new FCI(false, "./../baseis/single/");
+		}
+		double plateau = getPlateau();
+		int tvi = getTVI();
+		String tviCol = "appr"+String.valueOf(fciBS.convertTVI(tvi));
+		//init general perf data
+		int trainCount = 0;
+		int testCount = 0;
+		double[][] ttData = {{0.0, 0.0, 0.0}, 		//(0) train pappr, (1) train tappr, (2) train pos %
+							{0.0, 0.0, 0.0}};		//(0) test pappr, (1) test tappr, (2) test pos %
+		//itr thru basis file
+		ArrayList<ArrayList<String>> basis = AhrIO.scanFile(path, ",");
+		for(int i = 0; i < basis.size(); i++){
+			String itrTTV = basis.get(i).get(fciBS.getIdx("ttv_code"));
+			double itrAppr = 0.0;
+			try{
+				itrAppr = Double.parseDouble(basis.get(i).get(fciBS.getIdx(tviCol)));
+			}catch(NumberFormatException e){
+				System.out.println("ERR: " + e.getMessage());
+			}
+			if(itrTTV.equals("0")){
+				double platAppr = itrAppr;
+				if(platAppr > plateau){
+					platAppr = plateau;
+				}else if(platAppr < (plateau * -1.0)){
+					platAppr = (plateau * -1.0);
+				}
+				ttData[0][0] += platAppr;
+				ttData[0][1] += itrAppr;
+				if(itrAppr > 0){
+					ttData[0][2]++;
+				}
+				trainCount++;
+			}else if(itrTTV.equals("1")){
+				double platAppr = itrAppr;
+				if(platAppr > plateau){
+					platAppr = plateau;
+				}else if(platAppr < (plateau * -1.0)){
+					platAppr = (plateau * -1.0);
+				}
+				ttData[1][0] += platAppr;
+				ttData[1][1] += itrAppr;
+				if(itrAppr > 0){
+					ttData[1][2]++;
+				}
+				testCount++;
+			}
+		}
+		//convert data into easier format and return
+		ArrayList<String> data = new ArrayList<String>();
+		data.add(String.format("%.5f", (ttData[0][0] / (double)trainCount)));			//[0] train plat APAPT
+		data.add(String.format("%.5f", (ttData[0][1] / (double)trainCount)));			//[1] train true APAPT
+		data.add(String.format("%.3f", ((ttData[0][2] / (double)trainCount) * 100.0)));	//[2] train pos %
+		data.add(String.format("%.5f", (ttData[1][0] / (double)testCount)));			//[3] test plat APAPT
+		data.add(String.format("%.5f", (ttData[1][1] / (double)testCount)));			//[4] test true APAPT
+		data.add(String.format("%.3f", ((ttData[1][2] / (double)testCount) * 100.0)));	//[5] test pos %
+		return data;
 	}
+
 
 	//CONTROLLER FUNCTION: calc the perf vals of a SK
 	public ArrayList<String> keyPerformance(){
@@ -843,18 +901,7 @@ public class BGM_Manager {
 		String sdate = ann.getSDate();
 		String edate = ann.getEDate();
 		ArrayList<String> dates = AhrDate.getDatesBetween(sdate, edate);
-		//add dates w/ matching MS to mdates
-		ArrayList<String> mdates = new ArrayList<String>();
-		FCI fciMS = new FCI(false, "./../in/mstates.txt");
-		ArrayList<ArrayList<String>> mstates = AhrIO.scanFile("./../in/mstates.txt", ",");
-		ArrayList<String> msDates = AhrAL.getCol(mstates, fciMS.getIdx("date"));
-		for(int i = 0; i < dates.size(); i++){
-			int msIdx = msDates.indexOf(dates.get(i));
-			String msOfDate = mstates.get(msIdx).get(2);
-			if(AhrGen.compareMasks(msMask, msOfDate)){
-				mdates.add(dates.get(i));
-			}
-		}
+		ArrayList<String> mdates = AhrDate.getDatesThatPassMarketMask(dates, msMask);
 		//init general perf data
 		int evenCount = 0;
 		int oddCount = 0;
@@ -905,13 +952,49 @@ public class BGM_Manager {
 		data.add(String.format("%.3f", ((ttData[1][2] / (double)oddCount) * 100.0)));	//[5] test pos %
 		return data;
 	}
+
+	//set perf data (from either basis file or makePred) to SK keys_perf.txt file
+	public void perfToFileSK(ArrayList<String> perf){
+		String bgmLC = this.bgm.toLowerCase();
+		String kpPath = "./../out/ml/"+bgmLC+"/keys_perf.txt";
+		FCI fciKP = new FCI(true, kpPath);
+		ArrayList<ArrayList<String>> kpFile = AhrIO.scanFile(kpPath, ",");
+		ArrayList<String> kpRow = AhrAL.getRow(kpFile, String.valueOf(id));
+		kpRow.set(fciKP.getIdx("plat_train_apapt"), perf.get(0));
+		kpRow.set(fciKP.getIdx("plat_test_apapt"), perf.get(3));
+		kpRow.set(fciKP.getIdx("true_train_apapt"), perf.get(1));
+		kpRow.set(fciKP.getIdx("true_test_apapt"), perf.get(4));
+		kpRow.set(fciKP.getIdx("true_train_posp"), perf.get(2));
+		kpRow.set(fciKP.getIdx("true_test_posp"), perf.get(5));
+		int rowIdx = AhrAL.getRowIdx(kpFile, String.valueOf(id));
+		kpFile.set(rowIdx, kpRow);
+		AhrIO.writeToFile(kpPath, kpFile, ",");
+	}
+
+	//set perf data (from either basis file or makePred) ot AK ak_log.txt file
+	public void perfToFileAK(ArrayList<String> perf){
+		System.out.println("--> perfToFileAK() perf AL : " + perf);
+		String laPath = "./../baseis/log/ak_log.txt";
+		FCI fciLA = new FCI(true, laPath);
+		ArrayList<ArrayList<String>> laFile = AhrIO.scanFile(laPath, ",");
+		ArrayList<String> laRow = AhrAL.getRow(laFile, String.valueOf(id));
+		laRow.set(fciLA.getIdx("true_train_apapt"), perf.get(1));
+		laRow.set(fciLA.getIdx("true_test_apapt"), perf.get(4));
+		laRow.set(fciLA.getIdx("true_train_posp"), perf.get(2));
+		laRow.set(fciLA.getIdx("true_test_posp"), perf.get(5));
+		int rowIdx = AhrAL.getRowIdx(laFile, String.valueOf(id));
+		laFile.set(rowIdx, laRow);
+		AhrIO.writeToFile(laPath, laFile, ",");
+	}
+
+
 	
 	/*-------------------------------------------------------------------------------------
 		BIM/SOM Related Functions
 	---------------------------------------------------------------------------------------*/
 
-	//calcs BIM/SOM values to write to keys_perf file right after SK is generated
-	public void bsoPerfToFile(boolean is_min_trig, boolean use_sk_bso){
+	//calcs BIM/SOM values to write to keys_perf file
+	public void bsoPerfToFileSK(boolean is_min_trig, boolean use_sk_bso){
 		String bgmLC = this.bgm.toLowerCase();
 		//calc bso files
 		ArrayList<String> bsoTrain = bsoMultiple(getSDate(), getEDate(), "100", is_min_trig, use_sk_bso);
@@ -927,12 +1010,35 @@ public class BGM_Manager {
 		//add bso vals to row and write back to file
 		kpRow.set(fciKP.getIdx("bim"), bsoTest.get(0));
 		kpRow.set(fciKP.getIdx("som"), bsoTest.get(1));
-		kpRow.set(fciKP.getIdx("train_bs_apapt"), bsoTrain.get(2));
-		kpRow.set(fciKP.getIdx("test_bs_apapt"), bsoTest.get(2));
-		kpRow.set(fciKP.getIdx("train_bs_posp"), bsoTrain.get(4));
-		kpRow.set(fciKP.getIdx("test_bs_posp"), bsoTest.get(4));
+		kpRow.set(fciKP.getIdx("bso_train_apapt"), bsoTrain.get(2));
+		kpRow.set(fciKP.getIdx("bso_test_apapt"), bsoTest.get(2));
+		kpRow.set(fciKP.getIdx("bso_train_posp"), bsoTrain.get(4));
+		kpRow.set(fciKP.getIdx("bso_test_posp"), bsoTest.get(4));
 		kpFile.set(rowIdx, kpRow);
 		AhrIO.writeToFile(kpPath, kpFile, ",");
+	}
+
+	//calcs BIM/SOM values to write to ak_log.txt file
+	public void bsoPerfToFileAK(boolean is_min_trig, boolean use_sk_bso){
+		//calc bso files
+		ArrayList<String> bsoTrain = bsoMultiple(getSDate(), getEDate(), "100", is_min_trig, use_sk_bso);
+		ArrayList<String> bsoTest = bsoMultiple(getSDate(), getEDate(), "010", is_min_trig, use_sk_bso);
+		//get row from keys_perf
+		String laPath = "./../baseis/log/ak_log.txt";
+		FCI fciLA = new FCI(true, laPath);
+		ArrayList<ArrayList<String>> laFile = AhrIO.scanFile(laPath, ",");		
+		ArrayList<String> laRow = AhrAL.getRow(laFile, String.valueOf(id));
+		int rowIdx = AhrAL.getRowIdx(laFile, String.valueOf(id));
+		//combine bim & som and add 
+		String akBSO = bsoTest.get(0)+"|"+bsoTest.get(1);
+		laRow.set(fciLA.getIdx("ak_bso"), akBSO);
+		//add rest of BSO perf vals
+		laRow.set(fciLA.getIdx("bso_train_apapt"), bsoTrain.get(2));
+		laRow.set(fciLA.getIdx("bso_test_apapt"), bsoTest.get(2));
+		laRow.set(fciLA.getIdx("bso_train_posp"), bsoTrain.get(4));
+		laRow.set(fciLA.getIdx("bso_test_posp"), bsoTest.get(4));
+		laFile.set(rowIdx, laRow);
+		AhrIO.writeToFile(laPath, laFile, ",");
 	}
 		
 	//calc the optimized prices to a buy-in and sell-out pair, runs thru a basis file
@@ -1202,20 +1308,7 @@ public class BGM_Manager {
 		String edate = AhrDate.getTodaysDate();
 		String msMask = ann.getMsMask();
 		ArrayList<String> dates = AhrDate.getDatesBetween(sdate, edate);
-		//get list of dates that match with ms_mask of this SK
-		ArrayList<String> mdates = new ArrayList<String>();	//matched dates
-		ArrayList<ArrayList<String>> mstates = AhrIO.scanFile("./../in/mstates.txt", ",");
-		FCI fciMS = new FCI(false, "./../in/mstates.txt");
-		for(int i = 0; i < mstates.size(); i++){
-			boolean date_in_period = false;
-			String itrDate = mstates.get(i).get(fciMS.getIdx("date"));
-			if(AhrDate.isDateInPeriod(itrDate, sdate, edate)){
-				String itrState = mstates.get(i).get(fciMS.getIdx("ms_mask"));
-				if(AhrGen.compareMasks(msMask, itrState)){
-					mdates.add(itrDate);
-				}
-			}
-		}
+		ArrayList<String> mdates = AhrDate.getDatesThatPassMarketMask(dates, msMask);
 		Collections.reverse(mdates);
 		//get dbuf for each date, format, then add to their basis file 
 		ArrayList<ArrayList<String>> basis = new ArrayList<ArrayList<String>>();
@@ -1240,7 +1333,7 @@ public class BGM_Manager {
 		AhrIO.writeToFile("./../baseis/single/ann/ANN_"+String.valueOf(skID)+".txt", basis, ",");
 	}
 
-	//CONTROLLER FUNCT: generate basis file for SK
+	//CONTROLLER FUNCT: generate basis file for AK
 	public void genBasisAK(){
 		if(bgm.equals("GAD2")){
 			genBasisAK_GAD2();
@@ -1264,7 +1357,7 @@ public class BGM_Manager {
 		FCI fciAL = new FCI(true, "./../baseis/log/ak_log.txt");
 		ArrayList<String> aggLine = new ArrayList<String>();
 		for(int i = 1; i < aggLog.size(); i++){
-			if(this.id == Integer.parseInt(aggLog.get(i).get(fciAL.getIdx("basis_num")))){
+			if(this.id == Integer.parseInt(aggLog.get(i).get(fciAL.getIdx("ak_num")))){
 				aggLine = aggLog.get(i);
 			}
 		}
@@ -1295,6 +1388,104 @@ public class BGM_Manager {
 		}
 		AhrIO.writeToFile("./../baseis/aggregated/ann/ANN_"+String.valueOf(this.id)+".txt", basis, ",");
 	}
+	//generate basis file for random sampling
+	public void genBasisRnd(String sdate, String edate, int spd, int tvi, String msMask, String narMask){
+		ArrayList<ArrayList<String>> basis = new ArrayList<ArrayList<String>>();
+		String bdPath = "./../../DB_Intrinio/Clean/ByDate/";
+		ArrayList<String> bdFilesAll = AhrIO.getNamesInPath(bdPath);
+		//only get dates that fit market mask and within date range
+		bdFilesAll = AhrDate.getDatesThatPassMarketMask(bdFilesAll, msMask);
+		Collections.sort(bdFilesAll);
+		ArrayList<String> bdFiles = new ArrayList<String>();
+		for(int i = 0; i < bdFilesAll.size(); i++){
+			if(AhrDate.isDateInPeriod(bdFilesAll.get(i), sdate, edate)){
+				bdFiles.add(bdFilesAll.get(i));
+			}
+		}
+		//itr thru dates, get lines from Clean DB that fit narMask
+		FCI fciBD = new FCI(false, bdPath);
+		Random rnd = new Random();
+		for(int i = 0; i < bdFiles.size(); i++){
+			ArrayList<ArrayList<String>> bdFC = AhrIO.scanFile(bdPath+bdFiles.get(i)+".txt", "~");
+			ArrayList<ArrayList<String>> rndLines = new ArrayList<ArrayList<String>>();
+			while(rndLines.size() < spd){
+				int rndIdx = rnd.nextInt(bdFC.size());
+				String itrTick = bdFC.get(rndIdx).get(fciBD.getIdx("ticker"));
+				String itrNar = bdFC.get(rndIdx).get(fciBD.getIdx("nar_mask"));
+				String colAppr = "appr"+String.valueOf(fciBD.convertTVI(tvi)); 
+				String itrAppr = bdFC.get(rndIdx).get(fciBD.getIdx(colAppr));
+				boolean add_line = true;
+				if(!AhrGen.compareMasks(narMask, itrNar)){
+					add_line = false;
+				}
+				if(AhrAL.getCol(rndLines, 0).contains(itrTick)){
+					add_line = false;	
+				}
+				if(add_line){
+					ArrayList<String> line = new ArrayList<String>();
+					line.add(bdFiles.get(i));						//[0] date
+					line.add("0");									//[1] SK (not needed)
+					line.add("0");									//[2] TTV (not needed)
+					line.add(itrTick);								//[3] Ticker
+					line.add(String.valueOf(rndLines.size()));		//[4] Score (rank)
+					line.add(itrAppr);								//[5] TVIs % Appr
+					rndLines.add(line);
+				}
+			}
+			//translate rndLines over to basis
+			for(int j = 0; j < rndLines.size(); j++){
+				basis.add(rndLines.get(j));
+			}
+		}
+		//calc APAPT and Pos % of basis lines
+		double apapt = 0.0;
+		double posp = 0.0;
+		for(int i = 0; i < basis.size(); i++){
+			double itrAppr = 0.0;
+			try{
+				itrAppr = Double.parseDouble(basis.get(i).get(5));
+			}catch(NumberFormatException e){
+			}
+			apapt += itrAppr;
+			if(itrAppr > 0.0){
+				posp += 1.0;
+			}
+		}
+		apapt = apapt / (double)basis.size();
+		posp = (posp / (double)basis.size()) * 100.0;
+		//write basis to file and add to ./../out/ml/rnd/key_perf.txt
+		int keyNum = -1;
+		String kpPath = "./../out/ml/rnd/keys_perf.txt";
+		FCI fciKP = new FCI(true, kpPath);
+		ArrayList<ArrayList<String>> kpFile = AhrIO.scanFile(kpPath, ",");
+		ArrayList<String> kpKeys = AhrAL.getCol(kpFile, fciKP.getIdx("key_num"));
+		kpKeys.remove(0);
+		for(int i = 0; i < kpKeys.size(); i++){
+			if(Integer.parseInt(kpKeys.get(i)) > keyNum){
+				keyNum = Integer.parseInt(kpKeys.get(i));
+			}
+		}
+		keyNum += 1;
+		ArrayList<String> kpLine = new ArrayList<String>();
+		kpLine.add(String.valueOf(keyNum));					//[0] Key Num
+		kpLine.add(String.valueOf(tvi));					//[1] TVI
+		kpLine.add(String.valueOf(spd));					//[2] SPD
+		kpLine.add(msMask);									//[3] MS Mask
+		kpLine.add(narMask);								//[4] NAR Mask
+		kpLine.add(String.format("%.5f", apapt));			//[5] APAPT
+		kpLine.add(String.format("%.3f", posp));			//[6] Pos %
+		kpLine.add("tbd");									//[7] BIM	
+		kpLine.add("tbd");									//[8] SOM
+		kpLine.add("tbd");									//[9] BSO APAPT
+		kpLine.add("tbd");									//[10] BSO Pos %
+		kpFile.add(kpLine);
+		AhrIO.writeToFile(kpPath, kpFile, ",");
+		AhrIO.writeToFile("./../baseis/single/rnd/rnd_tmp_"+String.valueOf(keyNum)+".txt", basis, ",");
+	}
+	public void genBasisRnd(String sdate, String edate, int spd, int tvi, String msMask, String narMask, String filter){
+		ArrayList<ArrayList<String>> basis = new ArrayList<ArrayList<String>>();
+	}
+
 
 	//CONTROLLER FUNCT: update a basis file, keeping the old data intact
 	public void updateBasisSK(int skID){
@@ -1351,7 +1542,7 @@ public class BGM_Manager {
 			}
 		}
 		//get list of new dates that matches MS mask of SK or already have tdb in file
-		ArrayList<String> mdates = AhrGen.getDatesThatPassMarketMask(dates, msMask);
+		ArrayList<String> mdates = AhrDate.getDatesThatPassMarketMask(dates, msMask);
 		Collections.sort(mdates);
 		//moves lines from old basis file
 		for(int i = 0; i < fc.size(); i++){

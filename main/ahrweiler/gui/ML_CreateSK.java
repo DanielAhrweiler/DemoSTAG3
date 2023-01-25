@@ -19,11 +19,6 @@ public class ML_CreateSK extends JFrame {
 
 	public void drawGUI(){
 		//lists and overarching structs
-		String[] indList = {"S/M SMA(20)", "S/M SMA(10)", "S/M SMA(5)", "S/M SMA(2)", "S/I SMA(20)",
-						 "S/I SMA(10)", "S/I SMA(5)", "S/I SMA(2)", "SMA(20)", "SMA(10)", "SMA(5)",
-						 "SMA(2)", "RSI(14)", "MACD(12,26)", "MCDH(9,26)", "CMF(20)", "BBW(20)",
-						 "perB(20)", "ROC(12)", "MFI(14)", "CCI(20)", "Mass(9,25)", "TSI(25,13)",
-						 "UltOsc(7,14,28)"}; 
 		String[] tvarList = {"Intra 1", "Inter 1", "Inter 2", "Inter 3", "Inter 5", "Inter 10"};
 		String[] geneticBgmList = {"GAD2", "GAB3"};
 		String[] geneticFitFuncts = {"Fast Decrease"};
@@ -129,12 +124,12 @@ public class ML_CreateSK extends JFrame {
 		//button functionality
 		bListInds1.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e){
-				for(int i = 0; i < indList.length; i++){
+				for(int i = 0; i < Globals.ind_names.length; i++){
 					String printInd = String.valueOf(i);
 					if(printInd.length() == 1){
 						printInd = "0" + printInd;
 					}
-					printInd += " - " + indList[i];
+					printInd += " - " + Globals.ind_names[i];
 					System.out.println(printInd);
 				}
 			}
@@ -166,16 +161,14 @@ public class ML_CreateSK extends JFrame {
 				algo.setMsMask(tfMsMask1.getText());
 				algo.setNarMask(tfNarMask1.getText());
 				String[] actInds = taIndMask1.getText().split(",");
-				algo.setActIndNum(actInds.length);
 				ArrayList<Integer> actIndInts = new ArrayList<Integer>();
 				for(int i = 0 ; i < actInds.length; i++){
 					actIndInts.add(Integer.parseInt(actInds[i]));
 				}
 				String indMask = "";
-				for(int i = 0 ; i < indList.length; i++){
+				for(int i = 0 ; i < Globals.ind_names.length; i++){
 					if(actIndInts.contains(i)){
 						indMask += "1";
-						algo.addToActiveInds(indList[i]);
 					}else{
 						indMask += "0";
 					}
@@ -183,15 +176,19 @@ public class ML_CreateSK extends JFrame {
 				algo.setIndMask(indMask);
 				//run the ANN
 				algo.calcSK();
-				BGM_Manager skey = new BGM_Manager("ANN", id);
-				skey.genBasisSK(id);
-				skey.keyPerfToFile();				//save basic key perf to keys_perf
-				skey.bsoPerfToFile(true, false);	//save BIM/SOM perf to keys_perf
-				skey = new BGM_Manager("ANN", id+1);
-				skey.genBasisSK(id+1);
-				skey.keyPerfToFile();
-				skey.bsoPerfToFile(true, false);
-				
+				BGM_Manager skShort = new BGM_Manager("ANN", id);
+				skShort.genBasisSK(id);
+				String shortBasisPath = "./../baseis/single/ann/ANN_"+String.valueOf(id)+".txt";
+				ArrayList<String> shortPerf = skShort.perfFromBasisFile(shortBasisPath);
+				skShort.perfToFileSK(shortPerf);			//save short basic SK perf to keys_perf
+				skShort.bsoPerfToFileSK(true, false);		//save short BSO perf to keys_perf
+				BGM_Manager skLong = new BGM_Manager("ANN", id+1);
+				skLong.genBasisSK(id+1);
+				String longBasisPath = "./../baseis/single/ann/ANN_"+String.valueOf(id+1)+".txt";
+				ArrayList<String> longPerf = skLong.perfFromBasisFile(longBasisPath);
+				skLong.perfToFileSK(longPerf);				//save long basic SK perf to keys_perf
+				skLong.bsoPerfToFileSK(true, false);		//save long BSO perf to keys_perf
+
 				System.out.println("==> SK calculated and info printed to files.");
 			}
 		});

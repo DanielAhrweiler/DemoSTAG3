@@ -1,5 +1,6 @@
 package ahrweiler.util;
 import ahrweiler.util.AhrIO;
+import ahrweiler.util.AhrGen;
 import ahrweiler.support.FCI;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -273,6 +274,21 @@ public class AhrDate {
 			}
 		});	
 	}
+	
+	//get list opf dates that passes market mask
+	public static ArrayList<String> getDatesThatPassMarketMask(ArrayList<String> dates, String msMask){
+		ArrayList<String> mdates = new ArrayList<String>();
+		ArrayList<ArrayList<String>> mstates = AhrIO.scanFile("./../in/mstates.txt", ",");
+		FCI fciMS = new FCI(false, "./../in/mstates.txt");
+		for(int i = 0; i < mstates.size(); i++){
+			String itrDate = mstates.get(i).get(fciMS.getIdx("date"));
+			String itrMask = mstates.get(i).get(fciMS.getIdx("ms_mask"));
+			if(dates.contains(itrDate) && AhrGen.compareMasks(msMask, itrMask)){
+				mdates.add(itrDate);
+			}
+		}
+		return mdates;
+	}	
 	
 	//return mr date of out list of dates
 	public static String maxDateInAL(ArrayList<String> al){
