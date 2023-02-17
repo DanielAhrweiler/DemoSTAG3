@@ -58,6 +58,7 @@ public class AhrAL {
 		}
 		return rowIdx;
 	}
+
 	
 	//return col of AL with given col idx
 	public static ArrayList<String> getCol(ArrayList<ArrayList<String>> al, int colIdx){

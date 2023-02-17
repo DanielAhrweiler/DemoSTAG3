@@ -14,7 +14,7 @@ public class OrderSim {	//simulates ordering in reality
 	String edate = "";
 	double bim = 0.0;		//buy-in mult (of last close)
 	double som = 0.0;		//sell-off mult (of buy-in)
-	String ttvMask = "000";	//train test verify bit mask
+	String ttvMask = "010";	//train test verify bit mask
 	ArrayList<ArrayList<ArrayList<String>>> techBuf;
 	ArrayList<String> uniqDates;
 	int techLen = 0;
@@ -39,7 +39,7 @@ public class OrderSim {	//simulates ordering in reality
 	public OrderSim(String basisPath){//empty init
 		System.out.println("==> In OrderSim() (CUST)");
 		this.bfPath = basisPath;
-		this.fciBF = new FCI(true, basisPath);
+		this.fciBF = new FCI(false, basisPath);
 		this.techBuf = new ArrayList<ArrayList<ArrayList<String>>>();
 		this.orders = new ArrayList<ArrayList<String>>();
 		this.uniqDates = new ArrayList<String>();
@@ -50,29 +50,33 @@ public class OrderSim {	//simulates ordering in reality
 	public OrderSim(int keyID){//for agg key (dont need bgm)
 		System.out.println("==> In OrderSim() (AK)");
 		this.keyNum = keyID;
-		this.techBuf = new ArrayList<ArrayList<ArrayList<String>>>();
-		this.orders = new ArrayList<ArrayList<String>>();
-		this.uniqDates = new ArrayList<String>();
-		ArrayList<ArrayList<String>> aggLog = AhrIO.scanFile("./../baseis/log/ak_log.txt", ",");
-		FCI fciAL = new FCI(true, "./../baseis/log/ak_log.txt");
-		int aggIdx = AhrDTF.transpose(aggLog).get(fciAL.getIdx("basis_num")).indexOf(String.valueOf(keyID));
-		String bgm = aggLog.get(aggIdx).get(fciAL.getIdx("bgm"));
-		this.dbUsed = aggLog.get(aggIdx).get(fciAL.getIdx("db_used"));
+		//read in this keys row in ak_log
+		String laPath = "./../out/ak/log/ak_log.txt";
+		ArrayList<String> laRow = AhrIO.scanRow(laPath, ",", String.valueOf(keyID));
+		FCI fciLA = new FCI(true, laPath);
+		//assign class objs accroding to file row
+		String bgm = laRow.get(fciLA.getIdx("bgm"));
+		this.bfPath = "./../out/ak/baseis/"+bgm.toLowerCase()+"/"+bgm+"_"+String.valueOf(keyID)+".txt";
+		this.dbUsed = laRow.get(fciLA.getIdx("db_used"));
 		if(this.dbUsed .equals("YH")){
 			this.dbUsed = "Yahoo";
 		}else{
 			this.dbUsed = "Intrinio";
 		}
-		this.tvi = Integer.parseInt(aggLog.get(aggIdx).get(fciAL.getIdx("tvi")));
-		if(Integer.parseInt(aggLog.get(aggIdx).get(fciAL.getIdx("call"))) == 0){
+		this.setDateRange(laRow.get(fciLA.getIdx("start_date")), laRow.get(fciLA.getIdx("end_date")));
+		this.tvi = Integer.parseInt(laRow.get(fciLA.getIdx("tvi")));
+		if(Integer.parseInt(laRow.get(fciLA.getIdx("call"))) == 0){
 			this.is_long = false;
 			this.cmult = -1.0;
 		}else{
 			this.is_long = true;
 			this.cmult = 1.0;
 		}
-		this.bfPath = "./../baseis/aggregated/"+bgm.toLowerCase()+"/"+bgm+"_"+String.valueOf(keyID)+".txt";
 		this.fciBF = new FCI(false, this.bfPath);
+		//init empty ALs
+		this.techBuf = new ArrayList<ArrayList<ArrayList<String>>>();
+		this.orders = new ArrayList<ArrayList<String>>();
+		this.uniqDates = new ArrayList<String>();
 	}
 	//TODO: double check entire function
 	public OrderSim(String bgm, int keyID){//for single key
@@ -82,9 +86,9 @@ public class OrderSim {	//simulates ordering in reality
 		this.techBuf = new ArrayList<ArrayList<ArrayList<String>>>();
 		this.orders = new ArrayList<ArrayList<String>>();
 		this.uniqDates = new ArrayList<String>();//TODO: check if init for techBuf and uniqDates is correct
-		ArrayList<ArrayList<String>> ksFile = AhrIO.scanFile("./../out/ml/"+bgmLC+"/keys_struct.txt", ",");
-		FCI fciKS = new FCI(true, "./../out/ml/"+bgmLC+"/keys_struct.txt");
-		int ksIdx = AhrDTF.transpose(ksFile).get(fciKS.getIdx("key_num")).indexOf(String.valueOf(keyID));
+		ArrayList<ArrayList<String>> ksFile = AhrIO.scanFile("./../out/sk/log/"+bgmLC+"/keys_struct.txt", ",");
+		FCI fciKS = new FCI(true, "./../out/sk/log/"+bgmLC+"/keys_struct.txt");
+		int ksIdx = AhrDTF.transpose(ksFile).get(fciKS.getIdx("sk_num")).indexOf(String.valueOf(keyID));
 		System.out.println("**********\n--> ksFile : " + ksFile.get(ksIdx));
 		this.dbUsed = ksFile.get(ksIdx).get(fciKS.getIdx("db_used"));
 		if(this.dbUsed.equals("YH")){
@@ -116,10 +120,13 @@ public class OrderSim {	//simulates ordering in reality
 			}
 		}
 		//set path and FCI for basis file
-		this.bfPath = "./../baseis/single/"+bgmLC+"/"+bgm+"_"+String.valueOf(keyID)+".txt";
+		this.bfPath = "./../out/sk/baseis/"+bgmLC+"/"+bgm+"_"+String.valueOf(keyID)+".txt";
 		this.fciBF = new FCI(false, this.bfPath);
 	}
 	//getters & setters
+	public int getID(){
+		return this.keyNum;
+	}
 	public String getPath(){
 		return this.bfPath;
 	}
@@ -208,6 +215,7 @@ public class OrderSim {	//simulates ordering in reality
 	public void setDateRange(String date1, String date2){
 		this.sdate = date1;
 		this.edate = date2;
+		this.techBuf = new ArrayList<ArrayList<ArrayList<String>>>();
 	}
 	public void setBIM(double bimVal){
 		this.bim = bimVal;
@@ -220,6 +228,7 @@ public class OrderSim {	//simulates ordering in reality
 	}
 	public void setTtvMask(String ttvVal){
 		this.ttvMask = ttvVal;
+		this.techBuf = new ArrayList<ArrayList<ArrayList<String>>>();
 	}
 	public void setIsLong(boolean isLongVal){
 		this.is_long = isLongVal;
@@ -234,6 +243,7 @@ public class OrderSim {	//simulates ordering in reality
 	}
 	public void setTVI(int tviVal){
 		this.tvi = tviVal;
+		this.techBuf = new ArrayList<ArrayList<ArrayList<String>>>();
 	}
 	public void setISMT(boolean ismtVal){
 		this.ismt = ismtVal;
@@ -250,6 +260,7 @@ public class OrderSim {	//simulates ordering in reality
 	//techBuffer is 3D string AL that holds the basic tech data needed to calc an order around a date
 	//a 1-day order only needs 2 lines of tech data while a 3-day needs more
 	public void calcBuffer(){
+		this.orders = new ArrayList<ArrayList<String>>();
 		ArrayList<ArrayList<String>> slist = new ArrayList<ArrayList<String>>();
 		ArrayList<ArrayList<String>> basis = AhrIO.scanFile(this.bfPath, ",");
 		//add lines of dates in range and according to ttvMask
@@ -289,15 +300,24 @@ public class OrderSim {	//simulates ordering in reality
 			if(!this.uniqDates.contains(date)){
 				this.uniqDates.add(date);
 			}
-			//read files til you get to date
-			this.techLen = 2;	//# of lines needed in the buffer
-			if(this.tvi == 2 || this.tvi == 3){
-				this.techLen = this.tvi + 1;
-			}else if(this.tvi == 4){
-				this.techLen = 5 + 1;	
-			}else if(this.tvi == 5){
-				this.techLen = 10 + 1;
+			//# of lines needed in the buffer
+			this.techLen = 0;
+			if(this.tvi == 0 || this.tvi == 1){//1-day
+				this.techLen = 2;
 			}
+			if(this.tvi == 2 || this.tvi == 3){//2-day
+				this.techLen = 3;
+			}
+			if(this.tvi == 4 || this.tvi == 5){//3-day
+				this.techLen = 4;
+			}
+			if(this.tvi == 6 || this.tvi == 7){//5-day
+				this.techLen = 6;
+			}
+			if(this.tvi == 8 || this.tvi == 9){//10-day
+				this.techLen = 11;
+			}
+			//read files til you get to date
 			ArrayList<ArrayList<String>> stockBuf = new ArrayList<ArrayList<String>>();
 			String[] plArr = {""};	//prev line array (more recent)
 			String[] clArr = {""};	//curr line array (less recent)
@@ -359,10 +379,12 @@ public class OrderSim {	//simulates ordering in reality
 				tfTechBuf.add(this.techBuf.get(i).get(j));
 			}
 		}
-		AhrIO.writeToFile("./../data/orderlist/techbuf.txt", tfTechBuf, ",");
+		AhrIO.writeToFile("./../data/tmp/os_techbuf.txt", tfTechBuf, ",");
 	}
 
 	public void calcOrderList(){
+		System.out.println("In calcOL, TechBuf size1 = " + techBuf.size());
+
 		if(this.techBuf.size() < 1){
 			calcBuffer();
 		}else{
@@ -375,6 +397,8 @@ public class OrderSim {	//simulates ordering in reality
 		int bimCount = 0;
 		int somCount = 0;
 		//System.out.println("***** Calculating Order List *****");
+		System.out.println("In calcOL, TechBuf size2 = " + techBuf.size());
+
 		for(int i = 0; i < this.techBuf.size(); i++){
 			if(i%500==0){
 				//System.out.println("   "+i+" out of "+this.techBuf.size());
@@ -388,7 +412,7 @@ public class OrderSim {	//simulates ordering in reality
 				highs.add(Double.parseDouble(this.techBuf.get(i).get(x).get(fciTB.getIdx("adj_high"))));
 				lows.add(Double.parseDouble(this.techBuf.get(i).get(x).get(fciTB.getIdx("adj_low"))));
 			}
-			//printAL_S(this.techBuf.get(i));
+			//AhrAL.print(this.techBuf.get(i));
 			//System.out.println("");
 			double open = opens.get(opens.size()-2);
 			double firstHi = highs.get(highs.size()-2);
@@ -647,8 +671,30 @@ public class OrderSim {	//simulates ordering in reality
 		}
 		this.yoyAppr = ((this.yoyAppr - yoyStart) / yoyStart) * 100.0;
 
-		//log to file for debugging
-		AhrIO.writeToFile("./../data/orderlist/orderlist.txt", this.orders, ",");
+		//write to file OL earlier to test
+		AhrIO.writeToFile("./../data/tmp/os_orderlist.txt", this.orders, ",");
+		//write orderlist to file, order by meth % and write that to file also
+		String olPath = "./../data/tmp/os_orderlist.txt";
+		FCI fciOL = new FCI(false, olPath);
+		ArrayList<ArrayList<String>> olByAppr = new ArrayList<ArrayList<String>>(this.orders);
+		//test line for ph vals
+		for(int i = 0; i < olByAppr.size(); i++){
+			String itrAppr = olByAppr.get(i).get(fciOL.getIdx("method_appr"));
+			if(itrAppr.equals("ph")){
+				System.out.println("ol line = " + olByAppr.get(i));
+			}			
+		}
+
+		Collections.sort(olByAppr, new Comparator<ArrayList<String>>(){
+			@Override
+			public int compare(ArrayList<String> obj1, ArrayList<String> obj2){
+				double dcomp1 = Double.parseDouble(obj1.get(fciOL.getIdx("method_appr")));
+				double dcomp2 = Double.parseDouble(obj2.get(fciOL.getIdx("method_appr")));
+				return Double.compare(dcomp1, dcomp2);//ascending
+			}
+		});
+		AhrIO.writeToFile(olPath, this.orders, ",");
+		AhrIO.writeToFile("./../data/tmp/os_orderlist_byappr.txt", olByAppr, ",");
 	}
 
 	//calc growth on a porfolio using the calcualted order list
@@ -708,16 +754,195 @@ public class OrderSim {	//simulates ordering in reality
 		}
 		return growth;
 	}
+	
+	//calc best BIM/SOM from narrowing down on ever increasing BIM/SOM combo precision
+	public void calcBSO(){
+		//determine start and end vals depending on call
+		int loBimLim = 0;
+		int hiBimLim = 110;
+		int loSomLim = 0;
+		int hiSomLim = 200;
+		if(getIsLong()){
+			loBimLim = 90;
+			hiBimLim = 200;
+		}
+		//init vals
+		ArrayList<ArrayList<String>> bsoMult = new ArrayList<ArrayList<String>>();
+		double bestBIM = 0.0;
+		double bestSOM = 0.0;
+		double bestYOY = Double.MIN_VALUE;
+		//1st cycle scan entire region by 0.10 increments
+		for(int i = loBimLim; i <= hiBimLim; i+=10){
+			for(int j = loSomLim; j <= hiSomLim; j+=10){
+				double itrBIM = ((double)i/100.0);
+				double itrSOM = ((double)j/100.0);
+				if(j == 100){
+					j -= 7;//makes next itr 103
+					itrSOM = 0.97;
+				}
+				if(j == 103){
+					j -= 3;//corrects back to 110
+				}
+				
+				setBIM(itrBIM);
+				setSOM(itrSOM);
+				calcOrderList();
+				double itrYOY = getYoyAppr();
+				if(itrYOY > bestYOY){
+					bestBIM = itrBIM;
+					bestSOM = itrSOM;
+					bestYOY = itrYOY;
+				}
+				ArrayList<String> line = new ArrayList<String>();
+				line.add(String.format("%.3f", itrBIM));
+				line.add(String.format("%.3f", itrSOM));
+				line.add(String.format("%.5f", getTrigAppr()));
+				line.add(String.format("%.5f", getYoyAppr()));
+				line.add(String.format("%.3f", getPosPer()));
+				bsoMult.add(line);
+				System.out.println("BIM: "+String.format("%.3f",itrBIM)+
+									"  |  SOM: "+String.format("%.3f",itrSOM)+
+									"  |  YoY %: "+String.format("%.3f",itrYOY)+
+									"  |  Best YoY %: "+String.format("%.3f",bestYOY));
 
+			}
+		}
+		//2nd cycle, scan a 0.18 by 0.18 region by 0.02 increments
+		int centerBIM = (int)(bestBIM * 100.0);		//need unchanging BIM val while bestBIM can change
+		int centerSOM = (int)(bestSOM * 100.0);		// ^^ same for SOM
+		for(int i = centerBIM-8; i <= centerBIM+8; i+=2){
+			for(int j = centerSOM-8; j <= centerSOM+8; j+=2){
+				boolean is_useless_som = false;
+				if(j > 97 && j < 103){
+					is_useless_som = true;
+				}
+				if(i > 0 && j > 0 && !is_useless_som){
+					double itrBIM = ((double)i/100.0);
+					double itrSOM = ((double)j/100.0);
+					setBIM(itrBIM);
+					setSOM(itrSOM);
+					calcOrderList();
+					double itrYOY = getYoyAppr();
+					if(itrYOY > bestYOY){
+						bestBIM = itrBIM;
+						bestSOM = itrSOM;
+						bestYOY = itrYOY;
+					}
+					ArrayList<String> line = new ArrayList<String>();
+					line.add(String.format("%.3f", itrBIM));
+					line.add(String.format("%.3f", itrSOM));
+					line.add(String.format("%.5f", getTrigAppr()));
+					line.add(String.format("%.5f", getYoyAppr()));
+					line.add(String.format("%.3f", getPosPer()));
+					bsoMult.add(line);
+					System.out.println("BIM: "+String.format("%.3f",itrBIM)+
+										"  |  SOM: "+String.format("%.3f",itrSOM)+
+										"  |  YoY %: "+String.format("%.3f",itrYOY)+
+										"  |  Best YoY %: "+String.format("%.3f",bestYOY));
+				}
+			}
+		}
+		centerBIM = (int)(bestBIM * 1000.0);		//need unchanging BIM val while bestBIM can change
+		centerSOM = (int)(bestSOM * 1000.0);		// ^^ same for SOM
+		for(int i = centerBIM-20; i <= centerBIM+20; i+=5){
+			for(int j = centerSOM-20; j <= centerSOM+20; j+=5){
+				boolean is_useless_som = false;
+				if(j > 970 && j < 1030){
+					is_useless_som = true;
+				}
+				if(i > 0 && j > 0 && !is_useless_som){
+					double itrBIM = ((double)i/1000.0);
+					double itrSOM = ((double)j/1000.0);
+					setBIM(itrBIM);
+					setSOM(itrSOM);
+					calcOrderList();
+					double itrYOY = getYoyAppr();
+					if(itrYOY > bestYOY){
+						bestBIM = itrBIM;
+						bestSOM = itrSOM;
+						bestYOY = itrYOY;
+					}
+					ArrayList<String> line = new ArrayList<String>();
+					line.add(String.format("%.3f", itrBIM));
+					line.add(String.format("%.3f", itrSOM));
+					line.add(String.format("%.5f", getTrigAppr()));
+					line.add(String.format("%.5f", getYoyAppr()));
+					line.add(String.format("%.3f", getPosPer()));
+					bsoMult.add(line);
+					System.out.println("BIM: "+String.format("%.3f",itrBIM)+
+										"  |  SOM: "+String.format("%.3f",itrSOM)+
+										"  |  YoY %: "+String.format("%.3f",itrYOY)+
+										"  |  Best YoY %: "+String.format("%.3f",bestYOY));
+				}
+			}
+		}
+		centerBIM = (int)(bestBIM * 1000.0);		//need unchanging BIM val while bestBIM can change
+		centerSOM = (int)(bestSOM * 1000.0);		// ^^ same for SOM
+		for(int i = centerBIM-4; i <= centerBIM+4; i++){
+			for(int j = centerSOM-4; j <= centerSOM+4; j++){
+				boolean is_useless_som = false;
+				if(j > 970 && j < 1030){
+					is_useless_som = true;
+				}
+				if(i > 0 && j > 0 && !is_useless_som){
+					double itrBIM = ((double)i/1000.0);
+					double itrSOM = ((double)j/1000.0);
+					setBIM(itrBIM);
+					setSOM(itrSOM);
+					calcOrderList();
+					double itrYOY = getYoyAppr();
+					if(itrYOY > bestYOY){
+						bestBIM = itrBIM;
+						bestSOM = itrSOM;
+						bestYOY = itrYOY;
+					}
+					ArrayList<String> line = new ArrayList<String>();
+					line.add(String.format("%.3f", itrBIM));
+					line.add(String.format("%.3f", itrSOM));
+					line.add(String.format("%.5f", getTrigAppr()));
+					line.add(String.format("%.5f", getYoyAppr()));
+					line.add(String.format("%.3f", getPosPer()));
+					bsoMult.add(line);
+					System.out.println("BIM: "+String.format("%.3f",itrBIM)+
+										"  |  SOM: "+String.format("%.3f",itrSOM)+
+										"  |  YoY %: "+String.format("%.3f",itrYOY)+
+										"  |  Best YoY %: "+String.format("%.3f",bestYOY));
+				}
+			}
+		}
+		AhrIO.writeToFile("./../data/tmp/bso_multiple.txt", bsoMult, ",");
+		//calc one last time on best combo so can check files
+		setBIM(bestBIM);
+		setSOM(bestSOM);
+		calcOrderList();
+		printData();
+	}
+	
 	//given a TTV code from a basis line, returns bool whether code pass OrderSim ttvMask
 	//code: 0 = is train line in basis, 1 = is test line, 2 = is verify line
 	public boolean checkTTV(String code){
-		char bitInMask = ttvMask.charAt(Integer.parseInt(code));
+		char bitInMask = this.ttvMask.charAt(Integer.parseInt(code));
 		boolean pass_ttv = false;
 		if(bitInMask == '1'){
 			pass_ttv = true;
 		}
 		return pass_ttv;
+	}
+
+	//print out all data related info of current OrderSim
+	public void printData(){
+		System.out.println("========== OrderSim Data =========="+
+							"\n--> Key ID : "+getID()+
+							"\n--> BIM    : "+getBIM()+
+							"\n--> SOM    : "+getSOM()+
+							"\n--> TPR    : "+getTPR()+
+							"\n--> Positive %      : "+getPosPer()+
+							"\n--> BIM Triggered % : "+getBimPer()+
+							"\n--> SOM Triggered % : "+getSomPer()+
+							"\n--> Triggered APAPT : "+getTrigAppr()+
+							"\n--> Section %       : "+getSecAppr()+
+							"\n--> YoY %           : "+getYoyAppr()+
+							"\n===================================");
 	}
 
 }

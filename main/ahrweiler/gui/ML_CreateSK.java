@@ -138,12 +138,13 @@ public class ML_CreateSK extends JFrame {
 			public void actionPerformed(ActionEvent e) {
 				System.out.println("--> Calulate SK for ANN");
 				//set up algo info
-				FCI fciKS = new FCI(true, "./../out/ml/ann/keys_struct.txt");
-				ArrayList<ArrayList<String>> keys = AhrIO.scanFile("./../out/ml/ann/keys_struct.txt", ",");
+				String ksPath = "./../out/sk/log/ann/keys_struct.txt";
+				FCI fciKS = new FCI(true, ksPath);
+				ArrayList<ArrayList<String>> keys = AhrIO.scanFile(ksPath,"");
 				int maxID = -1;
 				if(keys.size() > 1){
 					for(int i = 1; i < keys.size(); i++){
-						int itrKey = Integer.parseInt(keys.get(i).get(fciKS.getIdx("key_num")));
+						int itrKey = Integer.parseInt(keys.get(i).get(fciKS.getIdx("sk_num")));
 						if(itrKey > maxID){
 							maxID = itrKey;
 						}
@@ -178,13 +179,13 @@ public class ML_CreateSK extends JFrame {
 				algo.calcSK();
 				BGM_Manager skShort = new BGM_Manager("ANN", id);
 				skShort.genBasisSK(id);
-				String shortBasisPath = "./../baseis/single/ann/ANN_"+String.valueOf(id)+".txt";
+				String shortBasisPath = "./../out/sk/baseis/ann/ANN_"+String.valueOf(id)+".txt";
 				ArrayList<String> shortPerf = skShort.perfFromBasisFile(shortBasisPath);
 				skShort.perfToFileSK(shortPerf);			//save short basic SK perf to keys_perf
 				skShort.bsoPerfToFileSK(true, false);		//save short BSO perf to keys_perf
 				BGM_Manager skLong = new BGM_Manager("ANN", id+1);
 				skLong.genBasisSK(id+1);
-				String longBasisPath = "./../baseis/single/ann/ANN_"+String.valueOf(id+1)+".txt";
+				String longBasisPath = "./../out/sk/baseis/ann/ANN_"+String.valueOf(id+1)+".txt";
 				ArrayList<String> longPerf = skLong.perfFromBasisFile(longBasisPath);
 				skLong.perfToFileSK(longPerf);				//save long basic SK perf to keys_perf
 				skLong.bsoPerfToFileSK(true, false);		//save long BSO perf to keys_perf

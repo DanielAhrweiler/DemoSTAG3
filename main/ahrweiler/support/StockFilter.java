@@ -60,8 +60,8 @@ public class StockFilter {
 	ArrayList<ArrayList<String>> results;
 	ArrayList<String> sectors;
 	ArrayList<String> industries;
-	NameAndRange mc_range;
-	ArrayList<NameAndRange> ind_ranges;
+	NameAndRange mcRange;
+	ArrayList<NameAndRange> indRanges;
 	
 
 	public StockFilter(){
@@ -69,20 +69,20 @@ public class StockFilter {
 		this.results = new ArrayList<ArrayList<String>>();
 		this.sectors = new ArrayList<String>();
 		this.industries = new ArrayList<String>();
-		this.mc_range = new NameAndRange("mc");
-		this.ind_ranges = new ArrayList<NameAndRange>();	
+		this.mcRange = new NameAndRange("mc");
+		this.indRanges = new ArrayList<NameAndRange>();	
 	}
 	public StockFilter(ArrayList<ArrayList<String>> filters){
 		this.scodes = new ArrayList<ArrayList<String>>();
 		this.results = new ArrayList<ArrayList<String>>();
 		this.sectors = new ArrayList<String>();
 		this.industries = new ArrayList<String>();
-		this.ind_ranges = new ArrayList<NameAndRange>();
+		this.indRanges = new ArrayList<NameAndRange>();
 		for(int i = 0; i < filters.size(); i++){
 			if(filters.get(i).get(0).contains("ind") && !filters.get(i).get(0).equals("industry")){
-				this.ind_ranges.add(new NameAndRange(filters.get(i)));
+				this.indRanges.add(new NameAndRange(filters.get(i)));
 			}else if(filters.get(i).get(0).equals("mc")){
-				this.mc_range = new NameAndRange(filters.get(i));
+				this.mcRange = new NameAndRange(filters.get(i));
 			}else if(filters.get(i).get(0).equals("sector")){
 				if(!filters.get(i).get(1).equals("")){
 					String[] allSecs = filters.get(i).get(1).split(",");
@@ -105,16 +105,16 @@ public class StockFilter {
 		this.results = new ArrayList<ArrayList<String>>();
 		this.sectors = new ArrayList<String>();
 		this.industries = new ArrayList<String>();
-		this.ind_ranges = new ArrayList<NameAndRange>();
+		this.indRanges = new ArrayList<NameAndRange>();
 		//sort out the filter lines
 		ArrayList<ArrayList<String>> filters = AhrIO.scanFile(fpath, "~");
 		System.out.println("--> In StockFilter(fpath) constructor, filters are ...");
 		AhrAL.print(filters);
 		for(int i = 0; i < filters.size(); i++){
 			if(filters.get(i).get(0).contains("ind") && !filters.get(i).get(0).equals("industry")){
-				this.ind_ranges.add(new NameAndRange(filters.get(i)));
+				this.indRanges.add(new NameAndRange(filters.get(i)));
 			}else if(filters.get(i).get(0).equals("mc")){
-				this.mc_range = new NameAndRange(filters.get(i));
+				this.mcRange = new NameAndRange(filters.get(i));
 			}else if(filters.get(i).get(0).equals("sector")){
 				if(!filters.get(i).get(1).equals("")){
 					String[] allSecs = filters.get(i).get(1).split(",");
@@ -146,14 +146,14 @@ public class StockFilter {
 	}
 	public ArrayList<String> getIndicators(){
 		ArrayList<String> inds = new ArrayList<String>();
-		for(int i = 0; i < this.ind_ranges.size(); i++){
-			inds.add(this.ind_ranges.get(i).getName());
+		for(int i = 0; i < this.indRanges.size(); i++){
+			inds.add(this.indRanges.get(i).getName());
 		}
 		return inds;
 	}
 	public void setMarketCap(int startVal, int endVal){
-		this.mc_range.setStartVal(startVal);
-		this.mc_range.setEndVal(endVal);
+		this.mcRange.setStartVal(startVal);
+		this.mcRange.setEndVal(endVal);
 	}
 	public void setSectors(String secRaw){
 		this.sectors = new ArrayList<String>();
@@ -178,14 +178,14 @@ public class StockFilter {
 
 	//add an indicator name, start val, and end val
 	public void addIndicatorFilter(ArrayList<String> filterLine){
-		this.ind_ranges.add(new NameAndRange(filterLine));
+		this.indRanges.add(new NameAndRange(filterLine));
 	}
 	//edit already existing indicator range
 	public void editIndicatorFilter(ArrayList<String> filterLine){
 		int idx = -1;
 		String newName = filterLine.get(0);
-		for(int i = 0; i < this.ind_ranges.size(); i++){
-			NameAndRange itrNAR = this.ind_ranges.get(i);
+		for(int i = 0; i < this.indRanges.size(); i++){
+			NameAndRange itrNAR = this.indRanges.get(i);
 			String oldName = itrNAR.getName();
 			if(oldName.equals(newName)){
 				idx = i;
@@ -193,7 +193,7 @@ public class StockFilter {
 			}
 		}
 		if(idx != -1){
-			this.ind_ranges.set(idx, new NameAndRange(filterLine));
+			this.indRanges.set(idx, new NameAndRange(filterLine));
 		}
 	}
 
@@ -293,8 +293,8 @@ public class StockFilter {
 			boolean is_in_bd = true;
 			boolean passes_ind_rules = true;
 			boolean passes_mc = true;
-			for(int j = 0; j < this.ind_ranges.size(); j++){
-				NameAndRange itrNAR = this.ind_ranges.get(j);
+			for(int j = 0; j < this.indRanges.size(); j++){
+				NameAndRange itrNAR = this.indRanges.get(j);
 				String vname = itrNAR.getName();
 				int vrs = itrNAR.getStartVal();
 				int vre = itrNAR.getEndVal();
@@ -314,17 +314,18 @@ public class StockFilter {
 				//check market cap
 				FCI fciSB = new FCI(false, "./../../DB_Intrinio/Main/S_Base/");
 				ArrayList<String> sbLine = AhrIO.scanRow("./../../DB_Intrinio/Main/S_Base/"+ticker+".txt","~",date);
-				//System.out.println("--> Date: "+date+"  |  Ticker: "+ticker+"  | sbLine: "+sbLine);
+				System.out.println("--> Date: "+date+"  |  Ticker: "+ticker+"  | sbLine: "+sbLine);
 				if(sbLine.size() < 6){
 					//System.out.println("ERR ==> sbLine: "+sbLine);
 					//errTicks.add(ticker);
 				}else{
 					mcVal = Double.parseDouble(sbLine.get(fciSB.getIdx("market_cap")));
 				}
-				if(mcVal < this.mc_range.getStartVal() || mcVal > this.mc_range.getEndVal()){
+				if(mcVal < this.mcRange.getStartVal() || mcVal > this.mcRange.getEndVal()){
 					passes_mc = false;
 				}
 			}
+			System.out.println("Is In BD: "+is_in_bd+"  |  Passes Ind Rules: "+passes_ind_rules+"  |  Passes MC: "+passes_mc);
 			if(is_in_bd && passes_ind_rules && passes_mc){
 				vals.add(0, scode);
 				vals.add(0, String.format("%.4f", mcVal));
@@ -343,8 +344,8 @@ public class StockFilter {
 		String ftext = "";
 		//add MC data
 		ftext += "mc~";
-		ftext += String.valueOf(this.mc_range.getStartVal())+"~";
-		ftext += String.valueOf(this.mc_range.getEndVal());
+		ftext += String.valueOf(this.mcRange.getStartVal())+"~";
+		ftext += String.valueOf(this.mcRange.getEndVal());
 		//add sector data
 		ftext += "\nsector~";
 		String secRaw = "";
@@ -368,8 +369,8 @@ public class StockFilter {
 		}
 		ftext += indRaw;	
 		//add all indicator data
-		for(int i = 0; i < this.ind_ranges.size(); i++){
-			NameAndRange itrNAR = this.ind_ranges.get(i);
+		for(int i = 0; i < this.indRanges.size(); i++){
+			NameAndRange itrNAR = this.indRanges.get(i);
 			ftext += "\n"+itrNAR.getName()+"~";
 			ftext += String.valueOf(itrNAR.getStartVal())+"~";
 			ftext += String.valueOf(itrNAR.getEndVal());
@@ -385,8 +386,8 @@ public class StockFilter {
 		ArrayList<ArrayList<String>> data = new ArrayList<ArrayList<String>>();
 		//add MC data
 		ArrayList<String> mcLine = AhrAL.toAL(new String[]{"mc"});
-		mcLine.add(String.valueOf(this.mc_range.getStartVal()));
-		mcLine.add(String.valueOf(this.mc_range.getEndVal()));
+		mcLine.add(String.valueOf(this.mcRange.getStartVal()));
+		mcLine.add(String.valueOf(this.mcRange.getEndVal()));
 		//add sector data
 		ArrayList<String> sectorLine = AhrAL.toAL(new String[]{"sector"});
 		String secRaw = "";
@@ -414,8 +415,8 @@ public class StockFilter {
 		data.add(sectorLine);
 		data.add(industryLine);
 		//add all indicator data
-		for(int i = 0; i < this.ind_ranges.size(); i++){
-			NameAndRange itrNAR = this.ind_ranges.get(i);
+		for(int i = 0; i < this.indRanges.size(); i++){
+			NameAndRange itrNAR = this.indRanges.get(i);
 			ArrayList<String> indLine = AhrAL.toAL(new String[]{itrNAR.getName()});
 			indLine.add(String.valueOf(itrNAR.getStartVal()));
 			indLine.add(String.valueOf(itrNAR.getEndVal()));
@@ -431,8 +432,8 @@ public class StockFilter {
 		this.results = new ArrayList<ArrayList<String>>();
 		this.sectors = new ArrayList<String>();
 		this.industries = new ArrayList<String>();
-		this.mc_range = new NameAndRange("mc");
-		this.ind_ranges = new ArrayList<NameAndRange>();
+		this.mcRange = new NameAndRange("mc");
+		this.indRanges = new ArrayList<NameAndRange>();
 	}
 	//reset just sector codes
 	public void clearSectorCodes(){

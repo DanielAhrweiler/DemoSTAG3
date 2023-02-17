@@ -28,11 +28,11 @@ public class FCI {
 
 		//TODO fix and remove this section
 		if(!this.has_header){
-			if(this.path.contains("./../baseis/single/")){
-				this.path = "./../baseis/single/";
+			if(this.path.contains("./../out/sk/baseis/")){
+				this.path = "./../out/sk/baseis/";
 			}
-			if(this.path.contains("./../baseis/aggregated/")){
-				this.path = "./../baseis/aggregated/";
+			if(this.path.contains("./../out/ak/baseis/")){
+				this.path = "./../out/ak/baseis/";
 			}
 		}
 

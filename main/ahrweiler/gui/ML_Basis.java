@@ -16,7 +16,7 @@ import javax.swing.SwingUtilities;
 public class ML_Basis extends JFrame {
 
 	Font monoFont = new Font(Font.MONOSPACED, Font.BOLD, 11);
-	String[] bgmList = {"ANN", "GAD2", "GAB3"};
+	String[] bgmList = {"ANN"};
 
 	public ML_Basis(){
 		drawGUI();
@@ -36,11 +36,11 @@ public class ML_Basis extends JFrame {
 		//lists and overaching structs
 		ArrayList<String> epochList = AhrIO.scanCol("./../in/epochs.txt", ",", 0);
 		ArrayList<String> akList = new ArrayList<String>();
-		FCI fciAL = new FCI(true, "./../baseis/log/ak_log.txt");
-		ArrayList<ArrayList<String>> fcAL = AhrIO.scanFile("./../baseis/log/ak_log.txt", ",");
+		FCI fciAL = new FCI(true, "./../out/ak/log/ak_log.txt");
+		ArrayList<ArrayList<String>> fcAL = AhrIO.scanFile("./../out/ak/log/ak_log.txt", ",");
 		for(int i = 1; i < fcAL.size(); i++){
 			if(!fcAL.get(i).get(fciAL.getIdx("bgm")).equals("RND")){
-				akList.add(fcAL.get(i).get(fciAL.getIdx("basis_num")));
+				akList.add(fcAL.get(i).get(fciAL.getIdx("ak_num")));
 			}
 		}
 		//layout
@@ -153,7 +153,10 @@ public class ML_Basis extends JFrame {
 		ArrayList<String> skByBgm1 = getSKeysByBgm(cbBgmSingleSK.getSelectedItem().toString());
 		for(int i = 0; i < skByBgm1.size(); i++){
 			cbKeySingleSK.addItem(skByBgm1.get(i));
-		}		
+		}
+		for(int i = 0; i < akList.size(); i++){
+			cbKeySingleAK.addItem(akList.get(i));
+		}	
 		for(int i = 0; i < epochList.size(); i++){
 			cbByEpoch.addItem(epochList.get(i));
 		}
@@ -200,12 +203,12 @@ public class ML_Basis extends JFrame {
 					for(int i = 0; i < bgmList.length; i++){
 						String bgmUC = bgmList[i];
 						String bgmLC = bgmList[i].toLowerCase();
-						String ksPath = "./../out/ml/"+bgmLC+"/keys_struct.txt";
+						String ksPath = "./../out/sk/log/"+bgmLC+"/keys_struct.txt";
 						FCI fciKS = new FCI(true, ksPath);
-						ArrayList<String> keyNums = AhrIO.scanCol(ksPath, ",", fciKS.getIdx("key_num"));
+						ArrayList<String> keyNums = AhrIO.scanCol(ksPath, ",", fciKS.getIdx("sk_num"));
 						keyNums.remove(0);
 						for(int j = 0; j < keyNums.size(); j++){
-							String basisPath = "./../baseis/single/"+bgmLC+"/"+bgmUC+"_"+keyNums.get(j);
+							String basisPath = "./../out/sk/baseis/"+bgmLC+"/"+bgmUC+"_"+keyNums.get(j);
 							File bfile = new File(basisPath+".txt");
 							if(!bfile.exists()){
 								BGM_Manager skey = new BGM_Manager(bgmUC, Integer.parseInt(keyNums.get(j)));
@@ -215,14 +218,15 @@ public class ML_Basis extends JFrame {
 						} 
 					}
 				}else if(rbGenAllAK.isSelected()){
-					FCI fciAL = new FCI(true, "./../baseis/log/ak_log.txt");
-					ArrayList<ArrayList<String>> alFC = AhrIO.scanFile("./../baseis/log/ak_log.txt", ",");
+					String alPath = "./../out/ak/log/ak_log.txt";
+					FCI fciAL = new FCI(true, alPath);
+					ArrayList<ArrayList<String>> alFC = AhrIO.scanFile(alPath, ",");
 					for(int i = 1; i < alFC.size(); i++){
-						String knum = alFC.get(i).get(fciAL.getIdx("basis_num"));
+						String knum = alFC.get(i).get(fciAL.getIdx("ak_num"));
 						String bgmUC = alFC.get(i).get(fciAL.getIdx("bgm"));
 						String bgmLC = bgmUC.toLowerCase();
 						if(AhrGen.contains(bgmList, bgmUC)){
-							File bfile = new File("./../baseis/aggregated/"+bgmLC+"/"+bgmUC+"_"+knum+".txt");
+							File bfile = new File("./../out/ak/baseis/"+bgmLC+"/"+bgmUC+"_"+knum+".txt");
 							if(!bfile.exists()){
 								BGM_Manager akey = new BGM_Manager(Integer.parseInt(knum));
 								akey.genBasisAK();
@@ -234,7 +238,7 @@ public class ML_Basis extends JFrame {
 					String bgmUC = cbBgmSingleSK.getSelectedItem().toString();
 					String bgmLC = bgmUC.toLowerCase();
 					String knum = cbKeySingleSK.getSelectedItem().toString();
-					File bfile = new File("./../baseis/single/"+bgmLC+"/"+bgmUC+"_"+knum+".txt");
+					File bfile = new File("./../out/sk/baseis/"+bgmLC+"/"+bgmUC+"_"+knum+".txt");
 					if(bfile.exists()){
 						System.out.println("--> "+bgmUC+" SK"+knum+" basis file already exists.");
 					}else{
@@ -244,10 +248,11 @@ public class ML_Basis extends JFrame {
 					}
 				}else if(rbGenSingleAK.isSelected()){
 					String knum = cbKeySingleAK.getSelectedItem().toString();
-					FCI fciAL = new FCI(true, "./../baseis/log/ak_log.txt");
-					String bgmUC = AhrIO.scanCell("./../baseis/log/ak_log.txt", ",", knum, fciAL.getIdx("bgm"));
+					String alPath = "./../out/ak/log/ak_log.txt";
+					FCI fciAL = new FCI(true, alPath);
+					String bgmUC = AhrIO.scanCell(alPath, ",", knum, fciAL.getIdx("bgm"));
 					String bgmLC = bgmUC.toLowerCase();
-					File bfile = new File("./../baseis/aggregated/"+bgmLC+"/"+bgmUC+"_"+knum+".txt");
+					File bfile = new File("./../out/ak/baseis/"+bgmLC+"/"+bgmUC+"_"+knum+".txt");
 					if(bfile.exists()){
 						System.out.println("--> "+bgmUC+" AK"+knum+" basis file already exists.");	
 					}else{
@@ -280,7 +285,7 @@ public class ML_Basis extends JFrame {
 					// ^^ 1 line contains: 0) SK/AK 1) bgm 2) key ID
 					for(int i = 0; i < bgmList.length; i++){
 						String bgmLC = bgmList[i].toLowerCase();
-						ArrayList<String> skNames = AhrIO.getNamesInPath("./../baseis/single/"+bgmLC+"/");
+						ArrayList<String> skNames = AhrIO.getNamesInPath("./../out/sk/baseis/"+bgmLC+"/");
 						for(int j = 0; j < skNames.size(); j++){
 							String[] skParts = skNames.get(j).split("_");
 							String keyID = skParts[1];
@@ -290,7 +295,7 @@ public class ML_Basis extends JFrame {
 							line.add(keyID);
 							allKeys.add(line);
 						}
-						ArrayList<String> akNames = AhrIO.getNamesInPath("./../baseis/aggregated/"+bgmLC+"/");
+						ArrayList<String> akNames = AhrIO.getNamesInPath("./../out/ak/baseis/"+bgmLC+"/");
 						for(int j = 0; j < akNames.size(); j++){
 							String keyID = akNames.get(j).split("_")[1];
 							ArrayList<String> line = new ArrayList<String>();
@@ -386,9 +391,9 @@ public class ML_Basis extends JFrame {
 	//gets list of single keys given a BGM
 	public ArrayList<String> getSKeysByBgm(String bgm){
 		String bgmLC = bgm.toLowerCase();
-		String fpath =  "./../out/ml/"+bgmLC+"/keys_struct.txt";
+		String fpath =  "./../out/sk/log/"+bgmLC+"/keys_struct.txt";
 		FCI fciKS = new FCI(true, fpath);
-		ArrayList<String> keys = AhrIO.scanCol(fpath, ",", fciKS.getIdx("key_num"));
+		ArrayList<String> keys = AhrIO.scanCol(fpath, ",", fciKS.getIdx("sk_num"));
 		keys.remove(0);
 		return keys;
 	}
@@ -410,15 +415,15 @@ public class ML_Basis extends JFrame {
 		for(int i = 0; i < bgmList.length; i++){
 			String bgmUC = bgmList[i];
 			String bgmLC = bgmUC.toLowerCase();
-			String ksPath = "./../out/ml/"+bgmLC+"/keys_struct.txt";
+			String ksPath = "./../out/sk/log/"+bgmLC+"/keys_struct.txt";
 			FCI fciKS = new FCI(true, ksPath);
-			ArrayList<String> skNums = AhrIO.scanCol(ksPath, ",", fciKS.getIdx("key_num"));
+			ArrayList<String> skNums = AhrIO.scanCol(ksPath, ",", fciKS.getIdx("sk_num"));
 			skNums.remove(0);
 			for(int j = 0; j < skNums.size(); j++){
 				boolean basis_file_exists = false;
 				//find date that is most recent in file
 				String mrBasisDate = "";
-				String sbPath = "./../baseis/single/"+bgmLC+"/"+bgmUC+"_"+skNums.get(j)+".txt";
+				String sbPath = "./../out/sk/baseis/"+bgmLC+"/"+bgmUC+"_"+skNums.get(j)+".txt";
 				File bfile = new File(sbPath);
 				if(bfile.exists()){
 					basis_file_exists = true;
@@ -449,17 +454,18 @@ public class ML_Basis extends JFrame {
 			}
 		}
 		//itr thru all AKs
-		ArrayList<ArrayList<String>> aggLog = AhrIO.scanFile("./../baseis/log/ak_log.txt", ",");
-		FCI fciAL = new FCI(true, "./../baseis/log/ak_log.txt");
-		for(int i = 1; i < aggLog.size(); i++){
-			String akNum = aggLog.get(i).get(fciAL.getIdx("basis_num"));
-			String bgmUC = aggLog.get(i).get(fciAL.getIdx("bgm"));
+		String laPath = "./../out/ak/log/ak_log.txt";
+		ArrayList<ArrayList<String>> laFile = AhrIO.scanFile(laPath, ",");
+		FCI fciLA = new FCI(true, laPath);
+		for(int i = 1; i < laFile.size(); i++){
+			String akNum = laFile.get(i).get(fciLA.getIdx("ak_num"));
+			String bgmUC = laFile.get(i).get(fciLA.getIdx("bgm"));
 			String bgmLC = bgmUC.toLowerCase();
 			if(AhrGen.contains(bgmList, bgmUC)){
 				ArrayList<String> line = new ArrayList<String>();
 				line.add(bgmUC);
 				line.add(akNum);
-				String abPath = "./../baseis/aggregated/"+bgmLC+"/"+bgmUC+"_"+akNum+".txt";
+				String abPath = "./../out/ak/baseis/"+bgmLC+"/"+bgmUC+"_"+akNum+".txt";
 				File bfile = new File(abPath);
 				if(bfile.exists()){
 					String mrBasisDate = AhrIO.scanCell(abPath, ",", Integer.MAX_VALUE, 0);
@@ -555,15 +561,15 @@ public class ML_Basis extends JFrame {
 		for(int i = 0; i < bgmList.length; i++){
 			String bgmUC = bgmList[i];
 			String bgmLC = bgmUC.toLowerCase();
-			String ksPath = "./../out/ml/"+bgmLC+"/keys_struct.txt";
+			String ksPath = "./../out/sk/log/"+bgmLC+"/keys_struct.txt";
 			FCI fciKS = new FCI(true, ksPath);
-			ArrayList<String> skNums = AhrIO.scanCol(ksPath, ",", fciKS.getIdx("key_num"));
+			ArrayList<String> skNums = AhrIO.scanCol(ksPath, ",", fciKS.getIdx("sk_num"));
 			skNums.remove(0);
 			for(int j = 0; j < skNums.size(); j++){
 				boolean basis_file_exists = false;
 				//find date that is most recent in file
 				String mrBasisDate = "";
-				String sbPath = "./../baseis/single/"+bgmLC+"/"+bgmUC+"_"+skNums.get(j)+".txt";
+				String sbPath = "./../out/sk/baseis/"+bgmLC+"/"+bgmUC+"_"+skNums.get(j)+".txt";
 				File bfile = new File(sbPath);
 				if(bfile.exists()){
 					basis_file_exists = true;
@@ -591,14 +597,15 @@ public class ML_Basis extends JFrame {
 			}
 		}
 		//count AKs
-		ArrayList<ArrayList<String>> aggLog = AhrIO.scanFile("./../baseis/log/ak_log.txt", ",");
-		FCI fciAL = new FCI(true, "./../baseis/log/ak_log.txt");
-		for(int i = 1; i < aggLog.size(); i++){
-			String akNum = aggLog.get(i).get(fciAL.getIdx("basis_num"));
-			String bgmUC = aggLog.get(i).get(fciAL.getIdx("bgm"));
+		String laPath = "./../out/ak/log/ak_log.txt";
+		ArrayList<ArrayList<String>> laFile = AhrIO.scanFile(laPath, ",");
+		FCI fciLA = new FCI(true, laPath);
+		for(int i = 1; i < laFile.size(); i++){
+			String akNum = laFile.get(i).get(fciLA.getIdx("ak_num"));
+			String bgmUC = laFile.get(i).get(fciLA.getIdx("bgm"));
 			String bgmLC = bgmUC.toLowerCase();
 			if(AhrGen.contains(bgmList, bgmUC)){
-				String abPath = "./../baseis/aggregated/"+bgmLC+"/"+bgmUC+"_"+akNum+".txt";
+				String abPath = "./../out/ak/baseis/"+bgmLC+"/"+bgmUC+"_"+akNum+".txt";
 				File bfile = new File(abPath);
 				if(bfile.exists()){
 					String mrBasisDate = AhrIO.scanCell(abPath, ",", Integer.MAX_VALUE, 0);

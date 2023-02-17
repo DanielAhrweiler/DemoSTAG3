@@ -42,9 +42,10 @@ public class BGM_Manager {
 		this.is_ak = true;
 		this.id = idVal;
 		//get info from agg basis log file
-		ArrayList<ArrayList<String>> laFile = AhrIO.scanFile("./../baseis/log/ak_log.txt", ",");
+		String laPath = "./../out/ak/log/ak_log.txt";
+		ArrayList<ArrayList<String>> laFile = AhrIO.scanFile(laPath, ",");
 		ArrayList<String> laRow = new ArrayList<String>();
-		FCI fciLA = new FCI(true, "./../baseis/log/ak_log.txt");
+		FCI fciLA = new FCI(true, laPath);
 		for(int i = 1; i < laFile.size(); i++){
 			int akNum = Integer.parseInt(laFile.get(i).get(fciLA.getIdx("ak_num")));
 			if(akNum == this.id){
@@ -61,7 +62,6 @@ public class BGM_Manager {
 		}
 		//set list of best single keys for this agg key
 		String[] bestSKstr = laRow.get(fciLA.getIdx("best_keys")).split("~");
-		System.out.println("--> In BGM_Manager(), best_keys = "+laRow.get(fciLA.getIdx("best_keys")));
 		this.bestSK = new int[bestSKstr.length];
 		for(int i = 0; i < bestSKstr.length; i++){
 			this.bestSK[i] = Integer.parseInt(bestSKstr[i]);
@@ -87,9 +87,9 @@ public class BGM_Manager {
 		}
 		//couple each SK with its market state mask
 		this.statesSK = new ArrayList<ArrayList<String>>();
-		ArrayList<ArrayList<String>> ksFile = AhrIO.scanFile("./../out/ml/"+bgmLC+"/keys_struct.txt", ",");
-		FCI fciKS = new FCI(true, "./../out/ml/"+bgmLC+"/keys_struct.txt");
-		ArrayList<String> ksKeyCol = AhrIO.scanCol("./../out/ml/"+bgmLC+"/keys_struct.txt", ",", fciKS.getIdx("sk_num"));
+		ArrayList<ArrayList<String>> ksFile = AhrIO.scanFile("./../out/sk/log/"+bgmLC+"/keys_struct.txt", ",");
+		FCI fciKS = new FCI(true, "./../out/sk/log/"+bgmLC+"/keys_struct.txt");
+		ArrayList<String> ksKeyCol = AhrIO.scanCol("./../out/sk/log/"+bgmLC+"/keys_struct.txt", ",", fciKS.getIdx("sk_num"));
 		for(int i = 0; i < bestSK.length; i++){
 			ArrayList<String> stateLine = new ArrayList<String>();
 			stateLine.add(String.valueOf(bestSK[i]));
@@ -339,7 +339,7 @@ public class BGM_Manager {
 		double plateau = ann.getPlateau();
 		String narMask = ann.getNarMask();
 		String indMask = ann.getIndMask();
-		Network network = new Network("./../out/ml/ann/structure/struct_"+String.valueOf(skID)+".txt");
+		Network network = new Network("./../out/sk/log/ann/structure/struct_"+String.valueOf(skID)+".txt");
 		//get lines from Clean DB for this date (that also pass NAR)
 		String bdPath = "./../../DB_Intrinio/Clean/ByDate/"+date+".txt";
 		ArrayList<ArrayList<String>> allClean = AhrIO.scanFile(bdPath, "~");
@@ -365,17 +365,21 @@ public class BGM_Manager {
 			}else{
 				line.add(String.valueOf(Double.MAX_VALUE));
 			}
-			line.add("0.0");								// [2] 1 day intra %
-			line.add("0.0");								// [3] 1 day inter %
-			line.add("0.0");								// [4] 2 day inter %
-			line.add("0.0");								// [5] 3 day inter %
-			line.add("0.0");								// [6] 5 day inter %
-			line.add("0.0");								// [7] 10 day inter %
+			line.add("0.0");								// [2] 1-day Intra %
+			line.add("0.0");								// [3] 1-day Inter %
+			line.add("0.0");								// [4] 2-day Intra %
+			line.add("0.0");								// [5] 2-day Inter %
+			line.add("0.0");								// [6] 3-day Intra %
+			line.add("0.0");								// [7] 3-day Inter %
+			line.add("0.0");								// [8] 5-day Intra %
+			line.add("0.0");								// [9] 5-day Inter %
+			line.add("0.0");								// [10] 10-day Intra %
+			line.add("0.0");								// [11] 10-day Inter %
 			dbuf.add(line);
 		}	
 		//calc score
 		//itr thru all clean lines of this date, getting all lines with best score
-		String tviCol = "appr"+String.valueOf(fciBD.convertTVI(tvi));
+		String tvColName = Globals.tvi_names[tvi];
 		for(int i = 0; i < narClean.size(); i++){
 			//create data line of normalized ind vals [0-65535] to [0-1]
 			ArrayList<String> dline = new ArrayList<String>();
@@ -387,8 +391,8 @@ public class BGM_Manager {
 			}
 			//get plateaued target val appr, normalize target val appr and add to dline
 			double tvAppr = 0.0;
-			if(!narClean.get(i).get(fciBD.getIdx(tviCol)).equals("tbd")){
-				tvAppr = Double.parseDouble(narClean.get(i).get(fciBD.getIdx(tviCol)));
+			if(!narClean.get(i).get(fciBD.getIdx(tvColName)).equals("tbd")){
+				tvAppr = Double.parseDouble(narClean.get(i).get(fciBD.getIdx(tvColName)));
 			}
 			if(tvAppr > plateau){
 				tvAppr = plateau;
@@ -401,7 +405,7 @@ public class BGM_Manager {
 			dline.add(String.valueOf(tvAppr));
 			//calc score for 1 line
 			double score = 0.0;
-			Network tnet = network;	//tmp netowrk so no change happens to main network
+			Network tnet = network;	//tmp network so no change happens to main network
 			tnet.feedForward(dline);
 			for(int j = 0; j < tnet.outputLayer.size(); j++){
 				score += tnet.outputLayer.get(j).getValue();
@@ -414,10 +418,12 @@ public class BGM_Manager {
 					dbuf.get(llIdx).set(0, ticker);
 					dbuf.get(llIdx).set(1, String.format("%.7f", score));
 					for(int j = 0; j < tvn; j++){
-						String apprCol = "appr"+String.valueOf(fciBD.convertTVI(j));
+						String itrColName = Globals.tvi_names[j];
+						String apprStr = narClean.get(i).get(fciBD.getIdx(itrColName));
 						double appr = 0.0;
-						if(!narClean.get(i).get(fciBD.getIdx(apprCol)).equals("tbd")){
-							appr = Double.parseDouble(narClean.get(i).get(fciBD.getIdx(apprCol)));
+						try{
+							appr = Double.parseDouble(apprStr);
+						}catch(NumberFormatException e){
 						}
 						dbuf.get(llIdx).set(2+j, String.format("%.4f", appr));
 					}
@@ -436,10 +442,12 @@ public class BGM_Manager {
 					dbuf.get(llIdx).set(0, ticker);
 					dbuf.get(llIdx).set(1, String.format("%.7f", score));
 					for(int j = 0; j < tvn; j++){
-						String apprCol = "appr"+String.valueOf(fciBD.convertTVI(j));
+						String itrColName = Globals.tvi_names[j];
+						String apprStr = narClean.get(i).get(fciBD.getIdx(itrColName));
 						double appr = 0.0;
-						if(!narClean.get(i).get(fciBD.getIdx(apprCol)).equals("tbd")){
-							appr = Double.parseDouble(narClean.get(i).get(fciBD.getIdx(apprCol)));
+						try{
+							appr = Double.parseDouble(apprStr);
+						}catch(NumberFormatException e){
 						}
 						dbuf.get(llIdx).set(2+j, String.format("%.4f", appr));
 					}
@@ -491,7 +499,7 @@ public class BGM_Manager {
 		double plateau = ann.getPlateau();
 		String narMask = ann.getNarMask();
 		String indMask = ann.getIndMask();
-		Network network = new Network("./../out/ml/ann/structure/struct_"+String.valueOf(skID)+".txt");
+		Network network = new Network("./../out/sk/log/ann/structure/struct_"+String.valueOf(skID)+".txt");
 		//get lines from Clean DB for this date (that also pass NAR)
 		String bdPath = "./../../DB_Intrinio/Clean/ByDate/"+date+".txt";
 		ArrayList<ArrayList<String>> allClean = AhrIO.scanFile(bdPath, "~");
@@ -517,17 +525,21 @@ public class BGM_Manager {
 			}else{
 				line.add(String.valueOf(Double.MAX_VALUE));
 			}
-			line.add("0.0");								// [2] 1 day intra %
-			line.add("0.0");								// [3] 1 day inter %
-			line.add("0.0");								// [4] 2 day inter %
-			line.add("0.0");								// [5] 3 day inter %
-			line.add("0.0");								// [6] 5 day inter %
-			line.add("0.0");								// [7] 10 day inter %
+			line.add("0.0");								// [2] 1-day intra %
+			line.add("0.0");								// [3] 1-day inter %
+			line.add("0.0");								// [4] 2-day intra %
+			line.add("0.0");								// [5] 2-day inter %
+			line.add("0.0");								// [6] 3-day intra %
+			line.add("0.0");								// [7] 3-day inter %
+			line.add("0.0");								// [8] 5-day intra %
+			line.add("0.0");								// [9] 5-day inter %
+			line.add("0.0");								// [10] 10-day intra %
+			line.add("0.0");								// [11] 10-day inter %
 			dbuf.add(line);
 		}	
 		//calc score
 		//itr thru all clean lines of this date, getting all lines with best score
-		String tviCol = "appr"+String.valueOf(fciBD.convertTVI(tvi));
+		String tvColName = Globals.tvi_names[tvi];
 		for(int i = 0; i < narClean.size(); i++){
 			//create data line of normalized ind vals [0-65535] to [0-1]
 			ArrayList<String> dline = new ArrayList<String>();
@@ -539,8 +551,8 @@ public class BGM_Manager {
 			}
 			//get plateaued target val appr, normalize target val appr and add to dline
 			double tvAppr = 0.0;
-			if(!narClean.get(i).get(fciBD.getIdx(tviCol)).equals("tbd")){
-				tvAppr = Double.parseDouble(narClean.get(i).get(fciBD.getIdx(tviCol)));
+			if(!narClean.get(i).get(fciBD.getIdx(tvColName)).equals("tbd")){
+				tvAppr = Double.parseDouble(narClean.get(i).get(fciBD.getIdx(tvColName)));
 			}
 			if(tvAppr > plateau){
 				tvAppr = plateau;
@@ -566,10 +578,12 @@ public class BGM_Manager {
 					dbuf.get(llIdx).set(0, ticker);
 					dbuf.get(llIdx).set(1, String.format("%.7f", score));
 					for(int j = 0; j < tvn; j++){
-						String apprCol = "appr"+String.valueOf(fciBD.convertTVI(j));
+						String itrColName = Globals.tvi_names[j];
+						String apprStr = narClean.get(i).get(fciBD.getIdx(itrColName));
 						double appr = 0.0;
-						if(!narClean.get(i).get(fciBD.getIdx(apprCol)).equals("tbd")){
-							appr = Double.parseDouble(narClean.get(i).get(fciBD.getIdx(apprCol)));
+						try{
+							appr = Double.parseDouble(apprStr);
+						}catch(NumberFormatException e){
 						}
 						dbuf.get(llIdx).set(2+j, String.format("%.4f", appr));
 					}
@@ -588,10 +602,12 @@ public class BGM_Manager {
 					dbuf.get(llIdx).set(0, ticker);
 					dbuf.get(llIdx).set(1, String.format("%.7f", score));
 					for(int j = 0; j < tvn; j++){
-						String apprCol = "appr"+String.valueOf(fciBD.convertTVI(j));
+						String itrColName = Globals.tvi_names[j];
+						String apprStr = narClean.get(i).get(fciBD.getIdx(itrColName));
 						double appr = 0.0;
-						if(!narClean.get(i).get(fciBD.getIdx(apprCol)).equals("tbd")){
-							appr = Double.parseDouble(narClean.get(i).get(fciBD.getIdx(apprCol)));
+						try{
+							appr = Double.parseDouble(apprStr);
+						}catch(NumberFormatException e){
 						}
 						dbuf.get(llIdx).set(2+j, String.format("%.4f", appr));
 					}
@@ -640,7 +656,7 @@ public class BGM_Manager {
 		}
 		//get relv info for this ANN SK
 		String indMask = ann.getIndMask();
-		Network network = new Network("./../out/ml/ann/structure/struct_"+String.valueOf(skID)+".txt");
+		Network network = new Network("./../out/sk/log/ann/structure/struct_"+String.valueOf(skID)+".txt");
 		ArrayList<String> dline = new ArrayList<String>();
 		//find line in Clean/ByDate that matches stock and date
 		ArrayList<ArrayList<String>> bdFile = AhrIO.scanFile("./../../DB_Intrinio/Clean/ByDate/"+date+".txt", "~");
@@ -744,17 +760,17 @@ public class BGM_Manager {
 		String bgmUC = this.bgm;
 		String bgmLC = bgmUC.toLowerCase();
 		String spPath = "./../out/score_percentiles.txt";
-		String laPath = "./../baseis/log/ak_log.txt";
+		String laPath = "./../out/ak/log/ak_log.txt";
 		FCI fciLA = new FCI(true, laPath);
 		ArrayList<ArrayList<String>> spFile = AhrIO.scanFile(spPath, ",");
 		ArrayList<String> laRow = AhrIO.scanRow(laPath, ",", String.valueOf(this.id));
 		String call = laRow.get(fciLA.getIdx("call"));
 		String sdate = laRow.get(fciLA.getIdx("start_date"));
 		String edate = laRow.get(fciLA.getIdx("end_date"));
-		FCI fciSK = new FCI(false, "./../baseis/single/");
+		FCI fciSK = new FCI(false, "./../out/sk/baseis/");
 		for(int i = 0; i < this.bestSK.length; i++){
 			String skNum = String.valueOf(this.bestSK[i]);
-			String skPath = "./../baseis/single/"+bgmLC+"/"+bgmUC+"_"+skNum+".txt";
+			String skPath = "./../out/sk/baseis/"+bgmLC+"/"+bgmUC+"_"+skNum+".txt";
 			int skIdx = -1;
 			for(int j = 0; j < spFile.size(); j++){
 				String bgmItr = spFile.get(j).get(0);
@@ -805,14 +821,14 @@ public class BGM_Manager {
 	//get performance data from reading it in from basis file
 	public ArrayList<String> perfFromBasisFile(String path){
 		FCI fciBS;
-		if(path.contains("aggregated")){
-			fciBS = new FCI(false, "./../baseis/aggregated/");
+		if(path.contains("ak")){
+			fciBS = new FCI(false, "./../out/ak/baseis/");
 		}else{
-			fciBS = new FCI(false, "./../baseis/single/");
+			fciBS = new FCI(false, "./../out/sk/baseis/");
 		}
 		double plateau = getPlateau();
 		int tvi = getTVI();
-		String tviCol = "appr"+String.valueOf(fciBS.convertTVI(tvi));
+		String tvColName = Globals.tvi_names[tvi];
 		//init general perf data
 		int trainCount = 0;
 		int testCount = 0;
@@ -824,7 +840,7 @@ public class BGM_Manager {
 			String itrTTV = basis.get(i).get(fciBS.getIdx("ttv_code"));
 			double itrAppr = 0.0;
 			try{
-				itrAppr = Double.parseDouble(basis.get(i).get(fciBS.getIdx(tviCol)));
+				itrAppr = Double.parseDouble(basis.get(i).get(fciBS.getIdx(tvColName)));
 			}catch(NumberFormatException e){
 				System.out.println("ERR: " + e.getMessage());
 			}
@@ -891,7 +907,7 @@ public class BGM_Manager {
 		return new ArrayList<String>();
 	}
 	public ArrayList<String> keyPerfSK_ANN(){
-		Network knet = new Network("./../out/ml/ann/structure/struct_"+id+".txt");
+		Network knet = new Network("./../out/sk/log/ann/structure/struct_"+id+".txt");
 		boolean isLong = ann.getCall();
 		double plateau = ann.getPlateau();
 		int spd = ann.getSPD();
@@ -956,7 +972,7 @@ public class BGM_Manager {
 	//set perf data (from either basis file or makePred) to SK keys_perf.txt file
 	public void perfToFileSK(ArrayList<String> perf){
 		String bgmLC = this.bgm.toLowerCase();
-		String kpPath = "./../out/ml/"+bgmLC+"/keys_perf.txt";
+		String kpPath = "./../out/sk/log/"+bgmLC+"/keys_perf.txt";
 		FCI fciKP = new FCI(true, kpPath);
 		ArrayList<ArrayList<String>> kpFile = AhrIO.scanFile(kpPath, ",");
 		ArrayList<String> kpRow = AhrAL.getRow(kpFile, String.valueOf(id));
@@ -974,7 +990,7 @@ public class BGM_Manager {
 	//set perf data (from either basis file or makePred) ot AK ak_log.txt file
 	public void perfToFileAK(ArrayList<String> perf){
 		System.out.println("--> perfToFileAK() perf AL : " + perf);
-		String laPath = "./../baseis/log/ak_log.txt";
+		String laPath = "./../out/ak/log/ak_log.txt";
 		FCI fciLA = new FCI(true, laPath);
 		ArrayList<ArrayList<String>> laFile = AhrIO.scanFile(laPath, ",");
 		ArrayList<String> laRow = AhrAL.getRow(laFile, String.valueOf(id));
@@ -1002,7 +1018,7 @@ public class BGM_Manager {
 		System.out.println("==> BSO Train Data: " + bsoTrain);
 		System.out.println("==> BSO Test Data: " + bsoTest);
 		//get row from keys_perf
-		String kpPath = "./../out/ml/"+bgmLC+"/keys_perf.txt";
+		String kpPath = "./../out/sk/log/"+bgmLC+"/keys_perf.txt";
 		FCI fciKP = new FCI(true, kpPath);
 		ArrayList<ArrayList<String>> kpFile = AhrIO.scanFile(kpPath, ",");		
 		ArrayList<String> kpRow = AhrAL.getRow(kpFile, String.valueOf(id));
@@ -1023,8 +1039,8 @@ public class BGM_Manager {
 		//calc bso files
 		ArrayList<String> bsoTrain = bsoMultiple(getSDate(), getEDate(), "100", is_min_trig, use_sk_bso);
 		ArrayList<String> bsoTest = bsoMultiple(getSDate(), getEDate(), "010", is_min_trig, use_sk_bso);
-		//get row from keys_perf
-		String laPath = "./../baseis/log/ak_log.txt";
+		//get row from ak_log
+		String laPath = "./../out/ak/log/ak_log.txt";
 		FCI fciLA = new FCI(true, laPath);
 		ArrayList<ArrayList<String>> laFile = AhrIO.scanFile(laPath, ",");		
 		ArrayList<String> laRow = AhrAL.getRow(laFile, String.valueOf(id));
@@ -1037,6 +1053,31 @@ public class BGM_Manager {
 		laRow.set(fciLA.getIdx("bso_test_apapt"), bsoTest.get(2));
 		laRow.set(fciLA.getIdx("bso_train_posp"), bsoTrain.get(4));
 		laRow.set(fciLA.getIdx("bso_test_posp"), bsoTest.get(4));
+		laFile.set(rowIdx, laRow);
+		AhrIO.writeToFile(laPath, laFile, ",");
+	}
+	//write BIM/SOM Opt values to file when given an OrderSim obj, assumes BIM/SOM is already calced
+	public void bsoPerfToFileAK(OrderSim osim){
+		//get row from ak_log
+		String laPath = "./../out/ak/log/ak_log.txt";
+		FCI fciLA = new FCI(true, laPath);
+		ArrayList<ArrayList<String>> laFile = AhrIO.scanFile(laPath, ",");		
+		ArrayList<String> laRow = AhrAL.getRow(laFile, String.valueOf(osim.getID()));
+		int rowIdx = AhrAL.getRowIdx(laFile, String.valueOf(id));
+		//combine BIM and SOM and add to file
+		String akBSO = String.format("%.3f", osim.getBIM()) +"|"+ String.format("%.3f", osim.getSOM());
+		laRow.set(fciLA.getIdx("ak_bso"), akBSO);
+		//calc train data
+		osim.setTtvMask("100");
+		osim.calcOrderList();
+		laRow.set(fciLA.getIdx("bso_train_apapt"), String.format("%.5f", osim.getTrigAppr())); 
+		laRow.set(fciLA.getIdx("bso_train_posp"), String.format("%.3f", (osim.getPosPer()*100.0)));
+		//calc test data
+		osim.setTtvMask("010");
+		osim.calcOrderList();
+		laRow.set(fciLA.getIdx("bso_test_apapt"), String.format("%.5f", osim.getTrigAppr())); 
+		laRow.set(fciLA.getIdx("bso_test_posp"), String.format("%.3f", (osim.getPosPer()*100.0)));
+		//update ak_log
 		laFile.set(rowIdx, laRow);
 		AhrIO.writeToFile(laPath, laFile, ",");
 	}
@@ -1190,7 +1231,7 @@ public class BGM_Manager {
 				//	"  |  YoY % = " + String.format("%.4f", osim.getYoyAppr()));
 				//update best vals if needed
 				boolean good_som_value = true;
-				if(som >= 0.981 && som <= 1.029){
+				if(som >= 0.97 && som <= 1.03){
 					good_som_value = false;
 				}
 				ArrayList<Double> itrVals = new ArrayList<Double>();
@@ -1205,14 +1246,25 @@ public class BGM_Manager {
 				tfLine.add(String.format("%.3f", trigAppr));
 				tfLine.add(String.format("%.3f", yoyAppr));
 				tfLine.add(String.format("%.2f", posp * 100.0));
-				allVals.add(tfLine);
-				if(yoyAppr > bestVals.get(3) && good_som_value){
-					bestVals = itrVals;
+				if(good_som_value){
+					allVals.add(tfLine);
+					if(yoyAppr > bestVals.get(3)){
+						bestVals = itrVals;
+					}
+				}else{
+					ArrayList<String> zeroLine = new ArrayList<String>();
+					zeroLine.add(String.format("%.3f", bim));
+					zeroLine.add(String.format("%.3f", som));
+					zeroLine.add("0.0");
+					zeroLine.add("0.0");
+					zeroLine.add("0.0");
+					allVals.add(zeroLine);
 				}
 			} 
 		}
-		AhrIO.writeToFile("./../data/bso/multiple.txt", allVals, ",");
+		AhrIO.writeToFile("./../data/tmp/bso_multiple.txt", allVals, ",");
 		//System.out.println("\n--> Best Vals 1st Round : " + bestVals);
+		//narrow down BIM/SOM to third sigfig
 		int bimItr = (int)(bestVals.get(0) * 1000.0);
 		int somItr = (int)(bestVals.get(1) * 1000.0);
 		ArrayList<Double> bestVals2 = new ArrayList<Double>();
@@ -1236,7 +1288,7 @@ public class BGM_Manager {
 				//	"  |  YoY % = " + String.format("%.4f", osim.getYoyAppr()));
 				//update best vals if needed
 				boolean good_som_value = true;
-				if(som >= 0.981 && som <= 1.029){
+				if(som >= 0.97 && som <= 1.03){
 					good_som_value = false;
 				}
 				if(yoyAppr > bestVals2.get(3) && good_som_value){
@@ -1259,6 +1311,21 @@ public class BGM_Manager {
 		data.add(String.format("%.3f", bestVals2.get(4)));
 		//System.out.println("========== Done With Calculations ==========");
 		return data;
+	}
+	//do only one section of BIM/SOM but for intent of doing mult
+	public ArrayList<String> bsoBySection(OrderSim osim){
+		//calc order list and relv data for this specific BIM/SOM combo
+		osim.calcOrderList();
+		double trigAppr = osim.getTrigAppr();
+		double yoyAppr = osim.getYoyAppr();
+		double posp = osim.getPosPer() * 100.0;
+		//convert to string AL and return
+		ArrayList<String> data = new ArrayList<String>();
+		data.add(String.format("%.5f", trigAppr));		//[0] Trig %
+		data.add(String.format("%.3f", yoyAppr));		//[1] APY %
+		data.add(String.format("%.3f", posp));			//[2] Pos %
+		return data;
+
 	}
 
 	//convert ttvMask to old ttSwitch (-1 = Train only, 1 = Test only, 0 = both)
@@ -1323,14 +1390,18 @@ public class BGM_Manager {
 				tfLine.add(dbuf.get(j).get(1));						//[4] Score
 				tfLine.add(dbuf.get(j).get(2));						//[5] 1-day Intra %
 				tfLine.add(dbuf.get(j).get(3));						//[6] 1-day Inter %
-				tfLine.add(dbuf.get(j).get(4));						//[7] 2-day Inter %
-				tfLine.add(dbuf.get(j).get(5));						//[8] 3-day Inter %
-				tfLine.add(dbuf.get(j).get(6));						//[9] 5-day Inter %
-				tfLine.add(dbuf.get(j).get(7));						//[10] 10-day Inter %
+				tfLine.add(dbuf.get(j).get(4));						//[7] 2-day Intra %
+				tfLine.add(dbuf.get(j).get(5));						//[8] 2-day Inter %
+				tfLine.add(dbuf.get(j).get(6));						//[9] 3-day Intra %
+				tfLine.add(dbuf.get(j).get(7));						//[10] 3-day Inter %
+				tfLine.add(dbuf.get(j).get(8));						//[11] 5-day Intra %
+				tfLine.add(dbuf.get(j).get(9));						//[12] 5-day Inter %
+				tfLine.add(dbuf.get(j).get(10));					//[13] 10-day Intra %
+				tfLine.add(dbuf.get(j).get(11));					//[14] 10-day Inter %
 				basis.add(tfLine);
 			}
 		}
-		AhrIO.writeToFile("./../baseis/single/ann/ANN_"+String.valueOf(skID)+".txt", basis, ",");
+		AhrIO.writeToFile("./../out/sk/baseis/ann/ANN_"+String.valueOf(skID)+".txt", basis, ",");
 	}
 
 	//CONTROLLER FUNCT: generate basis file for AK
@@ -1353,12 +1424,12 @@ public class BGM_Manager {
 	}
 	private void genBasisAK_ANN(){
 		ArrayList<ArrayList<String>> basis = new ArrayList<ArrayList<String>>();
-		ArrayList<ArrayList<String>> aggLog = AhrIO.scanFile("./../baseis/log/ak_log.txt", ",");
-		FCI fciAL = new FCI(true, "./../baseis/log/ak_log.txt");
-		ArrayList<String> aggLine = new ArrayList<String>();
-		for(int i = 1; i < aggLog.size(); i++){
-			if(this.id == Integer.parseInt(aggLog.get(i).get(fciAL.getIdx("ak_num")))){
-				aggLine = aggLog.get(i);
+		ArrayList<ArrayList<String>> laFile = AhrIO.scanFile("./../out/ak/log/ak_log.txt", ",");
+		FCI fciLA = new FCI(true, "./../out/ak/log/ak_log.txt");
+		ArrayList<String> laRow = new ArrayList<String>();
+		for(int i = 1; i < laFile.size(); i++){
+			if(this.id == Integer.parseInt(laFile.get(i).get(fciLA.getIdx("ak_num")))){
+				laRow = laFile.get(i);
 			}
 		}
 		//get relv info
@@ -1377,19 +1448,25 @@ public class BGM_Manager {
 				tfLine.add(calcTTV(dates.get(i)));						//[2] TTV Code
 				tfLine.add(dbuf.get(j).get(0));							//[3] ticker
 				tfLine.add(dbuf.get(j).get(1));							//[4] Score
-				tfLine.add(dbuf.get(j).get(2));							//[5] 1 day intra %
-				tfLine.add(dbuf.get(j).get(3));							//[6] 1 day inter %
-				tfLine.add(dbuf.get(j).get(4));							//[7] 2 day inter %
-				tfLine.add(dbuf.get(j).get(5));							//[8] 3 day inter %
-				tfLine.add(dbuf.get(j).get(6));							//[9] 5 day inter %
-				tfLine.add(dbuf.get(j).get(7));							//[10] 10 day inter %
+				tfLine.add(dbuf.get(j).get(2));							//[5] 1-day Intra %
+				tfLine.add(dbuf.get(j).get(3));							//[6] 1-day Inter %
+				tfLine.add(dbuf.get(j).get(4));							//[7] 2-day Intra %
+				tfLine.add(dbuf.get(j).get(5));							//[8] 2-day Inter %
+				tfLine.add(dbuf.get(j).get(6));							//[9] 3-day Intra %
+				tfLine.add(dbuf.get(j).get(7));							//[10] 3-day Inter %
+				tfLine.add(dbuf.get(j).get(8));							//[11] 5-day Intra %
+				tfLine.add(dbuf.get(j).get(9));							//[12] 5-day Inter %
+				tfLine.add(dbuf.get(j).get(10));						//[13] 10-day Intra %
+				tfLine.add(dbuf.get(j).get(11));						//[14] 10-day Inter %
 				basis.add(tfLine);
 			}	
 		}
-		AhrIO.writeToFile("./../baseis/aggregated/ann/ANN_"+String.valueOf(this.id)+".txt", basis, ",");
+		AhrIO.writeToFile("./../out/ak/baseis/ann/ANN_"+String.valueOf(this.id)+".txt", basis, ",");
 	}
 	//generate basis file for random sampling
-	public void genBasisRnd(String sdate, String edate, int spd, int tvi, String msMask, String narMask){
+	//probability is val b/w [0-1], is chance of a file added for sampling (slims down files and computation)
+	public void genBasisRnd(String sdate, String edate, int spd, int tvi, String msMask, String narMask, double probability){
+		Random rnd = new Random();
 		ArrayList<ArrayList<String>> basis = new ArrayList<ArrayList<String>>();
 		String bdPath = "./../../DB_Intrinio/Clean/ByDate/";
 		ArrayList<String> bdFilesAll = AhrIO.getNamesInPath(bdPath);
@@ -1399,12 +1476,13 @@ public class BGM_Manager {
 		ArrayList<String> bdFiles = new ArrayList<String>();
 		for(int i = 0; i < bdFilesAll.size(); i++){
 			if(AhrDate.isDateInPeriod(bdFilesAll.get(i), sdate, edate)){
-				bdFiles.add(bdFilesAll.get(i));
+				if(rnd.nextDouble() <= probability){
+					bdFiles.add(bdFilesAll.get(i));
+				}
 			}
 		}
 		//itr thru dates, get lines from Clean DB that fit narMask
 		FCI fciBD = new FCI(false, bdPath);
-		Random rnd = new Random();
 		for(int i = 0; i < bdFiles.size(); i++){
 			ArrayList<ArrayList<String>> bdFC = AhrIO.scanFile(bdPath+bdFiles.get(i)+".txt", "~");
 			ArrayList<ArrayList<String>> rndLines = new ArrayList<ArrayList<String>>();
@@ -1412,8 +1490,8 @@ public class BGM_Manager {
 				int rndIdx = rnd.nextInt(bdFC.size());
 				String itrTick = bdFC.get(rndIdx).get(fciBD.getIdx("ticker"));
 				String itrNar = bdFC.get(rndIdx).get(fciBD.getIdx("nar_mask"));
-				String colAppr = "appr"+String.valueOf(fciBD.convertTVI(tvi)); 
-				String itrAppr = bdFC.get(rndIdx).get(fciBD.getIdx(colAppr));
+				String tvColName = Globals.tvi_names[tvi]; 
+				String itrAppr = bdFC.get(rndIdx).get(fciBD.getIdx(tvColName));
 				boolean add_line = true;
 				if(!AhrGen.compareMasks(narMask, itrNar)){
 					add_line = false;
@@ -1453,12 +1531,12 @@ public class BGM_Manager {
 		}
 		apapt = apapt / (double)basis.size();
 		posp = (posp / (double)basis.size()) * 100.0;
-		//write basis to file and add to ./../out/ml/rnd/key_perf.txt
+		//write basis to file and add to ./../out/sk/log/rnd/key_perf.txt
 		int keyNum = -1;
-		String kpPath = "./../out/ml/rnd/keys_perf.txt";
+		String kpPath = "./../out/sk/log/rnd/keys_perf.txt";
 		FCI fciKP = new FCI(true, kpPath);
 		ArrayList<ArrayList<String>> kpFile = AhrIO.scanFile(kpPath, ",");
-		ArrayList<String> kpKeys = AhrAL.getCol(kpFile, fciKP.getIdx("key_num"));
+		ArrayList<String> kpKeys = AhrAL.getCol(kpFile, fciKP.getIdx("sk_num"));
 		kpKeys.remove(0);
 		for(int i = 0; i < kpKeys.size(); i++){
 			if(Integer.parseInt(kpKeys.get(i)) > keyNum){
@@ -1480,7 +1558,7 @@ public class BGM_Manager {
 		kpLine.add("tbd");									//[10] BSO Pos %
 		kpFile.add(kpLine);
 		AhrIO.writeToFile(kpPath, kpFile, ",");
-		AhrIO.writeToFile("./../baseis/single/rnd/rnd_tmp_"+String.valueOf(keyNum)+".txt", basis, ",");
+		AhrIO.writeToFile("./../out/sk/baseis/rnd/rnd_tmp_"+String.valueOf(keyNum)+".txt", basis, ",");
 	}
 	public void genBasisRnd(String sdate, String edate, int spd, int tvi, String msMask, String narMask, String filter){
 		ArrayList<ArrayList<String>> basis = new ArrayList<ArrayList<String>>();
@@ -1511,9 +1589,9 @@ public class BGM_Manager {
 		}
 		ArrayList<ArrayList<String>> basis = new ArrayList<ArrayList<String>>();
 		String msMask = ann.getMsMask();
-		FCI fciBS = new FCI(false, "./../baseis/single/");
-		String path = "./../baseis/single/ann/ANN_"+String.valueOf(skID)+".txt";
-		ArrayList<ArrayList<String>> fc = AhrIO.scanFile(path, ",");
+		String bsPath = "./../out/sk/baseis/";
+		FCI fciBS = new FCI(false, bsPath);
+		ArrayList<ArrayList<String>> fc = AhrIO.scanFile(bsPath+"ann/ANN_"+String.valueOf(skID)+".txt", ",");
 		//get dates needed to update
 		String mrdate = fc.get(fc.size()-1).get(fciBS.getIdx("date"));
 		String edate = AhrDate.getTodaysDate();
@@ -1561,24 +1639,29 @@ public class BGM_Manager {
 				tfLine.add(calcTTV(mdates.get(i)));						//[2] TTV Code
 				tfLine.add(dbuf.get(j).get(0));							//[3] Ticker
 				tfLine.add(dbuf.get(j).get(1));							//[4] Distance (score)
-				tfLine.add(dbuf.get(j).get(2));							//[5] 1 day intra %
-				tfLine.add(dbuf.get(j).get(3));							//[6] 1 day inter %
-				tfLine.add(dbuf.get(j).get(4));							//[7] 2 day inter %
-				tfLine.add(dbuf.get(j).get(5));							//[8] 3 day inter %
-				tfLine.add(dbuf.get(j).get(6));							//[9] 5 day inter %
-				tfLine.add(dbuf.get(j).get(7));							//[10] 10 day inter %
+				tfLine.add(dbuf.get(j).get(2));							//[5] 1-day Intra %
+				tfLine.add(dbuf.get(j).get(3));							//[6] 1-day Inter %
+				tfLine.add(dbuf.get(j).get(4));							//[7] 2-day Intra %
+				tfLine.add(dbuf.get(j).get(5));							//[8] 2-day Inter %
+				tfLine.add(dbuf.get(j).get(6));							//[9] 3-day Intra %
+				tfLine.add(dbuf.get(j).get(7));							//[10] 3-day Inter %
+				tfLine.add(dbuf.get(j).get(8));							//[11] 5-day Intra %
+				tfLine.add(dbuf.get(j).get(9));							//[12] 5-day Inter %
+				tfLine.add(dbuf.get(j).get(10));						//[13] 10-day Intra %
+				tfLine.add(dbuf.get(j).get(11));						//[14] 10-day Inter %
 				basis.add(tfLine);
 			}
 		}
-		AhrIO.writeToFile(path, basis, ",");
+		AhrIO.writeToFile(bsPath+"ann/ANN_"+String.valueOf(skID)+".txt", basis, ",");
 		System.out.println("--> ANN SK"+skID+" ... UPDATED");
 	}
 
 	//updates a AK basis file
 	public void updateBasisAK(){
 		ArrayList<ArrayList<String>> basis = new ArrayList<ArrayList<String>>();
-		ArrayList<String> alRow = AhrIO.scanRow("./../baseis/log/ak_log.txt", ",", String.valueOf(this.id));
-		FCI fciAL = new FCI(true, "./../baseis/log/ak_log.txt");
+		String alPath = "./../out/ak/log/ak_log.txt";
+		ArrayList<String> alRow = AhrIO.scanRow(alPath, ",", String.valueOf(this.id));
+		FCI fciAL = new FCI(true, alPath);
 		String bgmUC = this.bgm;
 		String bgmLC = bgmUC.toLowerCase();
 		//update single keys first
@@ -1587,9 +1670,9 @@ public class BGM_Manager {
 			updateBasisSK(Integer.parseInt(skeys[i]));
 		}
 		//get dates needed for update
-		String akPath = "./../baseis/aggregated/"+bgmLC+"/"+bgmUC+"_"+String.valueOf(this.id)+".txt";
+		String akPath = "./../out/ak/baseis/"+bgmLC+"/"+bgmUC+"_"+String.valueOf(this.id)+".txt";
 		ArrayList<ArrayList<String>> fc = AhrIO.scanFile(akPath, ",");
-		FCI fciBA = new FCI(false, "./../baseis/aggregated/");
+		FCI fciBA = new FCI(false, "./../out/ak/baseis/");
 		String mrDate = fc.get(fc.size()-1).get(fciBA.getIdx("date"));
 		String edate = AhrDate.getTodaysDate();
 		ArrayList<String> dates = AhrDate.getDatesBetween(mrDate, edate);
@@ -1624,10 +1707,10 @@ public class BGM_Manager {
 		}	
 		//update, add new lines
 
-		FCI fciBS = new FCI(false, "./../baseis/single/");
+		FCI fciBS = new FCI(false, "./../out/sk/baseis/");
 		for(int i = 0; i < dates.size(); i++){
 			int skNum = getSK(dates.get(i));
-			String skPath = "./../baseis/single/"+bgmLC+"/"+bgmUC+"_"+String.valueOf(skNum);
+			String skPath = "./../out/sk/baseis/"+bgmLC+"/"+bgmUC+"_"+String.valueOf(skNum);
 			skPath += ".txt";
 			ArrayList<ArrayList<String>> skRows = AhrIO.scanSelectRows(skPath, ",", dates.get(i), fciBS.getIdx("date"));
 			for(int j = 0; j < skRows.size(); j++){
@@ -1694,57 +1777,17 @@ public class BGM_Manager {
 		if(nline.size() < 1){
 			return nline;
 		}
-
-		int appr0Idx = fciSN.getIdx("appr0");
-		int appr1Idx = fciSN.getIdx("appr1");
-		int appr2Idx = fciSN.getIdx("appr2");
-		int appr3Idx = fciSN.getIdx("appr3");
-		int appr5Idx = fciSN.getIdx("appr5");
-		int appr10Idx = fciSN.getIdx("appr10");
-
-		if(!nline.get(appr0Idx).equals("tbd")){
-			nline.set(appr0Idx, String.format("%.5f", Double.parseDouble(nline.get(appr0Idx))));
-		}else{
-			if(!allow_tbd){
-				nline.set(appr0Idx, "0.000");
+		for(int i = 0; i < Globals.target_var_num; i++){
+			int tvColIdx = fciSN.getIdx(Globals.tvi_names[i]);
+			if(!nline.get(tvColIdx).equals("tbd")){
+				nline.set(tvColIdx, String.format("%.5f", Double.parseDouble(nline.get(tvColIdx))));
+			}else{
+				if(!allow_tbd){
+					nline.set(tvColIdx, "0.000");
+				}
 			}
 		}
-		if(!nline.get(appr1Idx).equals("tbd")){
-			nline.set(appr1Idx, String.format("%.5f", Double.parseDouble(nline.get(appr1Idx))));
-		}else{
-			if(!allow_tbd){
-				nline.set(appr1Idx, "0.000");
-			}
-		}
-		if(!nline.get(appr2Idx).equals("tbd")){
-			nline.set(appr2Idx, String.format("%.5f", Double.parseDouble(nline.get(appr2Idx))));
-		}else{
-			if(!allow_tbd){
-				nline.set(appr2Idx, "0.000");
-			}
-		}
-		if(!nline.get(appr3Idx).equals("tbd")){
-			nline.set(appr3Idx, String.format("%.5f", Double.parseDouble(nline.get(appr3Idx))));
-		}else{
-			if(!allow_tbd){
-				nline.set(appr3Idx, "0.000");
-			}
-		}
-		if(!nline.get(appr5Idx).equals("tbd")){
-			nline.set(appr5Idx, String.format("%.5f", Double.parseDouble(nline.get(appr5Idx))));
-		}else{
-			if(!allow_tbd){
-				nline.set(appr5Idx, "0.000");
-			}
-		}
-		if(!nline.get(appr10Idx).equals("tbd")){
-			nline.set(appr10Idx, String.format("%.5f", Double.parseDouble(nline.get(appr10Idx))));
-		}else{
-			if(!allow_tbd){
-				nline.set(appr10Idx, "0.000");
-			}
-		}
-		nline.add(appr0Idx, narMask);
+		nline.add(fciSN.getIdx(Globals.tvi_names[0]), narMask);
 		return nline;
 	}	
 

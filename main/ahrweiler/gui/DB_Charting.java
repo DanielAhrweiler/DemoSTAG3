@@ -279,14 +279,14 @@ public class DB_Charting extends JFrame {
 					//set column names
 					String ticker = tfStockTicker.getText();
 					int indIdx = cbStockInds.getSelectedIndex();
-					String dbColName = "close";
+					String dbColName = "adj_close";
 					csvColName = ticker;
-					String dbPath = "./../../DB_Intrinio/Main/S_Base/"+ticker+".txt";
+					String dbPath = "./../../DB_Intrinio/Main/Intrinio/"+ticker+".txt";
 					if(indIdx > 1){
 						dbPath = "./../../DB_Intrinio/Main/S_Norm/"+ticker+".txt";
 					}
 					if(indIdx == 1){
-						dbColName = "vol";
+						dbColName = "adj_vol";
 						csvColName += ".vol";
 					}else if(indIdx > 1){
 						dbColName = "ind" + String.valueOf(indIdx-2);
@@ -351,9 +351,12 @@ public class DB_Charting extends JFrame {
 						fname = fname.replaceAll("\\s+", "").split("-")[0];
 						csvColName = fname;
 						fname += ".txt";
-						String dbPath = "./../../DB_Intrinio/Main/S_Base/";
-						FCI fciSB = new FCI(false, dbPath);
-						int colIdx = fciSB.getIdx("close");
+						//String dbPath = "./../../DB_Intrinio/Main/S_Base/";
+						String dbPath = "./../../DB_Intrinio/Main/Intrinio/";
+						//FCI fciSB = new FCI(false, dbPath);
+						FCI fciIT = new FCI(false, dbPath);
+						//int colIdx = fciSB.getIdx("close");
+						int colIdx = fciIT.getIdx("adj_close");
 						newData = retrieveNewDataForPlot(dbPath+fname, sdate, edate, colIdx, sma);					
 				}else{
 					System.out.println("ERR: no comp chosen.");

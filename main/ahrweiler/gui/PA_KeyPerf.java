@@ -1,9 +1,11 @@
 package ahrweiler.gui;
+import ahrweiler.Globals;
 import ahrweiler.util.*;
 import ahrweiler.support.FCI;
 import ahrweiler.support.RCode;
 import ahrweiler.support.OrderSim;
 import ahrweiler.support.StockFilter;
+import ahrweiler.bgm.BGM_Manager;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
@@ -20,8 +22,7 @@ public class PA_KeyPerf extends JFrame {
 
 	public void drawGUI(){
 		//lists and overarching structs
-		String[] bgmList = {"ANN", "GAD2", "GAB3"};
-		String[] tvarList = {"Intra 1", "Inter 1", "Inter 2", "Inter 3", "Inter 5", "Inter 10"};
+		String[] bgmList = {"ANN"};
 		ArrayList<String> sffList = AhrIO.getNamesInPath("./../data/filters/");
 		sffList.add(0, "None");
 		ArrayList<String> keyNumList = new ArrayList<String>();
@@ -81,7 +82,6 @@ public class PA_KeyPerf extends JFrame {
 		Button bBgmBsoAF = new Button("Autofill");
 		JLabel lbBgmMos = new JLabel("MOS ($):");
 		JTextField tfBgmMos = new JTextField("10000");
-		Button bAutofill = new Button("Autofill");
 		Button bBgmCalcPerf = new Button("Calculate Performance");		//Calc Perf Button
 		JProgressBar pbBgmCalcPerf = new JProgressBar(0, 2000);
 		JLabel lbBgmSPD = new JLabel("SPD    : -");						//Output Panel
@@ -176,19 +176,19 @@ public class PA_KeyPerf extends JFrame {
 		});
 		bBgmDatesAF.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e){
+				String bgmUC = cbMethod.getSelectedItem().toString().toUpperCase();
 				String bgmLC = cbMethod.getSelectedItem().toString().toLowerCase();
 				String knum = cbKeyNum.getSelectedItem().toString();
+				String bsPath = "";
 				if(rbSK.isSelected()){
-					FCI fciKS = new FCI(true, "./../out/ml/"+bgmLC+"/keys_struct.txt");
-					ArrayList<String> ksRow = AhrIO.scanRow("./../out/ml/"+bgmLC+"/keys_struct.txt", ",", knum);
-					tfBgmSDate.setText(ksRow.get(fciKS.getIdx("start_date")));
-					tfBgmEDate.setText(ksRow.get(fciKS.getIdx("end_date")));
+					bsPath = "./../out/sk/baseis/"+bgmLC+"/"+bgmUC+"_"+knum+".txt";
 				}else{
-					FCI fciAL = new FCI(true, "./../baseis/log/ak_log.txt");
-					ArrayList<String> alRow = AhrIO.scanRow("./../baseis/log/ak_log.txt", ",", knum);
-					tfBgmSDate.setText(alRow.get(fciAL.getIdx("start_date")));
-					tfBgmEDate.setText(alRow.get(fciAL.getIdx("end_date")));
+					bsPath = "./../out/ak/baseis/"+bgmLC+"/"+bgmUC+"_"+knum+".txt";
 				}
+				FCI fciBS = new FCI(false, bsPath);
+				ArrayList<ArrayList<String>> basis = AhrIO.scanFile(bsPath, ",");
+				tfBgmSDate.setText(basis.get(0).get(fciBS.getIdx("date")));
+				tfBgmEDate.setText(basis.get(basis.size()-1).get(fciBS.getIdx("date")));
 			}
 		});
 		bBgmBsoAF.addActionListener(new ActionListener() {
@@ -196,15 +196,17 @@ public class PA_KeyPerf extends JFrame {
 				String bgmLC = cbMethod.getSelectedItem().toString().toLowerCase();
 				String knum = cbKeyNum.getSelectedItem().toString();
 				if(rbSK.isSelected()){
-					FCI fciKP = new FCI(true, "./../out/ml/"+bgmLC+"/keys_perf.txt");
-					ArrayList<String> kpRow = AhrIO.scanRow("./../out/ml/"+bgmLC+"/keys_perf.txt", ",", knum);
+					String kpPath = "./../out/sk/log/"+bgmLC+"/keys_perf.txt";
+					FCI fciKP = new FCI(true, kpPath);
+					ArrayList<String> kpRow = AhrIO.scanRow(kpPath, ",", knum);
 					tfBgmBim.setText(kpRow.get(fciKP.getIdx("bim")));
 					tfBgmSom.setText(kpRow.get(fciKP.getIdx("som")));
 				}else{
-					FCI fciAL = new FCI(true, "./../baseis/log/ak_log.txt");
-					ArrayList<String> alRow = AhrIO.scanRow("./../baseis/log/ak_log.txt", ",", knum);
+					String alPath = "./../out/ak/log/ak_log.txt";
+					FCI fciAL = new FCI(true, alPath);
+					ArrayList<String> alRow = AhrIO.scanRow(alPath, ",", knum);
 					String call = alRow.get(fciAL.getIdx("call"));
-					String[] bsoParts = alRow.get(fciAL.getIdx("ak_bim_som")).split("\\|");
+					String[] bsoParts = alRow.get(fciAL.getIdx("ak_bso")).split("\\|");
 					if(bsoParts.length > 0){
 						tfBgmBim.setText(bsoParts[0]);
 						tfBgmSom.setText(bsoParts[1]);
@@ -293,23 +295,30 @@ public class PA_KeyPerf extends JFrame {
 				int idx = cbBgmPlots.getSelectedIndex();
 				System.out.println("==> Plot Idx = " + idx);
 				if(idx == 0){//appr distn: b&w and cumlative
+					//basic plot vars
 					String plotPathBaw = "./../resources/pa_distn_baw.png";
 					String plotPathCdf = "./../resources/pa_distn_cdf.png";
 					String titleBaw = "All Method Appr %s for "+kmonik+" in B&W";
 					String titleCdf = "All Method Appr %s for "+kmonik+" in CDF";
 					xdim = 600;
 					ydim = 300;
-					//get all trig %s from orderlist, create Box & Whisker
-					String olPath = "./../data/orderlist/orderlist.txt";
+					//get all trig %s from orderlist, bounds from orderlist_byappr
+					String olPath = "./../data/tmp/os_orderlist.txt";
 					FCI fciOL = new FCI(false, olPath);
 					ArrayList<String> trigStr = AhrIO.scanCol(olPath, ",", fciOL.getIdx("method_appr"));
 					ArrayList<Double> trig = new ArrayList<Double>();
 					for(int i = 0; i < trigStr.size(); i++){
 						trig.add(Double.parseDouble(trigStr.get(i)));
 					} 
+					ArrayList<ArrayList<String>> olByApprs = AhrIO.scanFile("./../data/tmp/os_orderlist_byappr.txt",",");
+					double loBound = Double.parseDouble(olByApprs.get(0).get(fciOL.getIdx("method_appr")));
+					double hiBound = Double.parseDouble(olByApprs.get(olByApprs.size()-1).get(fciOL.getIdx("method_appr")));
+					//create R Box & Whisker
 					RCode rcBaw = new RCode();
 					rcBaw.setTitle(titleBaw);
-					rcBaw.limY(-10, 30);
+					rcBaw.setXLabel("");
+					rcBaw.setYLabel("Appreciation (%)");
+					rcBaw.limY(loBound, hiBound);
 					rcBaw.flipCoords();
 					rcBaw.createBAW(trig, plotPathBaw, xdim, ydim);
 					rcBaw.printCode();
@@ -318,7 +327,9 @@ public class PA_KeyPerf extends JFrame {
 					//calc CDF plot
 					RCode rcCDF = new RCode();
 					rcCDF.setTitle(titleCdf);
-					rcCDF.limX(-10, 30);
+					rcCDF.setXLabel("Appreciation (%)");
+					rcCDF.setYLabel("Cumulative Probability");
+					rcCDF.limX(loBound, hiBound);
 					rcCDF.createCDF(trig, plotPathCdf, xdim, ydim);
 					rcCDF.printCode();
 					rcCDF.writeCode("./../data/r/rscripts/pa_distn_cdf.R");
@@ -346,7 +357,7 @@ public class PA_KeyPerf extends JFrame {
 					xdim = 330;
 					ydim = 330;
 					//get all trigger codes from orderlist, create pie chart
-					String olPath = "./../data/orderlist/orderlist.txt";
+					String olPath = "./../data/tmp/os_orderlist.txt";
 					FCI fciOL = new FCI(false, olPath);
 					ArrayList<String> trigCodes = AhrIO.scanCol(olPath, ",", fciOL.getIdx("trigger_code"));
 					ArrayList<ArrayList<String>> pieAL = AhrAL.countUniq(trigCodes);
@@ -383,13 +394,15 @@ public class PA_KeyPerf extends JFrame {
 					String startTrainDate = "";
 					String endTrainDate = "";
 					if(rbSK.isSelected()){
-						FCI fciKS = new FCI(true, "./../out/ml/"+bgmLC+"/keys_struct.txt");
-						ArrayList<String> ksRow = AhrIO.scanRow("./../out/ml/"+bgmLC+"/keys_struct.txt", ",", knum);
+						String ksPath =  "./../out/sk/log/"+bgmLC+"/keys_struct.txt";
+						FCI fciKS = new FCI(true, ksPath);
+						ArrayList<String> ksRow = AhrIO.scanRow(ksPath, ",", knum);
 						startTrainDate = ksRow.get(fciKS.getIdx("start_date"));
 						endTrainDate = ksRow.get(fciKS.getIdx("end_date"));
 					}else{
-						FCI fciAL = new FCI(true, "./../baseis/log/ak_log.txt");
-						ArrayList<String> alRow = AhrIO.scanRow("./../baseis/log/ak_log.txt", ",", knum);
+						String alPath = "./../out/ak/log/ak_log.txt";
+						FCI fciAL = new FCI(true, alPath);
+						ArrayList<String> alRow = AhrIO.scanRow(alPath, ",", knum);
 						startTrainDate = alRow.get(fciAL.getIdx("start_date"));
 						endTrainDate = alRow.get(fciAL.getIdx("end_date"));
 					}
@@ -512,7 +525,7 @@ public class PA_KeyPerf extends JFrame {
 		rbLong.setBounds(95, 20, 60, 25);
 		rbShort.setBounds(170, 20, 70, 25);
 		lbTVI.setBounds(10, 55, 80, 25);
-		cbTVI.setBounds(110, 55, 80, 25);
+		cbTVI.setBounds(110, 55, 180, 25);
 		lbSampleSize.setBounds(10, 90, 100, 25);
 		tfSampleSize.setBounds(110, 90, 80, 25);
 		lbRndMos.setBounds(260, 90, 80, 25);
@@ -541,8 +554,8 @@ public class PA_KeyPerf extends JFrame {
 
 		//basic functionality
 		rbLong.setSelected(true);
-		for(int i = 0; i < tvarList.length; i++){
-			cbTVI.addItem(tvarList[i]);
+		for(int i = 0; i < Globals.target_var_num; i++){
+			cbTVI.addItem(Globals.tvi_monikers[i]);
 		}
 		for(int i = 0; i < sffList.size(); i++){
 			cbFilter.addItem(sffList.get(i));
@@ -583,43 +596,64 @@ public class PA_KeyPerf extends JFrame {
 				bRndCalcPerf.setEnabled(false);
 				bRndPlots.setEnabled(false);
 				setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
-	
-				//calc Order List
-				String bgm = cbMethod.getSelectedItem().toString();
-				int sampleSize = Integer.parseInt(tfSampleSize.getText());
+
+				//setup attrs from GUI
 				String sdate = tfRndSDate.getText();
-				String edate = tfRndEDate.getText(); 
-				String rndPath = "./../baseis/single/rnd/rnd_tmp.txt";
-				createRndBasisFile(rndPath, sampleSize, sdate, edate, cbFilter.getSelectedItem().toString());
-				OrderSim osim = new OrderSim(rndPath);
-				System.out.println("Rnd OrderSim created.");
-				osim.setIsLong(rbLong.isSelected());
-				osim.setDateRange(tfRndSDate.getText(), tfRndEDate.getText());
-				osim.setBIM(Double.parseDouble(tfRndBim.getText()));
-				osim.setSOM(Double.parseDouble(tfRndSom.getText()));
-				osim.setTtvMask("111");
-				osim.calcOrderList();
-				//show results
-				lbRndSPD.setText("SPD    : "+String.valueOf(osim.getOrderListSPD()) + " (" + 
-								String.valueOf(osim.getOrderListSize()) + " total)");
-				lbRndPosPer.setText("Pos %  : " + String.format("%.4f", osim.getPosPer()));
-				lbRndTrigPer.setText("Trig % : " + String.format("%.4f", osim.getTrigAppr()));
-				lbRndSecPer.setText("Sec %  : " + String.format("%.4f", osim.getSecAppr()));
-				lbRndYoyPer.setText("YoY %  : " + String.format("%.4f", osim.getYoyAppr()));
-				//Preserve data for graphing
-				ArrayList<ArrayList<String>> growth = osim.calcGrowth(100000.0);
-				ArrayList<String> growthHeader = new ArrayList<String>();
-				growthHeader.add("date");
-				growthHeader.add("growth");
-				growth.add(0, growthHeader);
-				AhrIO.writeToFile("./../data/r/rdata/pa_portgrowth.csv", AhrDTF.melt(growth, "date"), ",");
+				String edate = tfRndEDate.getText();
+				int sampleSize = 30;	//def val
+				try{
+					sampleSize = Integer.parseInt(tfSampleSize.getText());
+				}catch(NumberFormatException ex){
+				}
+				int tvi = 6;			//def val, 6 = 5-Day Inter %
+				try{
+					tvi = cbTVI.getSelectedIndex();
+				}catch(NumberFormatException ex){
+				}
+				String msMask = "xxxxxxxx";
+				String narMask = "1111";
+				//create rnd basis file from attrs
+				BGM_Manager bgmm = new BGM_Manager();
+				bgmm.genBasisRnd(sdate, edate, sampleSize, tvi, msMask, narMask, 1.0);
+				//get rnd basis file
+				String kpPath = "./../out/sk/log/rnd/keys_perf.txt";
+				ArrayList<ArrayList<String>> kpFile = AhrIO.scanFile(kpPath, ",");
+				FCI fciKP = new FCI(true, kpPath);
+				int rndKeyNum = Integer.parseInt(kpFile.get(kpFile.size()-1).get(fciKP.getIdx("sk_num")));
+				String bsPath = "./../out/sk/baseis/rnd/rnd_tmp_"+String.valueOf(rndKeyNum)+".txt";
+				File rndBasisFile = new File(bsPath);
+				if(rndBasisFile.exists()){
+					OrderSim osim = new OrderSim(bsPath);
+					osim.setIsLong(rbLong.isSelected());
+					osim.setDateRange(tfRndSDate.getText(), tfRndEDate.getText());
+					osim.setTVI(tvi);
+					osim.setBIM(Double.parseDouble(tfRndBim.getText()));
+					osim.setSOM(Double.parseDouble(tfRndSom.getText()));
+					osim.setTtvMask("111");
+					osim.calcOrderList();
+					//show results
+					lbRndSPD.setText("SPD    : "+String.valueOf(osim.getOrderListSPD()) + " (" + 
+									String.valueOf(osim.getOrderListSize()) + " total)");
+					lbRndPosPer.setText("Pos %  : " + String.format("%.4f", osim.getPosPer()));
+					lbRndTrigPer.setText("Trig % : " + String.format("%.4f", osim.getTrigAppr()));
+					lbRndSecPer.setText("Sec %  : " + String.format("%.4f", osim.getSecAppr()));
+					lbRndYoyPer.setText("YoY %  : " + String.format("%.4f", osim.getYoyAppr()));
+					//preserve data for graphing
+					ArrayList<ArrayList<String>> growth = osim.calcGrowth(100000.0);
+					ArrayList<String> growthHeader = new ArrayList<String>();
+					growthHeader.add("date");
+					growthHeader.add("growth");
+					growth.add(0, growthHeader);
+					AhrIO.writeToFile("./../data/r/rdata/pa_portgrowth.csv", AhrDTF.melt(growth, "date"), ",");
+				}else{
+					System.out.println("ERR: " + bsPath +" does not exist.");
+				}
 				//resume GUI
 				setCursor(null);
 				bPrintFilter.setEnabled(true);
 				bCreateNewFilter.setEnabled(true);
 				bRndCalcPerf.setEnabled(true);
-				bRndPlots.setEnabled(true);			
-
+				bRndPlots.setEnabled(true);
 			}
 		});
 		bRndPlots.addActionListener(new ActionListener() {
@@ -638,7 +672,7 @@ public class PA_KeyPerf extends JFrame {
 					xdim = 600;
 					ydim = 300;
 					//get all trig %s from orderlist, create Box & Whisker
-					String olPath = "./../data/orderlist/orderlist.txt";
+					String olPath = "./../data/tmp/os_orderlist.txt";
 					FCI fciOL = new FCI(false, olPath);
 					ArrayList<String> trigStr = AhrIO.scanCol(olPath, ",", fciOL.getIdx("method_appr"));
 					ArrayList<Double> trig = new ArrayList<Double>();
@@ -684,7 +718,7 @@ public class PA_KeyPerf extends JFrame {
 					xdim = 330;
 					ydim = 330;
 					//get all trigger codes from orderlist, create pie chart
-					String olPath = "./../data/orderlist/orderlist.txt";
+					String olPath = "./../data/tmp/os_orderlist.txt";
 					FCI fciOL = new FCI(false, olPath);
 					ArrayList<String> trigCodes = AhrIO.scanCol(olPath, ",", fciOL.getIdx("trigger_code"));
 					ArrayList<ArrayList<String>> pieAL = AhrAL.countUniq(trigCodes);
@@ -795,22 +829,22 @@ public class PA_KeyPerf extends JFrame {
 		ArrayList<String> nums = new ArrayList<String>();
 		String fpath = "";
 		if(is_sk){
-			fpath = "./../out/ml/"+bgmLC+"/keys_struct.txt";
+			fpath = "./../out/sk/log/"+bgmLC+"/keys_struct.txt";
 			FCI fciKS = new FCI(true, fpath);
 			ArrayList<ArrayList<String>> fc = AhrIO.scanFile(fpath, ",");
 			if(fc.size() > 1){
 				for(int i = 1; i < fc.size(); i++){
-					nums.add(fc.get(i).get(fciKS.getIdx("key_num")));
+					nums.add(fc.get(i).get(fciKS.getIdx("sk_num")));
 				}
 			}
 		}else{
-			fpath = "./../baseis/log/ak_log.txt";
+			fpath = "./../out/ak/log/ak_log.txt";
 			FCI fciLA = new FCI(true, fpath);
 			ArrayList<ArrayList<String>> fc = AhrIO.scanFile(fpath, ",");
 			if(fc.size() > 1){
 				for(int i = 1; i < fc.size(); i++){
 					if(!fc.get(i).get(fciLA.getIdx("bgm")).equals("RND")){
-						nums.add(fc.get(i).get(fciLA.getIdx("basis_num")));
+						nums.add(fc.get(i).get(fciLA.getIdx("ak_num")));
 					}
 				}
 			}

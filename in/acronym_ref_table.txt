@@ -1,0 +1,8 @@
+APAPT~Average Percent Appreciation Per Transaction~Main performance metric for a machine learning algorithm.
+APY~Annual Percent Yield~Main performance metric for a fully optimized trading strategy.
+SPD~Stocks Per Day~Number of stock predictions that are calculated on any given date.
+TVI~Target Variable Index~Is the target length in days in which to measure the APAPT, the APAPT is then placed in the database as the only target variable. There are 6 target variables tracked and indexed ...<ul><li>    [0] = 1-Day Intraday %</li><li>    [1] = 1-Day Interday %</li><li>    [2] = 2-Day %</li><li>    [3] = 3-Day %</li><li>    [4] = 5-Day %</li><li>    [5] = 10-Day %</li></ul>
+MS Mask~Market State Bitmask~8-digit bitmask where each bit answers a question about the markets current price vs its x-day SMA, where the more significant the bit the larger the x. Its purpose is to split the database into sections to focus an algorithm onto a specific market state.
+Ind Mask~Indicator Bitmask~24-digit bitmask where each bit represents a yes or no whether each indicator is included 
+BIM~Buy-In Multiplier~Part of trading strategy that limits price of stock in which you buy-in at.
+SOM~Sell-Out Multiplier~Part of trading strategy that limits price of stock in which you sell-out at.

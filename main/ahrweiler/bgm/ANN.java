@@ -43,7 +43,7 @@ public class ANN {
 	//------------- CONSTRUCTORS ----------------
 	//pull data from a saved file
 	public ANN(int idNum){
-		String path = "./../out/ml/ann/keys_struct.txt";
+		String path = "./../out/sk/log/ann/keys_struct.txt";
 		FCI fciKS = new FCI(true, path);
 		ArrayList<String> ksLine = AhrIO.scanRow(path, ",", String.valueOf(idNum));
 		if(ksLine.size() > 3){
@@ -254,6 +254,27 @@ public class ANN {
 		this.results.add(str);
 	}
 
+	//------------- DIAGNOSTICS ----------------
+	public void printAttrs(){
+		System.out.println("========== ANN ATTRS =========="+
+							"\nID = "+this.id+
+							"\nDBUC = "+this.dbuc+
+							"\nIs CR = "+this.is_cr_method+
+							"\nIs Long = "+this.is_long+
+							"\nStart Date = "+this.sdate+
+							"\nEnd Date = "+this.edate+
+							"\nLearn Rate = "+String.format("%.5f", this.learnRate)+
+							"\nPlateau = "+String.format("%.3f", this.plateau)+
+							"\nSPD = "+this.spd+
+							"\nTVI = "+this.tvi+
+							"\nMS Mask = "+this.msMask+
+							"\nNAR Mask = "+this.narMask+
+							"\nInd Mask = "+this.indMask+
+							"\nActive Ind Num = "+this.activeIndNum+
+							"\nActive Inds = "+this.activeIndNames+
+							"\n===============================");
+	}
+
 	//================ CALC SINGLE KEY FUNCTIONS ========================
 	/*	0) calcSK() or ...
 
@@ -385,7 +406,7 @@ public class ANN {
 		
 		//OUTPUT: save ANN info to files
 		//[1] keys_struct.txt
-		ArrayList<ArrayList<String>> keys = AhrIO.scanFile("./../out/ml/ann/keys_struct.txt", ",");
+		ArrayList<ArrayList<String>> keys = AhrIO.scanFile("./../out/sk/log/ann/keys_struct.txt", ",");
 		ArrayList<String> ksHeader = keys.get(0);
 		keys.remove(0);	//removes header
 		cdbs = AhrIO.scanFile(dbsPath, ",");
@@ -429,10 +450,10 @@ public class ANN {
 		keys.add(sline);
 		keys.add(lline);
 		keys.add(0, ksHeader);
-		AhrIO.writeToFile("./../out/ml/ann/keys_struct.txt", keys, ",");
+		AhrIO.writeToFile("./../out/sk/log/ann/keys_struct.txt", keys, ",");
 		//[2] struct_xxx.txt
 		ArrayList<ArrayList<String>> tfStruct = new ArrayList<ArrayList<String>>();
-		String fpath = "./../out/ml/ann/structure/struct_"+String.valueOf(id)+".txt";
+		String fpath = "./../out/sk/log/ann/structure/struct_"+String.valueOf(id)+".txt";
 		for(int i = 0; i < ann.getTotalLayers(); i++){
 			ArrayList<String> strLine = new ArrayList<String>();
 			if(i == 0){//input layer
@@ -461,13 +482,13 @@ public class ANN {
 				}
 			}
 		}
-		AhrIO.writeToFile("./../out/ml/ann/structure/struct_"+id+".txt", tfStruct, ",");
-		AhrIO.writeToFile("./../out/ml/ann/structure/struct_"+(id+1)+".txt", tfStruct, ",");
+		AhrIO.writeToFile("./../out/sk/log/ann/structure/struct_"+id+".txt", tfStruct, ",");
+		AhrIO.writeToFile("./../out/sk/log/ann/structure/struct_"+(id+1)+".txt", tfStruct, ",");
 		//[3] write to file err log : err_xxx.txt
-		AhrIO.writeToFile("./../out/ml/ann/error/err_"+id+".txt", getErrorLog(), ",");
-		AhrIO.writeToFile("./../out/ml/ann/error/err_"+(id+1)+".txt", getErrorLog(), ",");
+		AhrIO.writeToFile("./../out/sk/log/ann/error/err_"+id+".txt", getErrorLog(), ",");
+		AhrIO.writeToFile("./../out/sk/log/ann/error/err_"+(id+1)+".txt", getErrorLog(), ",");
 		//[4] keys_perf.txt
-		ArrayList<ArrayList<String>> kpFile = AhrIO.scanFile("./../out/ml/ann/keys_perf.txt", ",");
+		ArrayList<ArrayList<String>> kpFile = AhrIO.scanFile("./../out/sk/log/ann/keys_perf.txt", ",");
 		sline = new ArrayList<String>();
 		sline.add(String.valueOf(sskID));					//[0] sk_num
 		sline.add("0");										//[1] call
@@ -507,7 +528,7 @@ public class ANN {
 						   "===============================\n");
 		kpFile.add(sline);
 		kpFile.add(lline);
-		AhrIO.writeToFile("./../out/ml/ann/keys_perf.txt", kpFile, ",");
+		AhrIO.writeToFile("./../out/sk/log/ann/keys_perf.txt", kpFile, ",");
 
 		//Done
 		System.out.println("Output Files WRITTEN");		
@@ -524,13 +545,12 @@ public class ANN {
 		this.trainLineCount = 0;
 		this.testLineCount = 0;
 		ArrayList<Integer> hiddenDims = new ArrayList<Integer>();
-		System.out.println("--> activeIndNum = " + this.activeIndNum);
 		hiddenDims.add(this.activeIndNum+2);
 		this.network = new Network(this.activeIndNum, hiddenDims, 1);
 		this.trainFiles = AhrIO.getFilesInPath(trainPath);
 		Collections.sort(this.trainFiles);
 		//calc ID numbers for short and long
-		String ksPath = "./../out/ml/ann/keys_struct.txt";
+		String ksPath = "./../out/sk/log/ann/keys_struct.txt";
 		FCI fciKS = new FCI(true, ksPath);
 		ArrayList<ArrayList<String>> ksFile = AhrIO.scanFile(ksPath, ",");
 		int maxID = -1;
@@ -543,7 +563,7 @@ public class ANN {
 			}
 		}
 		setID(maxID + 1);
-		System.out.println("--> Init for SK"+getID()+" ... DONE");
+		printAttrs();
 	}
 
 	//calc 1 section of SK at a time
@@ -614,7 +634,7 @@ public class ANN {
 		}
 		overallError = overallError / (double)errLog.size();
 		//[1] keys_struct.txt
-		ArrayList<ArrayList<String>> ksFile = AhrIO.scanFile("./../out/ml/ann/keys_struct.txt", ",");
+		ArrayList<ArrayList<String>> ksFile = AhrIO.scanFile("./../out/sk/log/ann/keys_struct.txt", ",");
 		ArrayList<String> ksHeader = ksFile.get(0);
 		ksFile.remove(0);	//removes header
 		ArrayList<ArrayList<String>> cdbs = AhrIO.scanFile("./../data/ml/ann/cust/db_sizes.txt", ",");
@@ -626,6 +646,8 @@ public class ANN {
 		}
 		int sskID = maxID+1;
 		int lskID = sskID+1;
+		System.out.println("In ANN.java -> writeToFileSK()\n  short SK ID = " + sskID +
+							"  long SK ID = " + lskID);
 		//short call line
 		ArrayList<String> sline = new ArrayList<String>();
 		sline.add(String.valueOf(sskID));						//[0] sk_num
@@ -661,10 +683,10 @@ public class ANN {
 		ksFile.add(sline);
 		ksFile.add(lline);
 		ksFile.add(0, ksHeader);
-		AhrIO.writeToFile("./../out/ml/ann/keys_struct.txt", ksFile, ",");
+		AhrIO.writeToFile("./../out/sk/log/ann/keys_struct.txt", ksFile, ",");
 		//[2] struct_xxx.txt
 		ArrayList<ArrayList<String>> tfStruct = new ArrayList<ArrayList<String>>();
-		String fpath = "./../out/ml/ann/structure/struct_"+String.valueOf(id)+".txt";
+		String fpath = "./../out/sk/log/ann/structure/struct_"+String.valueOf(id)+".txt";
 		for(int i = 0; i < this.network.getTotalLayers(); i++){
 			ArrayList<String> strLine = new ArrayList<String>();
 			if(i == 0){//input layer
@@ -693,13 +715,13 @@ public class ANN {
 				}
 			}
 		}
-		AhrIO.writeToFile("./../out/ml/ann/structure/struct_"+id+".txt", tfStruct, ",");
-		AhrIO.writeToFile("./../out/ml/ann/structure/struct_"+(id+1)+".txt", tfStruct, ",");
+		AhrIO.writeToFile("./../out/sk/log/ann/structure/struct_"+id+".txt", tfStruct, ",");
+		AhrIO.writeToFile("./../out/sk/log/ann/structure/struct_"+(id+1)+".txt", tfStruct, ",");
 		//[3] write to file err log : err_xxx.txt
-		AhrIO.writeToFile("./../out/ml/ann/error/err_"+id+".txt", getErrorLog(), ",");
-		AhrIO.writeToFile("./../out/ml/ann/error/err_"+(id+1)+".txt", getErrorLog(), ",");
+		AhrIO.writeToFile("./../out/sk/log/ann/error/err_"+id+".txt", getErrorLog(), ",");
+		AhrIO.writeToFile("./../out/sk/log/ann/error/err_"+(id+1)+".txt", getErrorLog(), ",");
 		//[4] keys_perf.txt
-		ArrayList<ArrayList<String>> kpFile = AhrIO.scanFile("./../out/ml/ann/keys_perf.txt", ",");
+		ArrayList<ArrayList<String>> kpFile = AhrIO.scanFile("./../out/sk/log/ann/keys_perf.txt", ",");
 		sline = new ArrayList<String>();
 		sline.add(String.valueOf(sskID));					//[0] sk_num
 		sline.add("0");										//[1] call
@@ -724,7 +746,7 @@ public class ANN {
 		lline.set(1, "1");
 		kpFile.add(sline);
 		kpFile.add(lline);
-		AhrIO.writeToFile("./../out/ml/ann/keys_perf.txt", kpFile, ",");
+		AhrIO.writeToFile("./../out/sk/log/ann/keys_perf.txt", kpFile, ",");
 	}
 	
 	//creates the cust DB for ANN (each file will have secSize*2 length)
@@ -779,8 +801,8 @@ public class ANN {
 			evenLines += narClean.size();
 			//itr thru all clean lines that pass NAR
 			for(int j = 0; j < narClean.size(); j++){
-				String apprCol = "appr"+fciBD.convertTVI(tvi);
-				if(!narClean.get(j).get(fciBD.getIdx(apprCol)).equals("tbd")){	
+				String tvColName = Globals.tvi_names[tvi];
+				if(!narClean.get(j).get(fciBD.getIdx(tvColName)).equals("tbd")){	
 					ArrayList<String> line = new ArrayList<String>();
 					//add predictor variables
 					for(int k = 0; k < indMask.length(); k++){
@@ -794,7 +816,7 @@ public class ANN {
 					}
 					//add target variable
 					if(is_cr_method){
-						double platAppr = Double.parseDouble(narClean.get(j).get(fciBD.getIdx(apprCol)));
+						double platAppr = Double.parseDouble(narClean.get(j).get(fciBD.getIdx(tvColName)));
 						if(platAppr > plateau){
 							platAppr = plateau;
 						}
@@ -807,7 +829,7 @@ public class ANN {
 						line.add(String.format("%.6f", tvNorm));
 					}else{//is binomial distribution
 						String mode = "0";
-						if(Double.parseDouble(narClean.get(j).get(fciBD.getIdx(apprCol))) > 0){
+						if(Double.parseDouble(narClean.get(j).get(fciBD.getIdx(tvColName))) > 0){
 							mode = "1";
 						}
 						line.add(mode);
@@ -848,8 +870,8 @@ public class ANN {
 			oddLines += narClean.size();
 			//itr thru all clean lines that pass NAR
 			for(int j = 0; j < narClean.size(); j++){
-				String apprCol = "appr"+fciBD.convertTVI(tvi);
-				if(!narClean.get(j).get(fciBD.getIdx(apprCol)).equals("tbd")){
+				String tvColName = Globals.tvi_names[tvi];
+				if(!narClean.get(j).get(fciBD.getIdx(tvColName)).equals("tbd")){
 					ArrayList<String> line = new ArrayList<String>();
 					//add predictor variables
 					for(int k = 0; k < indMask.length(); k++){
@@ -863,7 +885,7 @@ public class ANN {
 					}
 					//add target variable
 					if(is_cr_method){
-						double platAppr = Double.parseDouble(narClean.get(j).get(fciBD.getIdx(apprCol)));
+						double platAppr = Double.parseDouble(narClean.get(j).get(fciBD.getIdx(tvColName)));
 						if(platAppr > plateau){
 							platAppr = plateau;
 						}
@@ -876,7 +898,7 @@ public class ANN {
 						line.add(String.format("%.8f", tvNorm));
 					}else{//is binomial distribution
 						String mode = "0";
-						if(Double.parseDouble(narClean.get(j).get(fciBD.getIdx(apprCol))) > 0){
+						if(Double.parseDouble(narClean.get(j).get(fciBD.getIdx(tvColName))) > 0){
 							mode = "1";
 						}
 						line.add(mode);
@@ -968,8 +990,8 @@ public class ANN {
 			evenLines += narClean.size();
 			//itr thru all clean lines that pass NAR
 			for(int j = 0; j < narClean.size(); j++){
-				String apprCol = "appr"+fciBD.convertTVI(tvi);
-				if(!narClean.get(j).get(fciBD.getIdx(apprCol)).equals("tbd")){	
+				String tvColName = Globals.tvi_names[tvi];
+				if(!narClean.get(j).get(fciBD.getIdx(tvColName)).equals("tbd")){	
 					ArrayList<String> line = new ArrayList<String>();
 					//add predictor variables
 					for(int k = 0; k < this.indMask.length(); k++){
@@ -985,7 +1007,7 @@ public class ANN {
 					if(is_cr_method){
 						double platAppr = 0.0;
 						try{
-							platAppr = Double.parseDouble(narClean.get(j).get(fciBD.getIdx(apprCol)));
+							platAppr = Double.parseDouble(narClean.get(j).get(fciBD.getIdx(tvColName)));
 						}catch(NumberFormatException e){
 							System.out.println("ERR: " + e.getMessage());
 						}
@@ -1003,7 +1025,7 @@ public class ANN {
 						String mode = "0";
 						double appr = 0.0;
 						try{
-							appr = Double.parseDouble(narClean.get(j).get(fciBD.getIdx(apprCol)));
+							appr = Double.parseDouble(narClean.get(j).get(fciBD.getIdx(tvColName)));
 						}catch(NumberFormatException e){
 							System.out.println("ERR: " + e.getMessage());
 						}
@@ -1099,8 +1121,8 @@ public class ANN {
 			oddLines += narClean.size();
 			//itr thru all clean lines that pass NAR
 			for(int j = 0; j < narClean.size(); j++){
-				String apprCol = "appr"+fciBD.convertTVI(tvi);
-				if(!narClean.get(j).get(fciBD.getIdx(apprCol)).equals("tbd")){
+				String tvColName = Globals.tvi_names[tvi];
+				if(!narClean.get(j).get(fciBD.getIdx(tvColName)).equals("tbd")){
 					ArrayList<String> line = new ArrayList<String>();
 					//add predictor variables
 					for(int k = 0; k < this.indMask.length(); k++){
@@ -1116,7 +1138,7 @@ public class ANN {
 					if(is_cr_method){
 						double platAppr = 0.0;
 						try{
-							platAppr = Double.parseDouble(narClean.get(j).get(fciBD.getIdx(apprCol)));
+							platAppr = Double.parseDouble(narClean.get(j).get(fciBD.getIdx(tvColName)));
 						}catch(NumberFormatException e){
 							System.out.println("ERR: " + e.getMessage());
 						}
@@ -1134,7 +1156,7 @@ public class ANN {
 						String mode = "0";
 						double appr = 0.0;
 						try{
-							appr = Double.parseDouble(narClean.get(j).get(fciBD.getIdx(apprCol)));
+							appr = Double.parseDouble(narClean.get(j).get(fciBD.getIdx(tvColName)));
 						}catch(NumberFormatException e){
 							System.out.println("ERR: " + e.getMessage());
 						}

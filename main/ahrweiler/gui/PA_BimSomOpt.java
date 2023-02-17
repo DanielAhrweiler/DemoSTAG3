@@ -219,13 +219,15 @@ public class PA_BimSomOpt extends JFrame {
 				String bgmLC = cbBgm1.getSelectedItem().toString().toLowerCase();
 				String knum = cbKeyNum1.getSelectedItem().toString();
 				if(rbSK1.isSelected()){
-					ArrayList<String> fline = AhrIO.scanRow("./../out/ml/"+bgmLC+"/keys_struct.txt", ",", knum);
-					FCI fciKS = new FCI(true, "./../out/ml/"+bgmLC+"/keys_struct.txt");
+					String ksPath = "./../out/sk/log/"+bgmLC+"/keys_struct.txt";
+					FCI fciKS = new FCI(true, ksPath);
+					ArrayList<String> fline = AhrIO.scanRow(ksPath, ",", knum);
 					tfSDate1.setText(fline.get(fciKS.getIdx("start_date")));
 					tfEDate1.setText(fline.get(fciKS.getIdx("end_date")));
 				}else{
-					ArrayList<String> fline = AhrIO.scanRow("./../baseis/log/ak_log.txt", ",", knum);
-					FCI fciAL = new FCI(true, "./../baseis/log/ak_log.txt");
+					String alPath = "./../out/ak/log/ak_log.txt";
+					FCI fciAL = new FCI(true, alPath);
+					ArrayList<String> fline = AhrIO.scanRow(alPath, ",", knum);
 					tfSDate1.setText(fline.get(fciAL.getIdx("start_date")));
 					tfEDate1.setText(fline.get(fciAL.getIdx("end_date")));
 				}
@@ -239,19 +241,20 @@ public class PA_BimSomOpt extends JFrame {
 				if(rbSK1.isSelected()){
 					String bgmLC = cbBgm1.getSelectedItem().toString().toLowerCase();
 					String knum = cbKeyNum1.getSelectedItem().toString();
-					FCI fciKP = new FCI(true, "./../out/ml/"+bgmLC+"/keys_perf.txt");
-					ArrayList<String> kpLine = AhrIO.scanRow("./../out/ml/"+bgmLC+"/keys_perf.txt", ",", String.valueOf(knum));
+					String kpPath = "./../out/sk/log/"+bgmLC+"/keys_perf.txt";
+					FCI fciKP = new FCI(true, kpPath);
+					ArrayList<String> kpLine = AhrIO.scanRow(kpPath, ",", String.valueOf(knum));
 					call = kpLine.get(fciKP.getIdx("call"));
 					bim = kpLine.get(fciKP.getIdx("bim"));
 					som = kpLine.get(fciKP.getIdx("som"));
-
 				}else{
 					String bgmLC = cbBgm1.getSelectedItem().toString().toLowerCase();
 					String knum = cbKeyNum1.getSelectedItem().toString();
-					FCI fciAL = new FCI(true, "./../baseis/log/ak_log.txt");
-					ArrayList<String> alLine = AhrIO.scanRow("./../baseis/log/ak_log.txt", ",", String.valueOf(knum));
+					String alPath = "./../out/ak/log/ak_log.txt";
+					FCI fciAL = new FCI(true, alPath);
+					ArrayList<String> alLine = AhrIO.scanRow(alPath, ",", String.valueOf(knum));
 					call = alLine.get(fciAL.getIdx("call"));
-					String akBimSom = alLine.get(fciAL.getIdx("ak_bim_som"));
+					String akBimSom = alLine.get(fciAL.getIdx("ak_bso"));
 					String[] bsoParts = akBimSom.split("\\|");
 					bim = bsoParts[0];
 					som = bsoParts[1];
@@ -536,13 +539,15 @@ public class PA_BimSomOpt extends JFrame {
 				String bgmLC = cbBgm2.getSelectedItem().toString().toLowerCase();
 				String knum = cbKeyNum2.getSelectedItem().toString();
 				if(rbSK2.isSelected()){
-					ArrayList<String> fline = AhrIO.scanRow("./../out/ml/"+bgmLC+"/keys_struct.txt", ",", knum);
-					FCI fciKS = new FCI(true, "./../out/ml/"+bgmLC+"/keys_struct.txt");
+					String ksPath = "./../out/sk/log/"+bgmLC+"/keys_struct.txt";
+					FCI fciKS = new FCI(true, ksPath);
+					ArrayList<String> fline = AhrIO.scanRow(ksPath, ",", knum);
 					tfSDate2.setText(fline.get(fciKS.getIdx("start_date")));
 					tfEDate2.setText(fline.get(fciKS.getIdx("end_date")));
 				}else{
-					ArrayList<String> fline = AhrIO.scanRow("./../baseis/log/ak_log.txt", ",", knum);
-					FCI fciAL = new FCI(true, "./../baseis/log/ak_log.txt");
+					String alPath = "./../out/ak/log/ak_log.txt";
+					FCI fciAL = new FCI(true, alPath);
+					ArrayList<String> fline = AhrIO.scanRow(alPath, ",", knum);
 					tfSDate2.setText(fline.get(fciAL.getIdx("start_date")));
 					tfEDate2.setText(fline.get(fciAL.getIdx("end_date")));
 				}
@@ -586,8 +591,8 @@ public class PA_BimSomOpt extends JFrame {
 					BGM_Manager akey = new BGM_Manager(knum);
 					data = akey.bsoMultiple(sdate, edate, ttvMask, is_min_trig, use_sk_bso);
 				}
-				//get full data from /out/tmp/bso_mult
-				ArrayList<ArrayList<String>> fc = AhrIO.scanFile("./../data/bso/multiple.txt", ",");
+				//get full data from /data/bso
+				ArrayList<ArrayList<String>> fc = AhrIO.scanFile("./../data/tmp/bso_multiple.txt", ",");
 				int worstIdx = -1;
 				double worstYoy = Double.MAX_VALUE;
 				double avgYoy = 0.0;
@@ -633,8 +638,8 @@ public class PA_BimSomOpt extends JFrame {
 				if(plotIdx == 0){
 					String plotPath = "./../resources/pa_bso_heat.png";
 					//get BSO Mult data and write to R csv file
-					FCI fciBM = new FCI(false, "./../data/bso/multiple.txt");
-					ArrayList<ArrayList<String>> fc = AhrIO.scanFile("./../data/bso/multiple.txt", ",");
+					FCI fciBM = new FCI(false, "./../data/tmp/bso_multiple.txt");
+					ArrayList<ArrayList<String>> fc = AhrIO.scanFile("./../data/tmp/bso_multiple.txt", ",");
 					ArrayList<ArrayList<String>> rfile = new ArrayList<ArrayList<String>>();
 					ArrayList<String> header = AhrAL.toAL(new String[]{"xvals", "yvals", "data"});
 					rfile.add(header);
@@ -722,19 +727,19 @@ public class PA_BimSomOpt extends JFrame {
 		ArrayList<String> nums = new ArrayList<String>();
 		String fpath = "";
 		if(is_sk){
-			fpath = "./../out/ml/"+bgm.toLowerCase()+"/keys_struct.txt";
+			fpath = "./../out/sk/log/"+bgm.toLowerCase()+"/keys_struct.txt";
 			FCI fciKS = new FCI(true, fpath);
 			ArrayList<ArrayList<String>> fc = AhrIO.scanFile(fpath, ",");
 			for(int i = 1; i < fc.size(); i++){
-				nums.add(fc.get(i).get(fciKS.getIdx("key_num")));
+				nums.add(fc.get(i).get(fciKS.getIdx("sk_num")));
 			}
 		}else{
-			fpath = "./../baseis/log/ak_log.txt";
+			fpath = "./../out/ak/log/ak_log.txt";
 			FCI fciLA = new FCI(true, fpath);
 			ArrayList<ArrayList<String>> fc = AhrIO.scanFile(fpath, ",");
 			for(int i = 1; i < fc.size(); i++){
 				if(!fc.get(i).get(fciLA.getIdx("bgm")).equals("RND")){
-					nums.add(fc.get(i).get(fciLA.getIdx("basis_num")));
+					nums.add(fc.get(i).get(fciLA.getIdx("ak_num")));
 				}
 			}
 		}

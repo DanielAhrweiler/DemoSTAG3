@@ -10,6 +10,7 @@ import ahrweiler.support.OrderSim;
 import ahrweiler.support.StockFilter;
 import ahrweiler.bgm.ANN;
 import ahrweiler.bgm.BGM_Manager;
+import ahrweiler.bgm.AttributesSK;
 import ahrweiler.gui.DB_Charting;
 import ahrweiler.gui.DB_Filter;
 import ahrweiler.gui.DB_DataIntegrity;
@@ -19,7 +20,8 @@ import ahrweiler.gui.ML_Basis;
 import ahrweiler.gui.PA_BimSomOpt;
 import ahrweiler.gui.PA_KeyPerf;
 import ahrweiler.gui.AutoDemo;
-import ahrweiler.gui.TestSwing;
+import ahrweiler.gui.AD_Params;
+import ahrweiler.gui.AD_Acronyms;
 import java.io.*;
 import java.net.*;
 import java.util.*;
@@ -41,13 +43,13 @@ public class STAG3 {
 	public void init(){
 		System.out.print("--> Initializing Data ... ");
 		//remove lines from rnd keys_perf
-		String kpPath = "./../out/ml/rnd/keys_perf.txt";
+		String kpPath = "./../out/sk/log/rnd/keys_perf.txt";
 		ArrayList<String> kpLine = AhrIO.scanRow(kpPath, ",", 0);
 		ArrayList<ArrayList<String>> kpFile = new ArrayList<ArrayList<String>>();
 		kpFile.add(kpLine);
 		AhrIO.writeToFile(kpPath, kpFile, ",");
 		//remove rnd tmp basis files
-		String rbPath = "./../baseis/single/rnd/";
+		String rbPath = "./../out/sk/baseis/rnd/";
 		ArrayList<String> rndFiles = AhrIO.getFilesInPath(rbPath);
 		for(int i = 0; i < rndFiles.size(); i++){
 			File file = new File(rbPath+rndFiles.get(i));
@@ -188,64 +190,52 @@ public class STAG3 {
 	}
 
 	public void tempCode(){
-		//update company_profile in sdws/out with mc_ratio and sec/ind info from scraper/company_profile
-		/*
-		ArrayList<ArrayList<String>> stagCP = AhrIO.scanFile("./../in/scraper/company_profile.txt", "~");
-		ArrayList<ArrayList<String>> sdwsCP = AhrIO.scanFile("./../python/sdws/out/company_profile.txt", "~");
-		for(int i = 0; i < sdwsCP.size(); i++){
-			String itrSec = "errNT";
-			String itrInd = "errNT";
-			String itrSCode = "errNT";
-			String itrMCR = "errNT";
-			int idx = AhrAL.getRowIdx(stagCP, sdwsCP.get(i).get(0));
-			if(idx != -1){
-				itrSec = stagCP.get(idx).get(3);
-				itrInd = stagCP.get(idx).get(4);
-				itrSCode = stagCP.get(idx).get(5);
-				itrMCR = stagCP.get(idx).get(6);
-			}
-			//update sector 
-			if(sdwsCP.get(i).get(5).contains("err")){
-				sdwsCP.get(i).set(5, itrSec);
-			}
-			//update industry
-			if(sdwsCP.get(i).get(6).contains("err")){
-				sdwsCP.get(i).set(6, itrInd);
-			}
-			//update sector code
-			if(sdwsCP.get(i).get(7).contains("err")){
-				sdwsCP.get(i).set(7, itrSCode);
-			}
-			//update mc ratio 
-			if(sdwsCP.get(i).get(8).contains("err")){
-				sdwsCP.get(i).set(8, itrMCR);
-			}
-		}
-		AhrIO.writeToFile("./../python/sdws/out/company_profile2.txt", sdwsCP, "~");
-		*/
+		ArrayList<String> test = AhrAL.toAL(new String[]{"rnd1", "rnd55", "rnd3", "rnd2", "rnd8"});
+		Collections.sort(test);
+		System.out.println(test);
 
 		/*
-		//go thru all ByDates files and check hm NAR masks are len of 3
-		String bdPath = "./../../DB_Intrinio/Clean/ByDate/";
-		FCI fciBD = new FCI(false, bdPath);
-		ArrayList<String> bdFiles = AhrIO.getFilesInPath(bdPath);
-		Collections.sort(bdFiles);
-		for(int i = 0; i < bdFiles.size(); i++){
-			ArrayList<ArrayList<String>> fc = AhrIO.scanFile(bdPath+bdFiles.get(i), "~");
-			int count = 0;
-			for(int j = 0; j < fc.size(); j++){
-				String narItr = fc.get(j).get(fciBD.getIdx("nar_mask"));
-				if(narItr.length() == 3){
-					count++;
+		//test diff in basis files (cl before pred) and orderlist (open after pred)
+		int skNum = 4;
+		String bsPath = "./../out/sk/baseis/ann/ANN_"+String.valueOf(skNum)+".txt";
+		String olPath = "./../data/tmp/os_orderlist.txt";
+		FCI fciBS = new FCI(false, bsPath);
+		FCI fciOL = new FCI(false, olPath);
+		String ttvMask = "100";
+		String colName = "appr3";
+		ArrayList<ArrayList<String>> basis = AhrIO.scanFile(bsPath, ",");
+		//have to run orderlist 1st to create file
+		OrderSim osim = new OrderSim("ANN", skNum);
+		osim.setDateRange("2016-01-01", "2020-12-31");
+		osim.setBIM(0.01);
+		osim.setSOM(50.0);
+		osim.setTtvMask(ttvMask);
+		osim.setMaxOrderSize(10000.0);
+		osim.calcOrderList();
+		try{
+			Thread.sleep(500);
+		}catch(InterruptedException e){
+			System.out.println("ERR: thread interrupted.");
+		}
+		ArrayList<ArrayList<String>> orderlist = AhrIO.scanFile("./../data/tmp/os_orderlist_byappr.txt", ",");
+		//get appr % col from basis and orderlist
+		ArrayList<ArrayList<String>> capprs = new ArrayList<ArrayList<String>>();
+		for(int i = 0; i < orderlist.size(); i++){
+			String olDate = orderlist.get(i).get(fciOL.getIdx("date"));
+			String olTick = orderlist.get(i).get(fciOL.getIdx("ticker"));
+			for(int j = 0; j < basis.size(); j++){
+				String bsDate = basis.get(j).get(fciBS.getIdx("date"));
+				String bsTick = basis.get(j).get(fciBS.getIdx("ticker"));
+				if(olDate.equals(bsDate) && olTick.equals(bsTick)){
+					String bsAppr = basis.get(j).get(fciBS.getIdx(colName)); 
+					orderlist.get(i).add(bsAppr);
+					break;
 				}
 			}
-			System.out.println("--> NAR len 3 in " + bdFiles.get(i) + " = " + count);
 		}
+		AhrIO.writeToFile("./../data/tmp/tmp_capprs.csv", orderlist, ",");
 		*/
-
-		//test StockFilter
-		StockFilter sf = new StockFilter("./../data/filters/sfilter_2.txt");
-		sf.applyFilter("2022-11-01");
+		
 
 		System.out.println("--> tempCode() DONE");
 	}
@@ -279,7 +269,7 @@ public class STAG3 {
 	public void updateScorePercentiles(){
 		String epPath = "./../in/epochs.txt";
 		String spPath = "./../out/score_percentiles.txt";
-		String laPath = "./../baseis/log/ak_log.txt";
+		String laPath = "./../out/ak/log/ak_log.txt";
 		FCI fciEP = new FCI(false, epPath);
 		FCI fciLA = new FCI(true, laPath);
 		ArrayList<ArrayList<String>> epochFile = AhrIO.scanFile(epPath, ",");
@@ -300,7 +290,7 @@ public class STAG3 {
 		for(int i = 0; i < allAK.size(); i++){
 			int laIdx = -1;
 			for(int j = 0; j < logFile.size(); j++){
-				String itrAK = logFile.get(j).get(fciLA.getIdx("basis_num"));
+				String itrAK = logFile.get(j).get(fciLA.getIdx("ak_num"));
 				if(itrAK.equals(allAK.get(i))){
 					laIdx = j;
 					break;
@@ -330,7 +320,7 @@ public class STAG3 {
 		AhrAL.print(allSK);
 		//itr thru all new SKs, write percentiles to file
 		ArrayList<ArrayList<String>> tf = AhrIO.scanFile("./../out/score_percentiles.txt", ",");
-		String skbPath = "./../baseis/single/";
+		String skbPath = "./../out/sk/baseis/";
 		FCI fciSKB = new FCI(false, skbPath);
 		for(int i = 0; i < allSK.size(); i++){
 			String bgm = allSK.get(i).get(0);
@@ -441,7 +431,7 @@ public class STAG3 {
 			line.add(String.valueOf(countSN));
 			tf.add(line);
 		}
-		AhrIO.writeToFile("./../out/tmp/snorm_vs_bydate.txt", tf, ",");
+		AhrIO.writeToFile("./../out/snorm_vs_bydate.txt", tf, ",");
 
 		System.out.println("--> Lines Analyzed In ByDate : "+totCountBD);
 		System.out.println("--> Lines Analyzed In S_Norm : "+totCountSN);

@@ -67,7 +67,7 @@ public class Network {
 	}
 	public Network(String fpath){//TODO change to read in struct files correctly, w/ bias and val
 		this.totalError = 0.0;
-		//read in info from ./../out/ann/structure/ file
+		//read in info from ./../out/sk/log/ann/structure/ file
 		ArrayList<ArrayList<String>> fc = new ArrayList<ArrayList<String>>();
 		try{
 			BufferedReader br = new BufferedReader(new FileReader(fpath));

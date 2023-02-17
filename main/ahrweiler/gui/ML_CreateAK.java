@@ -244,8 +244,8 @@ public class ML_CreateAK extends JFrame {
 			public void actionPerformed(ActionEvent e){
 				String bgm = cbBGM.getSelectedItem().toString();
 				String[] skeys = taBestKeys.getText().replaceAll("\\s+","").split(",");
-				String kpPath = "./../out/ml/"+bgm.toLowerCase()+"/keys_perf.txt";
-				String laPath = "./../baseis/log/ak_log.txt";
+				String kpPath = "./../out/sk/log/"+bgm.toLowerCase()+"/keys_perf.txt";
+				String laPath = "./../out/ak/log/ak_log.txt";
 				FCI fciKP = new FCI(true, kpPath);
 				FCI fciLA = new FCI(true, laPath);
 				String bestKeys = "";
@@ -263,11 +263,11 @@ public class ML_CreateAK extends JFrame {
 						skBimSom += bim+"|"+som+"~";
 					}
 				}
-				//get new basis_num
+				//get new ak_num
 				ArrayList<ArrayList<String>> aggLog = AhrIO.scanFile(laPath, ",");
 				int maxID = -1;
 				for(int i = 1; i < aggLog.size(); i++){
-					int itrID = Integer.parseInt(aggLog.get(i).get(fciLA.getIdx("basis_num")));
+					int itrID = Integer.parseInt(aggLog.get(i).get(fciLA.getIdx("ak_num")));
 					if(itrID > maxID){
 						maxID = itrID;
 					}
@@ -310,11 +310,11 @@ public class ML_CreateAK extends JFrame {
 				System.out.println("DONE");
 				//calc basic perf data
 				System.out.print("--> Calculating Basic AK Performance ... ");
-				String basisPath = "./../baseis/aggregated/ann/ANN_"+String.valueOf(newID)+".txt";
+				String basisPath = "./../out/ak/baseis/ann/ANN_"+String.valueOf(newID)+".txt";
 				ArrayList<String> perf = akey.perfFromBasisFile(basisPath);
 				akey.perfToFileAK(perf);
 				System.out.println("DONE");
-				//calc ak_bim_som and replace in agg_log
+				//calc ak_bso and replace in ak_log
 				System.out.print("--> Calculating BSO AK Performance ... ");
 				akey.bsoPerfToFileAK(true, false);
 				System.out.println("DONE");				
@@ -362,7 +362,7 @@ public class ML_CreateAK extends JFrame {
 	public ArrayList<ArrayList<String>> getMatchingKeys(String bgm, boolean isLong, String method, String sdate, 
 											String edate, String spd, String tvi, String narMask, String indMask){
 		//get data from keys_struct
-		String ksPath = "./../out/ml/"+bgm.toLowerCase()+"/keys_struct.txt";
+		String ksPath = "./../out/sk/log/"+bgm.toLowerCase()+"/keys_struct.txt";
 		FCI fciKS = new FCI(true, ksPath);
 		ArrayList<ArrayList<String>> fc = AhrIO.scanFile(ksPath, ",");
 		ArrayList<ArrayList<String>> goodLines = new ArrayList<ArrayList<String>>();
@@ -410,7 +410,7 @@ public class ML_CreateAK extends JFrame {
 
 	//calc best SKs from selected SKs that give 100% of market states
 	public ArrayList<ArrayList<String>> calcCovKeys(String bgm, boolean isLong, ArrayList<String> keys){
-		String bpath = "./../out/ml/"+bgm.toLowerCase()+"/";
+		String bpath = "./../out/sk/log/"+bgm.toLowerCase()+"/";
 		FCI fciKS = new FCI(true, bpath+"keys_struct.txt");
 		FCI fciKP = new FCI(true, bpath+"keys_perf.txt");
 		ArrayList<ArrayList<String>> ksFile = AhrIO.scanFile(bpath+"keys_struct.txt", ",");
@@ -422,7 +422,7 @@ public class ML_CreateAK extends JFrame {
 			ArrayList<String> line = new ArrayList<String>();
 			line.add(keys.get(i));
 			line.add(kpLine.get(fciKP.getIdx("ms_mask")));
-			line.add(kpLine.get(fciKP.getIdx("test_t_apapt")));
+			line.add(kpLine.get(fciKP.getIdx("true_test_apapt")));
 			msData.add(line);
 		}
 		//sort by true appr
