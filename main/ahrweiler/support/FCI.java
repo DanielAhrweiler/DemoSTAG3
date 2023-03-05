@@ -12,7 +12,7 @@ public class FCI {
 	//global vars
 	boolean has_header;
 	String path;
-	ArrayList<String> col_tags;
+	ArrayList<String> columnTags;
 	ArrayList<ArrayList<String>> log;
 	//constructors
 	public FCI(){
@@ -37,7 +37,7 @@ public class FCI {
 		}
 
 
-		this.col_tags = new ArrayList<String>();
+		this.columnTags = new ArrayList<String>();
 		if(this.has_header){
 			ArrayList<ArrayList<String>> fc = AhrIO.scanFile(this.path, "@");
 			String rawHeader = fc.get(0).get(0);
@@ -45,7 +45,7 @@ public class FCI {
 				String[] splitHead1 = rawHeader.split(",");
 				for(int i = 0; i < splitHead1.length; i++){
 					String[] splitHead2 = splitHead1[i].split(" ");
-					this.col_tags.add(splitHead2[splitHead2.length-1]);
+					this.columnTags.add(splitHead2[splitHead2.length-1]);
 				}
 			}else{
 				System.out.println("WARNING: Actual Header? ==> " + rawHeader);
@@ -59,7 +59,7 @@ public class FCI {
 					is_path_in_file = true;
 					line = this.log.get(i);
 					line.remove(0);
-					this.col_tags = line;
+					this.columnTags = line;
 				}
 			}
 			if(!is_path_in_file){
@@ -67,7 +67,7 @@ public class FCI {
 					if(this.path.contains(this.log.get(i).get(0))){
 						line = this.log.get(i);
 						line.remove(0);
-						this.col_tags = line;					
+						this.columnTags = line;					
 					}
 				}
 			}
@@ -75,18 +75,18 @@ public class FCI {
 
 
 
-		//System.out.println("Col Tags: " + this.col_tags);
+		//System.out.println("Col Tags: " + this.columnTags);
 	}
 
 	
 	//functions
 	public void setDelim(String delim){
 		if(this.has_header){
-			this.col_tags = new ArrayList<String>();
+			this.columnTags = new ArrayList<String>();
 			ArrayList<String> header = AhrIO.scanRow(this.path, delim, 0);
 			for(int i = 0; i < header.size(); i++){
 				String[] splitHead2 = header.get(i).split(" ");
-				this.col_tags.add(splitHead2[splitHead2.length-1]);
+				this.columnTags.add(splitHead2[splitHead2.length-1]);
 			}
 		}
 	}
@@ -95,17 +95,17 @@ public class FCI {
 		return this.has_header;
 	}
 	public String getTag(int idx){
-		return this.col_tags.get(idx);
+		return this.columnTags.get(idx);
 	}
 	public ArrayList<String> getTags(){
-		return this.col_tags;
+		return this.columnTags;
 	}
 	public int getIdx(String tag){
-		int index = this.col_tags.indexOf(tag);
+		int index = this.columnTags.indexOf(tag);
 		return index;
 	}
 	public int getNumOfCols(){
-		return this.col_tags.size();
+		return this.columnTags.size();
 	}
 	public int convertTVI(int tviVal){//like to have headers represent the actual tvi time period
 		int tap = tviVal;			// instead of the tv index number so need to translate

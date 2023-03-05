@@ -10,6 +10,7 @@
 ./../in/scraper/sector/logs/,ticker,exchange,company_name,sector,industry
 ./../data/tmp/bso_multiple.txt,bim,som,trig,yoy,pos_percent
 ./../data/tmp/os_orderlist.txt,date,ticker,intra_appr,inter_appr,trigger_code,buy_price,sell_price,method_appr,days_reserved
+./../data/tmp/os_orderlist_byappr.txt,date,ticker,intra_appr,inter_appr,trigger_code,buy_price,sell_price,method_appr,days_reserved
 ./../../DB_Intrinio/out/MC_Logs/most_recent.txt,ticker,mr_date,mr_mc
 ./../../DB_Intrinio/Clean/ByDate/,ticker,ind0,ind1,ind2,ind3,ind4,ind5,ind6,ind7,ind8,ind9,ind10,ind11,ind12,ind13,ind14,ind15,ind16,ind17,ind18,ind19,ind20,ind21,ind22,ind23,nar_mask,appr_intra1,appr_inter1,appr_intra2,appr_inter2,appr_intra3,appr_inter3,appr_intra5,appr_inter5,appr_intra10,appr_inter10
 ./../../DB_Intrinio/Clean/ByStock/,date,ind0,ind1,ind2,ind3,ind4,ind5,ind6,ind7,ind8,ind9,ind10,ind11,ind12,ind13,ind14,ind15,ind16,ind17,ind18,ind19,ind20,ind21,ind22,ind23,nar_mask,appr_intra1,appr_inter1,appr_intra2,appr_inter2,appr_intra3,appr_inter3,appr_intra5,appr_inter5,appr_intra10,appr_inter10
@@ -24,7 +25,7 @@
 ./../../DB_Intrinio/Main/M_Raw/,date,ind0,ind1,ind2,ind3,ind4,appr_intra1,appr_inter1,appr_intra2,appr_inter2,appr_intra3,appr_inter3,appr_intra5,appr_inter5,appr_intra10,appr_inter10
 ./../../DB_Intrinio/Main/M_Norm/,date,ind0,ind1,ind2,ind3,ind4,appr_intra1,appr_inter1,appr_intra2,appr_inter2,appr_intra3,appr_inter3,appr_intra5,appr_inter5,appr_intra10,appr_inter10
 ./../../DB_Intrinio/Main/legacy.txt,ticker,start_date,end_date
-./../out/ak/baseis/,date,key_num,ttv_code,ticker,score,appr_intra1,appr_inter1,appr_intra2,appr_inter2,appr_intra3,appr_inter3,appr_intra5,appr_inter5,appr_intra10,appr_inter10
-./../out/sk/baseis/,date,key_num,ttv_code,ticker,score,appr_intra1,appr_inter1,appr_intra2,appr_inter2,appr_intra3,appr_inter3,appr_intra5,appr_inter5,appr_intra10,appr_inter10
-./../out/sk/baseis/rnd/,date,key_num,ttv_code,ticker,score,appr
+./../out/ak/baseis/,date,sk_num,ttv_code,ticker,score,appr
+./../out/sk/baseis/,date,sk_num,ttv_code,ticker,score,appr
+./../out/sk/baseis/rnd/,date,sk_num,ttv_code,ticker,score,appr
 ./../out/predictions/,epoch,ak_num,sk_num,call,rank,ticker,score,score_percentile,irl_buy,td_type,profit,method_appr,market_cap,region,sector_code

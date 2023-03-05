@@ -1,4 +1,5 @@
 package ahrweiler.gui;
+import ahrweiler.Globals;
 import ahrweiler.util.*;
 import ahrweiler.support.FCI;
 import ahrweiler.bgm.*;
@@ -17,6 +18,8 @@ import java.util.Comparator;
 
 public class ML_CreateAK extends JFrame {
 
+	final Font plainFont = new Font(Font.SANS_SERIF, Font.PLAIN, 12);
+
 	public ML_CreateAK(){
 		drawGUI();
 	}
@@ -25,7 +28,7 @@ public class ML_CreateAK extends JFrame {
 		//lists and over-arching structs
 		int fxDim = 500;
 		int fyDim = 620;
-		String[] bgmList = {"ANN", "GAD2", "GAB3"};
+		String[] bgmList = {"ANN"};
 		String[] methodList = {"Binomial", "Continuous"};
 		DefaultTableCellRenderer centerRenderer = new DefaultTableCellRenderer();
 		centerRenderer.setHorizontalAlignment(JLabel.CENTER);
@@ -55,19 +58,19 @@ public class ML_CreateAK extends JFrame {
 		bgCall.add(rbShort);
 		JLabel lbMethod = new JLabel("Method:");
 		JComboBox cbMethod = new JComboBox();
+		JLabel lbTargetVar = new JLabel("Target Var:");
+		JComboBox cbTargetVar = new JComboBox();
 		JLabel lbSDate = new JLabel("Start Date:");
-		JTextField tfSDate = new JTextField("2010-01-01");
+		JTextField tfSDate = new JTextField("2016-01-01");
 		JLabel lbEDate = new JLabel("End Date:");
 		JTextField tfEDate = new JTextField("2020-12-31");
 		JLabel lbSPD = new JLabel("SPD:");
-		JTextField tfSPD = new JTextField("20");
-		JLabel lbTVI = new JLabel("TVI:");
-		JTextField tfTVI = new JTextField("1");
+		JTextField tfSPD = new JTextField("10");
 		JLabel lbNarMask = new JLabel("NAR Mask:");
-		JTextField tfNarMask = new JTextField("11x");
+		JTextField tfNarMask = new JTextField("1111");
 		JLabel lbIndMask = new JLabel("Ind Mask:");
 		JTextField tfIndMask = new JTextField("111111111111111111111111");
-		Button bGetKeys = new Button("Get Matching SKs");
+		JButton bGetKeys = new JButton("Get Matching SKs");
 
 		DefaultTableModel dtmSK = new DefaultTableModel();
 		dtmSK.addColumn("Key Num");
@@ -80,8 +83,8 @@ public class ML_CreateAK extends JFrame {
 		JLabel lbBestKeys = new JLabel("Best Keys:");
 		JTextArea taBestKeys = new JTextArea();
 		JLabel lbCov = new JLabel("Coverage :     0.00 %");
-		Button bCheckCov = new Button("Check Coverage");
-		Button bSaveAK = new Button("Save AK");
+		JButton bCheckCov = new JButton("Check Coverage");
+		JButton bSaveAK = new JButton("Save AK");
 		
 		//bounds
 		lbBGM.setBounds(10, 20, 80, 25);
@@ -91,14 +94,14 @@ public class ML_CreateAK extends JFrame {
 		rbShort.setBounds(200, 50, 80, 25);
 		lbMethod.setBounds(10, 80, 80, 25);
 		cbMethod.setBounds(110, 80, 160, 25);
-		lbSDate.setBounds(10, 110, 80, 25);
-		tfSDate.setBounds(110, 110, 80, 25);
-		lbEDate.setBounds(210, 110, 80, 25);
-		tfEDate.setBounds(300, 110, 80, 25);
-		lbSPD.setBounds(10, 140, 80, 25);
-		tfSPD.setBounds(110, 140, 80, 25);
-		lbTVI.setBounds(210, 140, 80, 25);
-		tfTVI.setBounds(300, 140, 80, 25);
+		lbTargetVar.setBounds(10, 110, 80, 25);
+		cbTargetVar.setBounds(110, 110, 160, 25);
+		lbSDate.setBounds(10, 140, 80, 25);
+		tfSDate.setBounds(110, 140, 80, 25);
+		lbEDate.setBounds(210, 140, 80, 25);
+		tfEDate.setBounds(300, 140, 80, 25);
+		lbSPD.setBounds(210, 170, 80, 25);
+		tfSPD.setBounds(300, 170, 80, 25);
 		lbNarMask.setBounds(10, 170, 80, 25);
 		tfNarMask.setBounds(110, 170, 80, 25);
 		lbIndMask.setBounds(10, 200, 70, 25);
@@ -113,12 +116,21 @@ public class ML_CreateAK extends JFrame {
 		bSaveAK.setBounds(10, 575, 180, 30);
 
 		//basic functionality
+		rbLong.setFont(plainFont);
+		rbShort.setFont(plainFont);
 		rbLong.setSelected(true);
+		setButtonStyle(bGetKeys);
+		setButtonStyle(bCheckCov);
+		setButtonStyle(bSaveAK);
 		for(int i = 0; i < bgmList.length; i++){
 			cbBGM.addItem(bgmList[i]);
 		}
 		for(int i = 0; i < methodList.length; i++){
 			cbMethod.addItem(methodList[i]);
+		}
+		cbMethod.setSelectedIndex(1);
+		for(int i = 0; i < Globals.target_var_num; i++){
+			cbTargetVar.addItem(Globals.tvi_monikers[i]);
 		}
 		tSK.getColumnModel().getColumn(0).setCellRenderer(centerRenderer);
 		tSK.getColumnModel().getColumn(1).setCellRenderer(centerRenderer);
@@ -159,7 +171,7 @@ public class ML_CreateAK extends JFrame {
 				String sdate = tfSDate.getText();
 				String edate = tfEDate.getText();
 				String spd = tfSPD.getText();
-				String tvi = tfTVI.getText();
+				String tvi = String.valueOf(cbTargetVar.getSelectedItem());
 				String narMask = tfNarMask.getText();
 				String indMask = tfIndMask.getText();
 				//get matching SKs from keys_struct and best key that give 100% coverage
@@ -287,7 +299,7 @@ public class ML_CreateAK extends JFrame {
 					akLine.add("0");
 				}
 				akLine.add(tfSPD.getText());								//[7]  spd
-				akLine.add(tfTVI.getText());								//[8]  tvi
+				akLine.add(String.valueOf(cbTargetVar.getSelectedIndex()));	//[8]  tvi
 				akLine.add(tfIndMask.getText());							//[9]  ind_mask
 				akLine.add(tfNarMask.getText());							//[10] nar_mask
 				akLine.add(bestKeys);										//[11] best_keys
@@ -334,14 +346,14 @@ public class ML_CreateAK extends JFrame {
 		pInputs.add(rbShort);
 		pInputs.add(lbMethod);
 		pInputs.add(cbMethod);
+		pInputs.add(lbTargetVar);
+		pInputs.add(cbTargetVar);
 		pInputs.add(lbSDate);
 		pInputs.add(tfSDate);
 		pInputs.add(lbEDate);
 		pInputs.add(tfEDate);
 		pInputs.add(lbSPD);
 		pInputs.add(tfSPD);
-		pInputs.add(lbTVI);
-		pInputs.add(tfTVI);
 		pInputs.add(lbNarMask);
 		pInputs.add(tfNarMask);
 		pInputs.add(lbIndMask);
@@ -356,6 +368,12 @@ public class ML_CreateAK extends JFrame {
 		this.add(pKeys);
 		this.add(bSaveAK);
 		this.setVisible(true);
+	}
+	//GUI related, sets style to a JButton
+	public void setButtonStyle(JButton btn){
+		btn.setFont(plainFont);
+		btn.setBackground(new Color(230, 230, 230));
+		btn.setBorder(BorderFactory.createLineBorder(Color.GRAY));
 	}
 
 	//get list of single keys that match params

@@ -15,7 +15,7 @@ public class AD_Acronyms extends JFrame {
 	private String[][] tableData;
 
 	public AD_Acronyms(){
-		tableData = AhrAL.toArr(AhrIO.scanFile("./../in/acronym_ref_table.txt", "~"));
+		tableData = AhrAL.toArr2D(AhrIO.scanFile("./../in/acronym_ref_table.txt", "~"));
 		splitLines(tableData);
 		drawGUI();
 	}
@@ -58,9 +58,6 @@ public class AD_Acronyms extends JFrame {
 											JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
 
 		
-		//component bounds
-
-
 		//basic functionality
 		UIDefaults uiDefs = UIManager.getLookAndFeelDefaults();
 		if(uiDefs.get("Table.alternateRowColor") == null){

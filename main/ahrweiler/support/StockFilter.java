@@ -197,7 +197,7 @@ public class StockFilter {
 		}
 	}
 
-	//apply all filter lines and return all stocks that fall within all ranges
+	//assign sector/industry codes to all tickers from given sector range
 	public void applySecIndFilter(){
 		//cols [0]  ticker
 		//	   [1]  mc
@@ -376,7 +376,6 @@ public class StockFilter {
 			ftext += String.valueOf(itrNAR.getEndVal());
 		}
 		ftext += "\n";
-
 
 		return ftext;		
 	}

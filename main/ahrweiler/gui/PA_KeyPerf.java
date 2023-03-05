@@ -6,15 +6,18 @@ import ahrweiler.support.RCode;
 import ahrweiler.support.OrderSim;
 import ahrweiler.support.StockFilter;
 import ahrweiler.bgm.BGM_Manager;
+import ahrweiler.bgm.AttributesSK;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
+import java.awt.image.BufferedImage;
 import java.util.*;
 import java.io.File;
 
 public class PA_KeyPerf extends JFrame {
 
-	Font monoFont = new Font(Font.MONOSPACED, Font.BOLD, 11);
+	final Font monoFont = new Font(Font.MONOSPACED, Font.BOLD, 11);
+	final Font plainFont = new Font(Font.SANS_SERIF, Font.PLAIN, 12);
 
 	public PA_KeyPerf(){
 		drawGUI();
@@ -27,6 +30,8 @@ public class PA_KeyPerf extends JFrame {
 		sffList.add(0, "None");
 		ArrayList<String> keyNumList = new ArrayList<String>();
 		String[] plotList = {"Appr Distribution", "Trigger Codes", "Portfolio Growth ($)"};
+		String[] baseOut = {"SPD    : " , "Pos %  : " , "APAPT  : " , "Annual % Yield   : ",
+							"Total Section %  : "};
 
 		//layout components
 		int fxDim = 510;
@@ -51,7 +56,7 @@ public class PA_KeyPerf extends JFrame {
 		pBgmInputs.setBorder(BorderFactory.createTitledBorder("Input Params"));
 		pBgmInputs.setLayout(null);
 		JPanel pBgmOutputs = new JPanel();
-		pBgmOutputs.setBounds(10, 295, fxDim-20, 140);
+		pBgmOutputs.setBounds(10, 295, fxDim-20, 150);
 		pBgmOutputs.setBorder(BorderFactory.createTitledBorder("Performance"));
 		pBgmOutputs.setLayout(null);
 
@@ -74,24 +79,27 @@ public class PA_KeyPerf extends JFrame {
 		JTextField tfBgmSDate = new JTextField("2020-01-01");
 		JLabel lbBgmEDate = new JLabel("End Date:");
 		JTextField tfBgmEDate = new JTextField(AhrDate.getTodaysDate());
-		Button bBgmDatesAF = new Button("Autofill");
+		JButton bBgmDatesAF = new JButton("Autofill");
 		JLabel lbBgmBim = new JLabel("BIM:");
 		JTextField tfBgmBim = new JTextField("0.95");
 		JLabel lbBgmSom = new JLabel("SOM:");
 		JTextField tfBgmSom = new JTextField("0.95");
-		Button bBgmBsoAF = new Button("Autofill");
-		JLabel lbBgmMos = new JLabel("MOS ($):");
-		JTextField tfBgmMos = new JTextField("10000");
-		Button bBgmCalcPerf = new Button("Calculate Performance");		//Calc Perf Button
-		JProgressBar pbBgmCalcPerf = new JProgressBar(0, 2000);
-		JLabel lbBgmSPD = new JLabel("SPD    : -");						//Output Panel
-		JLabel lbBgmPosPer = new JLabel("Pos %  : -");
-		JLabel lbBgmTrigPer = new JLabel("Trig % : -");
-		JLabel lbBgmSecPer = new JLabel("Sec %  : -");
-		JLabel lbBgmYoyPer = new JLabel("YoY %  : -");	
+		JButton bBgmBsoAF = new JButton("Autofill");
+		JLabel lbBgmPrincipal = new JLabel("Principal ($):");
+		JTextField tfBgmPrincipal = new JTextField("100000");
+		JLabel lbBgmMop = new JLabel("MOP ($):");
+		JTextField tfBgmMop = new JTextField("10000");
+		JButton bBgmOrdersAF = new JButton("Autofill");
+		JButton bBgmCalcPerf = new JButton("Calculate Performance");	//Calc Perf Button
+		JButton bBgmRunRnd = new JButton("Run Params w/ RND Selection =>");
+		JLabel lbBgmSPD = new JLabel(baseOut[0]);						//Output Panel
+		JLabel lbBgmPosPer = new JLabel(baseOut[1]);
+		JLabel lbBgmAPAPT = new JLabel(baseOut[2]);
+		JLabel lbBgmYoyPer = new JLabel(baseOut[3]);	
+		JLabel lbBgmSecPer = new JLabel(baseOut[4]);
 		JLabel lbBgmPlots = new JLabel("Plot Results: ");
 		JComboBox cbBgmPlots = new JComboBox();
-		Button bBgmPlots = new Button("Plot");
+		JButton bBgmPlots = new JButton("Plot");
 
 
 		//bounds of components
@@ -116,18 +124,21 @@ public class PA_KeyPerf extends JFrame {
 		lbBgmSom.setBounds(215, 160, 80, 25);
 		tfBgmSom.setBounds(295, 160, 80, 25);	
 		bBgmBsoAF.setBounds(385, 160, 80, 25);
-		lbBgmMos.setBounds(10, 195, 80, 25);
-		tfBgmMos.setBounds(105, 195, 80, 25);
-		bBgmCalcPerf.setBounds(10, 250, 180, 40);						//Calc Perf Button
-		pbBgmCalcPerf.setBounds(10, 250, 100, 30);
+		lbBgmPrincipal.setBounds(10, 195, 100, 25);
+		tfBgmPrincipal.setBounds(105, 195, 80, 25);
+		lbBgmMop.setBounds(215, 195, 80, 25);
+		tfBgmMop.setBounds(295, 195, 80, 25);
+		bBgmOrdersAF.setBounds(385, 195, 80, 25);
+		bBgmCalcPerf.setBounds(10, 250, 180, 35);						//Calc Perf Button
+		bBgmRunRnd.setBounds(250, 250, 250, 35);
 		lbBgmSPD.setBounds(10, 20, 200, 20);							//Outputs Panel
 		lbBgmPosPer.setBounds(10, 45, 200, 20);
-		lbBgmTrigPer.setBounds(240, 20, 200, 20);
-		lbBgmSecPer.setBounds(240, 45, 200, 20);
-		lbBgmYoyPer.setBounds(240, 70, 200, 20);
-		lbBgmPlots.setBounds(10, 105, 100, 25);
-		cbBgmPlots.setBounds(110, 105, 210, 25);
-		bBgmPlots.setBounds(330, 105, 50, 25); 
+		lbBgmAPAPT.setBounds(10, 70, 200, 20);
+		lbBgmYoyPer.setBounds(220, 20, 200, 20);
+		lbBgmSecPer.setBounds(220, 70, 200, 20);
+		lbBgmPlots.setBounds(10, 115, 100, 25);
+		cbBgmPlots.setBounds(110, 115, 210, 25);
+		bBgmPlots.setBounds(330, 115, 50, 25); 
 
 		//basic functionality
 		rbAK.setSelected(true);
@@ -139,9 +150,20 @@ public class PA_KeyPerf extends JFrame {
 		for(int i = 0; i < keyNumList.size(); i++){
 			cbKeyNum.addItem(keyNumList.get(i));
 		}
+		rbSK.setFont(plainFont);
+		rbAK.setFont(plainFont);
+		cbTrain.setFont(plainFont);
+		cbTest.setFont(plainFont);
+		cbVerify.setFont(plainFont);
+		setButtonStyle(bBgmDatesAF);
+		setButtonStyle(bBgmBsoAF);
+		setButtonStyle(bBgmOrdersAF);
+		setButtonStyle(bBgmCalcPerf);
+		setButtonStyle(bBgmRunRnd);
+		setButtonStyle(bBgmPlots);
 		lbBgmSPD.setFont(monoFont);
 		lbBgmPosPer.setFont(monoFont);
-		lbBgmTrigPer.setFont(monoFont);
+		lbBgmAPAPT.setFont(monoFont);
 		lbBgmSecPer.setFont(monoFont);
 		lbBgmYoyPer.setFont(monoFont);
 		for(int i = 0; i < plotList.length; i++){
@@ -195,30 +217,88 @@ public class PA_KeyPerf extends JFrame {
 			public void actionPerformed(ActionEvent e){
 				String bgmLC = cbMethod.getSelectedItem().toString().toLowerCase();
 				String knum = cbKeyNum.getSelectedItem().toString();
+				String bim = "ph";
+				String som = "ph";
+				String call = "0";
 				if(rbSK.isSelected()){
 					String kpPath = "./../out/sk/log/"+bgmLC+"/keys_perf.txt";
 					FCI fciKP = new FCI(true, kpPath);
-					ArrayList<String> kpRow = AhrIO.scanRow(kpPath, ",", knum);
-					tfBgmBim.setText(kpRow.get(fciKP.getIdx("bim")));
-					tfBgmSom.setText(kpRow.get(fciKP.getIdx("som")));
-				}else{
-					String alPath = "./../out/ak/log/ak_log.txt";
-					FCI fciAL = new FCI(true, alPath);
-					ArrayList<String> alRow = AhrIO.scanRow(alPath, ",", knum);
-					String call = alRow.get(fciAL.getIdx("call"));
-					String[] bsoParts = alRow.get(fciAL.getIdx("ak_bso")).split("\\|");
-					if(bsoParts.length > 0){
-						tfBgmBim.setText(bsoParts[0]);
-						tfBgmSom.setText(bsoParts[1]);
-					}else{
-						if(call.equals("0")){
-							tfBgmBim.setText("0.95");
-							tfBgmSom.setText("0.95");
-						}else{
-							tfBgmBim.setText("1.05");
-							tfBgmSom.setText("1.05");
-						}
+					ArrayList<String> kpLine = AhrIO.scanRow(kpPath, ",", String.valueOf(knum));
+					call = kpLine.get(fciKP.getIdx("call"));
+					bim = kpLine.get(fciKP.getIdx("bim"));
+					som = kpLine.get(fciKP.getIdx("som"));
+					if(bim.equals("ph")){
+						String laPath = "./../out/ak/log/ak_log.txt";
+						FCI fciLA = new FCI(true, laPath);
+						ArrayList<ArrayList<String>> laFile = AhrIO.scanFile(laPath, ",");
+						for(int i = 0; i < laFile.size(); i++){
+							String bestKeysFull = laFile.get(i).get(fciLA.getIdx("best_keys"));
+							String[] bestKeys = bestKeysFull.split("~");
+							for(int j = 0; j < bestKeys.length; j++){
+								if(bestKeys[j].equals(knum)){
+									String akBimSom = laFile.get(i).get(fciLA.getIdx("ak_bso"));
+									String[] bsoParts = akBimSom.split("\\|");
+									bim = bsoParts[0];
+									som = bsoParts[1];
+									break;
+								}
+							}
+						} 					
 					}
+				}else{
+					String laPath = "./../out/ak/log/ak_log.txt";
+					FCI fciLA = new FCI(true, laPath);
+					ArrayList<String> laLine = AhrIO.scanRow(laPath, ",", String.valueOf(knum));
+					call = laLine.get(fciLA.getIdx("call"));
+					String akBimSom = laLine.get(fciLA.getIdx("ak_bso"));
+					String[] bsoParts = akBimSom.split("\\|");
+					bim = bsoParts[0];
+					som = bsoParts[1];
+				}
+				//if no BSO is found in SK or AK file, set some def vals		
+				if(bim.equals("ph")){
+					if(call.equals("0")){
+						bim = "0.92";
+						som = "0.92";
+					}else{
+						bim = "1.15";
+						som = "0.001";
+					}
+				}
+				tfBgmBim.setText(bim);
+				tfBgmSom.setText(som);
+			}
+		});
+		bBgmOrdersAF.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e){
+				String keyNum = cbKeyNum.getSelectedItem().toString();
+				int tvi = -1;
+				if(rbSK.isSelected()){
+					String ksPath = "./../out/sk/log/keys_struct.txt";
+					FCI fciKS = new FCI(true, ksPath);
+					ArrayList<String> ksRow = AhrIO.scanRow(ksPath, ",", keyNum);
+					tvi = Integer.parseInt(ksRow.get(fciKS.getIdx("tvi")));
+				}else{
+					String ksPath = "./../out/ak/log/ak_log.txt";
+					FCI fciKS = new FCI(true, ksPath);
+					ArrayList<String> ksRow = AhrIO.scanRow(ksPath, ",", keyNum);
+					tvi = Integer.parseInt(ksRow.get(fciKS.getIdx("tvi")));
+				}
+				if(tvi == 0 || tvi == 1){//1-day
+					tfBgmPrincipal.setText("100000");
+					tfBgmMop.setText("10000");
+				}else if(tvi == 2 || tvi == 3){//2-day
+					tfBgmPrincipal.setText("200000");
+					tfBgmMop.setText("10000");
+				}else if(tvi == 4 || tvi == 5){//3-day
+					tfBgmPrincipal.setText("300000");
+					tfBgmMop.setText("10000");
+				}else if(tvi == 6 || tvi == 7){//5-day
+					tfBgmPrincipal.setText("500000");
+					tfBgmMop.setText("10000");
+				}else if(tvi == 8 || tvi == 9){//10-day
+					tfBgmPrincipal.setText("1000000");
+					tfBgmMop.setText("10000");
 				}
 			}
 		});
@@ -246,6 +326,8 @@ public class PA_KeyPerf extends JFrame {
 				}else{
 					ttvMask += "0";
 				}
+				double principal = Double.parseDouble(tfBgmPrincipal.getText());
+				double maxOrderPrice = Double.parseDouble(tfBgmMop.getText());
 				//create OrderSim obj and calc the order list
 				OrderSim osim;
 				if(rbSK.isSelected()){
@@ -257,16 +339,17 @@ public class PA_KeyPerf extends JFrame {
 				osim.setBIM(Double.parseDouble(tfBgmBim.getText()));
 				osim.setSOM(Double.parseDouble(tfBgmSom.getText()));
 				osim.setTtvMask(ttvMask);
-				osim.setMaxOrderSize(Double.parseDouble(tfBgmMos.getText()));
+				osim.setPrincipal(principal);
+				osim.setMaxOrderPrice(maxOrderPrice);
 				osim.calcOrderList();
-				lbBgmSPD.setText("SPD    : "+String.valueOf(osim.getOrderListSPD()) + " (" + 
+				lbBgmSPD.setText(baseOut[0] + String.valueOf(osim.getOrderListSPD()) + " (" + 
 								String.valueOf(osim.getOrderListSize()) + " total)");
-				lbBgmPosPer.setText("Pos %  : " + String.format("%.4f", osim.getPosPer()));
-				lbBgmTrigPer.setText("Trig % : " + String.format("%.4f", osim.getTrigAppr()));
-				lbBgmSecPer.setText("Sec %  : " + String.format("%.4f", osim.getSecAppr()));
-				lbBgmYoyPer.setText("YoY %  : " + String.format("%.4f", osim.getYoyAppr()));
+				lbBgmPosPer.setText(baseOut[1] + String.format("%.2f", (osim.getPosPer()*100.0)));
+				lbBgmAPAPT.setText(baseOut[2] + String.format("%.4f", osim.getTrigAppr()));
+				lbBgmYoyPer.setText(baseOut[3] + String.format("%.4f", osim.getYoyAppr()));
+				lbBgmSecPer.setText(baseOut[4] + String.format("%.4f", osim.getSecAppr()));
 				//Preserve data for graphing
-				ArrayList<ArrayList<String>> growth = osim.calcGrowth(100000.0);
+				ArrayList<ArrayList<String>> growth = osim.calcGrowth(principal);
 				ArrayList<String> growthHeader = new ArrayList<String>();
 				growthHeader.add("date");
 				growthHeader.add("growth");
@@ -302,25 +385,29 @@ public class PA_KeyPerf extends JFrame {
 					String titleCdf = "All Method Appr %s for "+kmonik+" in CDF";
 					xdim = 600;
 					ydim = 300;
-					//get all trig %s from orderlist, bounds from orderlist_byappr
-					String olPath = "./../data/tmp/os_orderlist.txt";
+					//get all trig %s (while trimming) from orderlist, bounds from orderlist_byappr
+					String olPath = "./../data/tmp/os_orderlist_byappr.txt";
 					FCI fciOL = new FCI(false, olPath);
-					ArrayList<String> trigStr = AhrIO.scanCol(olPath, ",", fciOL.getIdx("method_appr"));
-					ArrayList<Double> trig = new ArrayList<Double>();
-					for(int i = 0; i < trigStr.size(); i++){
-						trig.add(Double.parseDouble(trigStr.get(i)));
-					} 
-					ArrayList<ArrayList<String>> olByApprs = AhrIO.scanFile("./../data/tmp/os_orderlist_byappr.txt",",");
-					double loBound = Double.parseDouble(olByApprs.get(0).get(fciOL.getIdx("method_appr")));
-					double hiBound = Double.parseDouble(olByApprs.get(olByApprs.size()-1).get(fciOL.getIdx("method_appr")));
+					ArrayList<String> methAppr = AhrIO.scanCol(olPath, ",", fciOL.getIdx("method_appr"));
+					ArrayList<Double> trimAppr = new ArrayList<Double>();
+					double trimVal = 0.025;	//0-1, what % of vals you want trimmed on top & bot
+					int startTrim = (int)((double)methAppr.size() * trimVal);
+					int endTrim = (int)((double)methAppr.size() - ((double)methAppr.size() * trimVal));
+					System.out.println("StartTrim = "+startTrim+"  |  EndTrim = "+endTrim+"  |  "+
+									"Count = "+methAppr.size());
+					for(int i = startTrim; i < endTrim; i++){
+						trimAppr.add(Double.parseDouble(methAppr.get(i)));
+					}
+					double loBound = trimAppr.get(0) - 1.0;
+					double hiBound = trimAppr.get(trimAppr.size()-1) + 1.0;
 					//create R Box & Whisker
 					RCode rcBaw = new RCode();
 					rcBaw.setTitle(titleBaw);
 					rcBaw.setXLabel("");
 					rcBaw.setYLabel("Appreciation (%)");
-					rcBaw.limY(loBound, hiBound);
+					rcBaw.hardLimY(loBound, hiBound);
 					rcBaw.flipCoords();
-					rcBaw.createBAW(trig, plotPathBaw, xdim, ydim);
+					rcBaw.createBAW(trimAppr, plotPathBaw, xdim, ydim);
 					rcBaw.printCode();
 					rcBaw.writeCode("./../data/r/rscripts/pa_distn_baw.R");
 					rcBaw.runScript("./../data/r/rscripts/pa_distn_baw.R");
@@ -329,8 +416,8 @@ public class PA_KeyPerf extends JFrame {
 					rcCDF.setTitle(titleCdf);
 					rcCDF.setXLabel("Appreciation (%)");
 					rcCDF.setYLabel("Cumulative Probability");
-					rcCDF.limX(loBound, hiBound);
-					rcCDF.createCDF(trig, plotPathCdf, xdim, ydim);
+					rcCDF.hardLimX(loBound, hiBound);
+					rcCDF.createCDF(trimAppr, plotPathCdf, xdim, ydim);
 					rcCDF.printCode();
 					rcCDF.writeCode("./../data/r/rscripts/pa_distn_cdf.R");
 					rcCDF.runScript("./../data/r/rscripts/pa_distn_cdf.R");
@@ -387,10 +474,10 @@ public class PA_KeyPerf extends JFrame {
 					String scriptPath = "./../data/r/rscripts/pa_portgrowth.R";
 					String bimStr = tfBgmBim.getText();
 					String somStr = tfBgmSom.getText();
-					String mosStr = tfBgmMos.getText();
+					String mopStr = tfBgmMop.getText();
 					ArrayList<String> fdates = AhrIO.scanCol(dataPath, ",", 0);
 					fdates.remove(0);
-					String plotTitle = "Portfolio Growth "+kmonik+" ($)  [BIM = "+bimStr+", SOM = "+somStr+", MOS = "+mosStr+"]";
+					String plotTitle = "Portfolio Growth "+kmonik+" ($)  [BIM = "+bimStr+", SOM = "+somStr+", MOP = "+mopStr+"]";
 					String startTrainDate = "";
 					String endTrainDate = "";
 					if(rbSK.isSelected()){
@@ -459,13 +546,16 @@ public class PA_KeyPerf extends JFrame {
 		pBgmInputs.add(lbBgmSom);
 		pBgmInputs.add(tfBgmSom);
 		pBgmInputs.add(bBgmBsoAF);
-		pBgmInputs.add(lbBgmMos);
-		pBgmInputs.add(tfBgmMos);
+		pBgmInputs.add(lbBgmPrincipal);
+		pBgmInputs.add(tfBgmPrincipal);
+		pBgmInputs.add(lbBgmMop);
+		pBgmInputs.add(tfBgmMop);
+		pBgmInputs.add(bBgmOrdersAF);
 		pBgmOutputs.add(lbBgmSPD);
 		pBgmOutputs.add(lbBgmPosPer);
-		pBgmOutputs.add(lbBgmTrigPer);
-		pBgmOutputs.add(lbBgmSecPer);
+		pBgmOutputs.add(lbBgmAPAPT);
 		pBgmOutputs.add(lbBgmYoyPer);
+		pBgmOutputs.add(lbBgmSecPer);
 		pBgmOutputs.add(lbBgmPlots);
 		pBgmOutputs.add(cbBgmPlots);
 		pBgmOutputs.add(bBgmPlots);
@@ -490,14 +580,10 @@ public class PA_KeyPerf extends JFrame {
 		ButtonGroup bgCall = new ButtonGroup();
 		bgCall.add(rbLong);
 		bgCall.add(rbShort);
+		JLabel lbTargetVar = new JLabel("Target Var :");
+		JComboBox cbTargetVar = new JComboBox();
 		JLabel lbSampleSize = new JLabel("Sample Size:");
 		JTextField tfSampleSize = new JTextField("30");
-		JLabel lbRndMos = new JLabel("MOS ($):");
-		JTextField tfRndMos = new JTextField("10000");
-		JLabel lbTVI = new JLabel("TVI:");
-		JComboBox cbTVI = new JComboBox();
-		JLabel lbMsMask = new JLabel("MS Mask:");
-		JTextField tfMsMask = new JTextField("xxxxxxxx");
 		JLabel lbRndSDate = new JLabel("Start Date:");
 		JTextField tfRndSDate = new JTextField("2020-01-01");
 		JLabel lbRndEDate = new JLabel("End Date:");
@@ -506,48 +592,54 @@ public class PA_KeyPerf extends JFrame {
 		JTextField tfRndBim = new JTextField("0.95");
 		JLabel lbRndSom = new JLabel("SOM:");
 		JTextField tfRndSom = new JTextField("0.95");
+		JLabel lbRndPrincipal = new JLabel("Principal ($):");
+		JTextField tfRndPrincipal = new JTextField("100000");
+		JLabel lbRndMop = new JLabel("MOP ($):");
+		JTextField tfRndMop = new JTextField("10000");
 		JLabel lbFilter = new JLabel("Stock Filter:");
 		JComboBox cbFilter = new JComboBox();
-		Button bPrintFilter = new Button("Print Info");
-		Button bCreateNewFilter = new Button("Create New");
-		Button bRndCalcPerf = new Button("Calculate Performance");
-		JLabel lbRndSPD = new JLabel("SPD    : -");						//Output Panel
-		JLabel lbRndPosPer = new JLabel("Pos %  : -");
-		JLabel lbRndTrigPer = new JLabel("Trig % : -");
-		JLabel lbRndSecPer = new JLabel("Sec %  : -");
-		JLabel lbRndYoyPer = new JLabel("YoY %  : -");
+		JButton bPrintFilter = new JButton("Print Info");
+		JButton bCreateNewFilter = new JButton("Create New");
+		JButton bRndCalcPerf = new JButton("Calculate Performance");
+		JLabel lbRndSPD = new JLabel(baseOut[0]);						//Output Panel
+		JLabel lbRndPosPer = new JLabel(baseOut[1]);
+		JLabel lbRndAPAPT = new JLabel(baseOut[2]);
+		JLabel lbRndYoyPer = new JLabel(baseOut[3]);
+		JLabel lbRndSecPer = new JLabel(baseOut[4]);
 		JLabel lbRndPlots = new JLabel("Plot Results: ");
 		JComboBox cbRndPlots = new JComboBox();
-		Button bRndPlots = new Button("Plot");
+		JButton bRndPlots = new JButton("Plot");
 
 		//bounds of components
 		lbCall.setBounds(10, 20, 100, 25);
 		rbLong.setBounds(95, 20, 60, 25);
 		rbShort.setBounds(170, 20, 70, 25);
-		lbTVI.setBounds(10, 55, 80, 25);
-		cbTVI.setBounds(110, 55, 180, 25);
-		lbSampleSize.setBounds(10, 90, 100, 25);
-		tfSampleSize.setBounds(110, 90, 80, 25);
-		lbRndMos.setBounds(260, 90, 80, 25);
-		tfRndMos.setBounds(340, 90, 80, 25);
-		lbRndSDate.setBounds(10, 125, 90, 25);
-		tfRndSDate.setBounds(110, 125, 80, 25);
-		lbRndEDate.setBounds(260, 125, 80, 25);
-		tfRndEDate.setBounds(340, 125, 80, 25);
-		lbRndBim.setBounds(10, 160, 80, 25);
-		tfRndBim.setBounds(110, 160, 80, 25);
-		lbRndSom.setBounds(260, 160, 80, 25);
-		tfRndSom.setBounds(340, 160, 80, 25);
+		lbTargetVar.setBounds(10, 55, 100, 25);
+		cbTargetVar.setBounds(110, 55, 130, 25);
+		lbSampleSize.setBounds(270, 55, 100, 25);
+		tfSampleSize.setBounds(370, 55, 80, 25);
+		lbRndSDate.setBounds(10, 90, 90, 25);
+		tfRndSDate.setBounds(110, 90, 80, 25);
+		lbRndEDate.setBounds(270, 90, 80, 25);
+		tfRndEDate.setBounds(370, 90, 80, 25);
+		lbRndBim.setBounds(10, 125, 80, 25);
+		tfRndBim.setBounds(110, 125, 80, 25);
+		lbRndSom.setBounds(270, 125, 80, 25);
+		tfRndSom.setBounds(370, 125, 80, 25);
+		lbRndPrincipal.setBounds(10, 160, 100, 25);
+		tfRndPrincipal.setBounds(110, 160, 80, 25);
+		lbRndMop.setBounds(270, 160, 80, 25);
+		tfRndMop.setBounds(370, 160, 80, 25);
 		lbFilter.setBounds(10, 195, 100, 25);
-		cbFilter.setBounds(110, 195, 120, 25);
-		bPrintFilter.setBounds(250, 195, 90, 30);
-		bCreateNewFilter.setBounds(350, 195, 90, 30);
-		bRndCalcPerf.setBounds(10, 250, 180, 40);
+		cbFilter.setBounds(110, 195, 130, 25);
+		bPrintFilter.setBounds(260, 195, 85, 25);
+		bCreateNewFilter.setBounds(370, 195, 85, 25);
+		bRndCalcPerf.setBounds(10, 250, 180, 35);
 		lbRndSPD.setBounds(10, 20, 200, 20);							//Outputs Panel
 		lbRndPosPer.setBounds(10, 45, 200, 20);
-		lbRndTrigPer.setBounds(240, 20, 200, 20);
-		lbRndSecPer.setBounds(240, 45, 200, 20);
-		lbRndYoyPer.setBounds(240, 70, 200, 20);
+		lbRndAPAPT.setBounds(10, 70, 200, 20);
+		lbRndYoyPer.setBounds(240, 20, 200, 20);
+		lbRndSecPer.setBounds(240, 70, 200, 20);
 		lbRndPlots.setBounds(10, 105, 100, 25);
 		cbRndPlots.setBounds(110, 105, 210, 25);
 		bRndPlots.setBounds(330, 105, 50, 25);
@@ -555,14 +647,20 @@ public class PA_KeyPerf extends JFrame {
 		//basic functionality
 		rbLong.setSelected(true);
 		for(int i = 0; i < Globals.target_var_num; i++){
-			cbTVI.addItem(Globals.tvi_monikers[i]);
+			cbTargetVar.addItem(Globals.tvi_monikers[i]);
 		}
 		for(int i = 0; i < sffList.size(); i++){
 			cbFilter.addItem(sffList.get(i));
 		}
+		rbLong.setFont(plainFont);
+		rbShort.setFont(plainFont);
+		setButtonStyle(bPrintFilter);
+		setButtonStyle(bCreateNewFilter);
+		setButtonStyle(bRndCalcPerf);
+		setButtonStyle(bRndPlots);
 		lbRndSPD.setFont(monoFont);
 		lbRndPosPer.setFont(monoFont);
-		lbRndTrigPer.setFont(monoFont);
+		lbRndAPAPT.setFont(monoFont);
 		lbRndSecPer.setFont(monoFont);
 		lbRndYoyPer.setFont(monoFont);
 		for(int i = 0; i < plotList.length; i++){
@@ -588,6 +686,36 @@ public class PA_KeyPerf extends JFrame {
 				cbFilter.addItem(filterName);
 			}
 		});
+		bBgmRunRnd.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e){
+				//move params to RND pane
+				String keyNum = cbKeyNum.getSelectedItem().toString();
+				int tvi = -1;
+				String spd = "";
+				String ksPath = "";
+				if(rbSK.isSelected()){
+					ksPath = "./../out/sk/log/keys_struct.txt";
+				}else{
+					ksPath = "./../out/ak/log/ak_log.txt";
+				}
+				FCI fciKS = new FCI(true, ksPath);
+				ArrayList<String> ksRow = AhrIO.scanRow(ksPath, ",", keyNum);
+				tvi = Integer.parseInt(ksRow.get(fciKS.getIdx("tvi")));
+				spd = ksRow.get(fciKS.getIdx("spd"));
+				cbTargetVar.setSelectedIndex(tvi);
+				tfSampleSize.setText(spd);
+				tfRndSDate.setText(tfBgmSDate.getText());
+				tfRndEDate.setText(tfBgmEDate.getText());
+				tfRndBim.setText(tfBgmBim.getText());
+				tfRndSom.setText(tfBgmSom.getText());
+				tfRndPrincipal.setText(tfBgmPrincipal.getText());
+				tfRndMop.setText(tfBgmMop.getText());
+				//run RND calc perf
+				bRndCalcPerf.doClick();
+				//move focus to RND pane
+				tpKeyPerf.setSelectedIndex(1);
+			}
+		});
 		bRndCalcPerf.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e){
 				//suspend GUI to while in progress
@@ -596,8 +724,8 @@ public class PA_KeyPerf extends JFrame {
 				bRndCalcPerf.setEnabled(false);
 				bRndPlots.setEnabled(false);
 				setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
-
 				//setup attrs from GUI
+				AttributesSK kattr = new AttributesSK();
 				String sdate = tfRndSDate.getText();
 				String edate = tfRndEDate.getText();
 				int sampleSize = 30;	//def val
@@ -607,20 +735,36 @@ public class PA_KeyPerf extends JFrame {
 				}
 				int tvi = 6;			//def val, 6 = 5-Day Inter %
 				try{
-					tvi = cbTVI.getSelectedIndex();
+					tvi = cbTargetVar.getSelectedIndex();
+				}catch(NumberFormatException ex){
+				}
+				double principal = 100000.0;
+				try{
+					principal = Double.parseDouble(tfRndPrincipal.getText());
+				}catch(NumberFormatException ex){
+				}
+				double maxOrderPrice = 10000;
+				try{
+					maxOrderPrice = Double.parseDouble(tfRndMop.getText());
 				}catch(NumberFormatException ex){
 				}
 				String msMask = "xxxxxxxx";
 				String narMask = "1111";
+				kattr.setSDate(sdate);
+				kattr.setEDate(edate);
+				kattr.setSPD(sampleSize);
+				kattr.setTVI(tvi);
+				kattr.setMsMask(msMask);
+				kattr.setNarMask(narMask);
 				//create rnd basis file from attrs
-				BGM_Manager bgmm = new BGM_Manager();
-				bgmm.genBasisRnd(sdate, edate, sampleSize, tvi, msMask, narMask, 1.0);
+				BGM_Manager bgmm = new BGM_Manager(kattr);
+				bgmm.genBasisRnd(1.0);
 				//get rnd basis file
 				String kpPath = "./../out/sk/log/rnd/keys_perf.txt";
 				ArrayList<ArrayList<String>> kpFile = AhrIO.scanFile(kpPath, ",");
 				FCI fciKP = new FCI(true, kpPath);
 				int rndKeyNum = Integer.parseInt(kpFile.get(kpFile.size()-1).get(fciKP.getIdx("sk_num")));
-				String bsPath = "./../out/sk/baseis/rnd/rnd_tmp_"+String.valueOf(rndKeyNum)+".txt";
+				String bsPath = "./../out/sk/baseis/rnd/RND_"+String.valueOf(rndKeyNum)+".txt";
 				File rndBasisFile = new File(bsPath);
 				if(rndBasisFile.exists()){
 					OrderSim osim = new OrderSim(bsPath);
@@ -629,17 +773,19 @@ public class PA_KeyPerf extends JFrame {
 					osim.setTVI(tvi);
 					osim.setBIM(Double.parseDouble(tfRndBim.getText()));
 					osim.setSOM(Double.parseDouble(tfRndSom.getText()));
+					osim.setPrincipal(principal);
+					osim.setMaxOrderPrice(maxOrderPrice);
 					osim.setTtvMask("111");
 					osim.calcOrderList();
 					//show results
-					lbRndSPD.setText("SPD    : "+String.valueOf(osim.getOrderListSPD()) + " (" + 
+					lbRndSPD.setText(baseOut[0] + String.valueOf(osim.getOrderListSPD()) + " (" + 
 									String.valueOf(osim.getOrderListSize()) + " total)");
-					lbRndPosPer.setText("Pos %  : " + String.format("%.4f", osim.getPosPer()));
-					lbRndTrigPer.setText("Trig % : " + String.format("%.4f", osim.getTrigAppr()));
-					lbRndSecPer.setText("Sec %  : " + String.format("%.4f", osim.getSecAppr()));
-					lbRndYoyPer.setText("YoY %  : " + String.format("%.4f", osim.getYoyAppr()));
+					lbRndPosPer.setText(baseOut[1] + String.format("%.2f", (osim.getPosPer()*100.0)));
+					lbRndAPAPT.setText(baseOut[2] + String.format("%.4f", osim.getTrigAppr()));
+					lbRndYoyPer.setText(baseOut[3] + String.format("%.4f", osim.getYoyAppr()));
+					lbRndSecPer.setText(baseOut[4] + String.format("%.4f", osim.getSecAppr()));
 					//preserve data for graphing
-					ArrayList<ArrayList<String>> growth = osim.calcGrowth(100000.0);
+					ArrayList<ArrayList<String>> growth = osim.calcGrowth(principal);
 					ArrayList<String> growthHeader = new ArrayList<String>();
 					growthHeader.add("date");
 					growthHeader.add("growth");
@@ -671,27 +817,40 @@ public class PA_KeyPerf extends JFrame {
 					String titleCdf = "CDF for All Appr %s for RND Method";
 					xdim = 600;
 					ydim = 300;
-					//get all trig %s from orderlist, create Box & Whisker
-					String olPath = "./../data/tmp/os_orderlist.txt";
+
+					//get all trig %s (while trimming) from orderlist, bounds from orderlist_byappr
+					String olPath = "./../data/tmp/os_orderlist_byappr.txt";
 					FCI fciOL = new FCI(false, olPath);
-					ArrayList<String> trigStr = AhrIO.scanCol(olPath, ",", fciOL.getIdx("method_appr"));
-					ArrayList<Double> trig = new ArrayList<Double>();
-					for(int i = 0; i < trigStr.size(); i++){
-						trig.add(Double.parseDouble(trigStr.get(i)));
-					} 
+					ArrayList<String> methAppr = AhrIO.scanCol(olPath, ",", fciOL.getIdx("method_appr"));
+					ArrayList<Double> trimAppr = new ArrayList<Double>();
+					double trimVal = 0.025;	//0-1, what % of vals you want trimmed on top & bot
+					int startTrim = (int)((double)methAppr.size() * trimVal);
+					int endTrim = (int)((double)methAppr.size() - ((double)methAppr.size() * trimVal));
+					System.out.println("StartTrim = "+startTrim+"  |  EndTrim = "+endTrim+"  |  "+
+									"Count = "+methAppr.size());
+					for(int i = startTrim; i < endTrim; i++){
+						trimAppr.add(Double.parseDouble(methAppr.get(i)));
+					}
+					double loBound = trimAppr.get(0) - 1.0;
+					double hiBound = trimAppr.get(trimAppr.size()-1) + 1.0;
+					//calc B&W plot
 					RCode rcBaw = new RCode();
 					rcBaw.setTitle(titleBaw);
-					rcBaw.limY(-10, 30);
+					rcBaw.setXLabel("");
+					rcBaw.setYLabel("Appreciation (%)");
+					rcBaw.hardLimY(loBound, hiBound);
 					rcBaw.flipCoords();
-					rcBaw.createBAW(trig, plotPathBaw, xdim, ydim);
+					rcBaw.createBAW(trimAppr, plotPathBaw, xdim, ydim);
 					rcBaw.printCode();
 					rcBaw.writeCode("./../data/r/rscripts/pa_distn_baw.R");
 					rcBaw.runScript("./../data/r/rscripts/pa_distn_baw.R");
 					//calc CDF plot
 					RCode rcCDF = new RCode();
 					rcCDF.setTitle(titleCdf);
-					rcCDF.limX(-10, 30);
-					rcCDF.createCDF(trig, plotPathCdf, xdim, ydim);
+					rcCDF.setXLabel("Appreciation (%)");
+					rcCDF.setYLabel("Cumulative Probability");
+					rcCDF.hardLimX(loBound, hiBound);
+					rcCDF.createCDF(trimAppr, plotPathCdf, xdim, ydim);
 					rcCDF.printCode();
 					rcCDF.writeCode("./../data/r/rscripts/pa_distn_cdf.R");
 					rcCDF.runScript("./../data/r/rscripts/pa_distn_cdf.R");
@@ -749,10 +908,9 @@ public class PA_KeyPerf extends JFrame {
 					String scriptPath = "./../data/r/rscripts/pa_portgrowth.R";
 					String bimStr = tfRndBim.getText();
 					String somStr = tfRndSom.getText();
-					String mosStr = tfRndMos.getText();
+					String mopStr = tfRndMop.getText();
 					//other plot attrs
-					String plotTitle = "Portfolio Growth ($)  [BIM = "+bimStr+", SOM = "+somStr+", MOS = "+mosStr+"]";
-
+					String plotTitle = "Portfolio Growth ($)  [BIM = "+bimStr+", SOM = "+somStr+", MOP = "+mopStr+"]";
 					//create growth graph
 					RCode rcode = new RCode();
 					rcode.setXLabel("Date");
@@ -783,10 +941,10 @@ public class PA_KeyPerf extends JFrame {
 		pRndInputs.add(lbCall);
 		pRndInputs.add(rbLong);
 		pRndInputs.add(rbShort);
+		pRndInputs.add(lbTargetVar);
+		pRndInputs.add(cbTargetVar);
 		pRndInputs.add(lbSampleSize);
 		pRndInputs.add(tfSampleSize);
-		pRndInputs.add(lbTVI);
-		pRndInputs.add(cbTVI);
 		pRndInputs.add(lbRndSDate);
 		pRndInputs.add(tfRndSDate);
 		pRndInputs.add(lbRndEDate);
@@ -795,15 +953,17 @@ public class PA_KeyPerf extends JFrame {
 		pRndInputs.add(tfRndBim);
 		pRndInputs.add(lbRndSom);
 		pRndInputs.add(tfRndSom);
+		pRndInputs.add(lbRndPrincipal);
+		pRndInputs.add(tfRndPrincipal);
+		pRndInputs.add(lbRndMop);
+		pRndInputs.add(tfRndMop);
 		pRndInputs.add(lbFilter);
 		pRndInputs.add(cbFilter);
 		pRndInputs.add(bPrintFilter);
 		pRndInputs.add(bCreateNewFilter);
-		pRndInputs.add(lbRndMos);
-		pRndInputs.add(tfRndMos);
 		pRndOutputs.add(lbRndSPD);
 		pRndOutputs.add(lbRndPosPer);
-		pRndOutputs.add(lbRndTrigPer);
+		pRndOutputs.add(lbRndAPAPT);
 		pRndOutputs.add(lbRndSecPer);
 		pRndOutputs.add(lbRndYoyPer);
 		pRndOutputs.add(lbRndPlots);
@@ -813,6 +973,7 @@ public class PA_KeyPerf extends JFrame {
 		//add everything together
 		pBGM.add(pBgmInputs);
 		pBGM.add(bBgmCalcPerf);
+		pBGM.add(bBgmRunRnd);
 		pBGM.add(pBgmOutputs);
 		pRND.add(pRndInputs);
 		pRND.add(bRndCalcPerf);
@@ -821,6 +982,13 @@ public class PA_KeyPerf extends JFrame {
 		tpKeyPerf.add("RND Perf", pRND);
 		this.add(tpKeyPerf);
 		this.setVisible(true);
+	}
+
+	//GUI related, set specific style for a JButton
+	public void setButtonStyle(JButton btn){
+		btn.setFont(plainFont);
+		btn.setBackground(new Color(230, 230, 230));
+		btn.setBorder(BorderFactory.createLineBorder(Color.GRAY));
 	}
 
 	//gets list of all possible keys given BGM and SK or AK

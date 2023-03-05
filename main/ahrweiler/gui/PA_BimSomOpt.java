@@ -13,6 +13,8 @@ import javax.swing.table.DefaultTableCellRenderer;
 
 public class PA_BimSomOpt extends JFrame {
 
+	final Font plainFont = new Font(Font.SANS_SERIF, Font.PLAIN, 12);
+
 	public PA_BimSomOpt(){
 		drawGUI();
 	}
@@ -21,13 +23,13 @@ public class PA_BimSomOpt extends JFrame {
 		//lists and over-arching data
 		int fxDim = 500;
 		int fyDim = 620;
-		String[] bgmList = {"ANN", "GAD2", "GAB3"};
+		String[] bgmList = {"ANN"};
 		Font monoFont = new Font(Font.MONOSPACED, Font.BOLD, 11);
-		String[] baseOut1 = {"Trades Positive : ", "BIM Triggered   : ", "SOM Triggered   : ", "Throughput Rate : ", 
-								"YoY Appr        : "};
-		String[] baseOut2 = {"Best BIM : ", "Best SOM : ", "Best YoY : ",
-							 "Worst BIM: ", "Worst SOM: ", "Worst YoY: ",
-							 "Avg YoY  : "};
+		String[] baseOut1 = {"Trades Positive : ", "BIM Triggered   : ", "SOM Triggered   : ", "Avg Trade Len   : ", 
+								"APY Appr        : "};
+		String[] baseOut2 = {"Best BIM : ", "Best SOM : ", "Best APY : ",
+							 "Worst BIM: ", "Worst SOM: ", "Worst APY: ",
+							 "Avg APY  : "};
 		String[] outHeader = {"", "% of Tot", "Close %", "Intra %", "Trig %"};
 		String[][] outData = {{"All Lines", "0.0", "0.0", "0.0", "0.0"},
 							  {"Open Triggered", "0.0", "0.0", "0.0", "0.0"},
@@ -80,12 +82,12 @@ public class PA_BimSomOpt extends JFrame {
 		JTextField tfSDate1 = new JTextField();
 		JLabel lbEDate1 = new JLabel("End Date:");
 		JTextField tfEDate1 = new JTextField();
-		Button bDatesAF1 = new Button("Autofill");
+		JButton bDatesAF1 = new JButton("Autofill");
 		JLabel lbBim = new JLabel("BIM:");
 		JTextField tfBim = new JTextField();
 		JLabel lbSom = new JLabel("SOM:");
 		JTextField tfSom = new JTextField();
-		Button bBimSomAF = new Button("Autofill");
+		JButton bBimSomAF = new JButton("Autofill");
 		JLabel lbMinTrig1 = new JLabel("Use Min Triggers?");
 		JRadioButton rbMinYes1 = new JRadioButton("Yes");
 		JRadioButton rbMinNo1 = new JRadioButton("No");
@@ -98,12 +100,12 @@ public class PA_BimSomOpt extends JFrame {
 		ButtonGroup bgUseSKs1 = new ButtonGroup();
 		bgUseSKs1.add(rbUseSKsYes1);
 		bgUseSKs1.add(rbUseSKsNo1);
-		Button bListSKs1 = new Button("List");
-		Button bCompute1 = new Button("Compute");				//compute button
+		JButton bListSKs1 = new JButton("List");
+		JButton bCompute1 = new JButton("Compute");				//compute button
 		JLabel lbPosPer = new JLabel(baseOut1[0]);				//output panel
+		JLabel lbThruRate = new JLabel(baseOut1[3]);
 		JLabel lbTrigBIM = new JLabel(baseOut1[1]);
 		JLabel lbTrigSOM = new JLabel(baseOut1[2]);
-		JLabel lbThruRate = new JLabel(baseOut1[3]);
 		JLabel lbYoyAppr = new JLabel(baseOut1[4]);
 		JTable tApprs = new JTable(outData, outHeader);
 		JScrollPane spApprs = new JScrollPane(tApprs, JScrollPane.VERTICAL_SCROLLBAR_NEVER,
@@ -139,17 +141,26 @@ public class PA_BimSomOpt extends JFrame {
 		rbUseSKsNo1.setBounds(230, 230, 60, 25);
 		bListSKs1.setBounds(300, 230, 50, 25);
 		bCompute1.setBounds(10, 290, 100, 30);				//compute 
-		lbPosPer.setBounds(10, 15, 300, 20);
-		lbTrigBIM.setBounds(10, 35, 300, 20);				//output panel
-		lbTrigSOM.setBounds(10, 55, 300, 20);
-		lbThruRate.setBounds(10, 75, 300, 20);
+		lbPosPer.setBounds(10, 15, 300, 20);				//output panel
+		lbThruRate.setBounds(10, 35, 300, 20);
+		lbTrigBIM.setBounds(10, 55, 300, 20);
+		lbTrigSOM.setBounds(10, 75, 300, 20);
 		lbYoyAppr.setBounds(10, 95, 300, 20);
 		tApprs.setBounds(10, 125, 460, 85);
 		spApprs.setBounds(10, 125, 460, 85);
 		
 		
 		//basic functionality
+		rbSK1.setFont(plainFont);
+		rbAK1.setFont(plainFont);
 		rbAK1.setSelected(true);
+		cbTrain1.setFont(plainFont);
+		cbTest1.setFont(plainFont);
+		cbVerify1.setFont(plainFont);
+		setButtonStyle(bDatesAF1);
+		setButtonStyle(bBimSomAF);
+		setButtonStyle(bListSKs1);
+		setButtonStyle(bCompute1);
 		for(int i = 0; i < bgmList.length; i++){
 			cbBgm1.addItem(bgmList[i]);
 		}
@@ -216,56 +227,71 @@ public class PA_BimSomOpt extends JFrame {
 		});
 		bDatesAF1.addActionListener(new ActionListener(){
 			public void actionPerformed(ActionEvent e){
+				String bgmUC = cbBgm1.getSelectedItem().toString().toUpperCase();
 				String bgmLC = cbBgm1.getSelectedItem().toString().toLowerCase();
 				String knum = cbKeyNum1.getSelectedItem().toString();
+				String bsPath = "";
 				if(rbSK1.isSelected()){
-					String ksPath = "./../out/sk/log/"+bgmLC+"/keys_struct.txt";
-					FCI fciKS = new FCI(true, ksPath);
-					ArrayList<String> fline = AhrIO.scanRow(ksPath, ",", knum);
-					tfSDate1.setText(fline.get(fciKS.getIdx("start_date")));
-					tfEDate1.setText(fline.get(fciKS.getIdx("end_date")));
+					bsPath = "./../out/sk/baseis/"+bgmLC+"/"+bgmUC+"_"+knum+".txt";
 				}else{
-					String alPath = "./../out/ak/log/ak_log.txt";
-					FCI fciAL = new FCI(true, alPath);
-					ArrayList<String> fline = AhrIO.scanRow(alPath, ",", knum);
-					tfSDate1.setText(fline.get(fciAL.getIdx("start_date")));
-					tfEDate1.setText(fline.get(fciAL.getIdx("end_date")));
+					bsPath = "./../out/ak/baseis/"+bgmLC+"/"+bgmUC+"_"+knum+".txt";
 				}
+				FCI fciBS = new FCI(false, bsPath);
+				ArrayList<ArrayList<String>> basis = AhrIO.scanFile(bsPath, ",");
+				tfSDate1.setText(basis.get(0).get(fciBS.getIdx("date")));
+				tfEDate1.setText(basis.get(basis.size()-1).get(fciBS.getIdx("date")));
 			}
 		});
 		bBimSomAF.addActionListener(new ActionListener(){
 			public void actionPerformed(ActionEvent e){
+				String bgmLC = cbBgm1.getSelectedItem().toString().toLowerCase();
+				String knum = cbKeyNum1.getSelectedItem().toString();
 				String bim = "ph";
 				String som = "ph";
 				String call = "0";
 				if(rbSK1.isSelected()){
-					String bgmLC = cbBgm1.getSelectedItem().toString().toLowerCase();
-					String knum = cbKeyNum1.getSelectedItem().toString();
 					String kpPath = "./../out/sk/log/"+bgmLC+"/keys_perf.txt";
 					FCI fciKP = new FCI(true, kpPath);
 					ArrayList<String> kpLine = AhrIO.scanRow(kpPath, ",", String.valueOf(knum));
 					call = kpLine.get(fciKP.getIdx("call"));
 					bim = kpLine.get(fciKP.getIdx("bim"));
 					som = kpLine.get(fciKP.getIdx("som"));
+					if(bim.equals("ph")){
+						String laPath = "./../out/ak/log/ak_log.txt";
+						FCI fciLA = new FCI(true, laPath);
+						ArrayList<ArrayList<String>> laFile = AhrIO.scanFile(laPath, ",");
+						for(int i = 0; i < laFile.size(); i++){
+							String bestKeysFull = laFile.get(i).get(fciLA.getIdx("best_keys"));
+							String[] bestKeys = bestKeysFull.split("~");
+							for(int j = 0; j < bestKeys.length; j++){
+								if(bestKeys[j].equals(knum)){
+									String akBimSom = laFile.get(i).get(fciLA.getIdx("ak_bso"));
+									String[] bsoParts = akBimSom.split("\\|");
+									bim = bsoParts[0];
+									som = bsoParts[1];
+									break;
+								}
+							}
+						} 					
+					}
 				}else{
-					String bgmLC = cbBgm1.getSelectedItem().toString().toLowerCase();
-					String knum = cbKeyNum1.getSelectedItem().toString();
-					String alPath = "./../out/ak/log/ak_log.txt";
-					FCI fciAL = new FCI(true, alPath);
-					ArrayList<String> alLine = AhrIO.scanRow(alPath, ",", String.valueOf(knum));
-					call = alLine.get(fciAL.getIdx("call"));
-					String akBimSom = alLine.get(fciAL.getIdx("ak_bso"));
+					String laPath = "./../out/ak/log/ak_log.txt";
+					FCI fciLA = new FCI(true, laPath);
+					ArrayList<String> laLine = AhrIO.scanRow(laPath, ",", String.valueOf(knum));
+					call = laLine.get(fciLA.getIdx("call"));
+					String akBimSom = laLine.get(fciLA.getIdx("ak_bso"));
 					String[] bsoParts = akBimSom.split("\\|");
 					bim = bsoParts[0];
 					som = bsoParts[1];
-				}			
+				}
+				//if no BSO is found in SK or AK file, set some def vals		
 				if(bim.equals("ph")){
 					if(call.equals("0")){
-						bim = "0.95";
-						som = "0.95";
+						bim = "0.92";
+						som = "0.92";
 					}else{
-						bim = "1.05";
-						som = "1.05";
+						bim = "1.15";
+						som = "0.001";
 					}
 				}
 				tfBim.setText(bim);
@@ -291,6 +317,10 @@ public class PA_BimSomOpt extends JFrame {
 		});
 		bCompute1.addActionListener(new ActionListener(){
 			public void actionPerformed(ActionEvent e){
+				//suspend GUI while working
+				bCompute1.setEnabled(false);
+				setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
+				//setup vars from GUI
 				boolean is_sk = rbSK1.isSelected();
 				String bgm = cbBgm1.getSelectedItem().toString();
 				int knum = Integer.parseInt(cbKeyNum1.getSelectedItem().toString());
@@ -316,6 +346,7 @@ public class PA_BimSomOpt extends JFrame {
 				}
 				boolean is_min_trig = rbMinYes1.isSelected();
 				boolean use_sk_bso = rbUseSKsYes1.isSelected();
+				//calc BIM/SOM Opt data from BGM_Manager
 				ArrayList<ArrayList<String>> data = new ArrayList<ArrayList<String>>();
 				if(is_sk){
 					BGM_Manager skey = new BGM_Manager(bgm, knum);
@@ -324,19 +355,21 @@ public class PA_BimSomOpt extends JFrame {
 					BGM_Manager akey = new BGM_Manager(knum);
 					data = akey.bsoSingle(sdate, edate, bim, som, ttvMask, is_min_trig, use_sk_bso);
 				}
-
-
 				//output results
-				lbPosPer.setText(baseOut1[0] + data.get(0).get(5) + " %");
+				double posPercent = Double.parseDouble(data.get(0).get(5)) * 100.0;
+				lbPosPer.setText(baseOut1[0] + String.format("%.2f", posPercent) + " %");
+				lbThruRate.setText(baseOut1[3] + data.get(0).get(2) + " days");
 				lbTrigBIM.setText(baseOut1[1] + data.get(0).get(0) + " %");
 				lbTrigSOM.setText(baseOut1[2] + data.get(0).get(1) + " %");
-				lbThruRate.setText(baseOut1[3] + data.get(0).get(2));
 				lbYoyAppr.setText(baseOut1[4] + data.get(0).get(4) + " %");
 				for(int i = 0; i < 4; i++){
 					for(int j = 0; j < 4; j++){
 						tApprs.setValueAt(data.get(i+1).get(j), i, j+1);
 					} 
 				}
+				//resume GUI
+				setCursor(null);
+				bCompute1.setEnabled(true);
 			}
 		});
 
@@ -412,7 +445,7 @@ public class PA_BimSomOpt extends JFrame {
 		JTextField tfSDate2 = new JTextField();
 		JLabel lbEDate2 = new JLabel("End Date:");
 		JTextField tfEDate2 = new JTextField();
-		Button bDatesAF2 = new Button("Autofill");
+		JButton bDatesAF2 = new JButton("Autofill");
 		JLabel lbMinTrig2 = new JLabel("Use Min Triggers?");
 		JRadioButton rbMinYes2 = new JRadioButton("Yes");
 		JRadioButton rbMinNo2 = new JRadioButton("No");
@@ -425,8 +458,8 @@ public class PA_BimSomOpt extends JFrame {
 		ButtonGroup bgUseSKs2 = new ButtonGroup();
 		bgUseSKs2.add(rbUseSKsYes2);
 		bgUseSKs2.add(rbUseSKsNo2);
-		Button bListSKs2 = new Button("List");
-		Button bCompute2 = new Button("Compute");				//compute button
+		JButton bListSKs2 = new JButton("List");
+		JButton bCompute2 = new JButton("Compute");				//compute button
 		JLabel lbBestBim = new JLabel(baseOut2[0]);				//output panel
 		JLabel lbBestSom = new JLabel(baseOut2[1]);
 		JLabel lbBestYoy = new JLabel(baseOut2[2]);
@@ -436,7 +469,7 @@ public class PA_BimSomOpt extends JFrame {
 		JLabel lbAvgYoy = new JLabel(baseOut2[6]);
 		JLabel lbDistn = new JLabel("Distribution:");
 		JComboBox cbDistnPlot = new JComboBox();
-		Button bShowPlot = new Button("Show Plot");
+		JButton bShowPlot = new JButton("Show Plot");
 
 		//bounds
 		lbKeyType2.setBounds(10, 20, 80, 25);				//inputs panel
@@ -475,7 +508,16 @@ public class PA_BimSomOpt extends JFrame {
 		bShowPlot.setBounds(265, 110, 80, 25);
 
 		//basic functionality
+		rbSK2.setFont(plainFont);
+		rbAK2.setFont(plainFont);
 		rbAK2.setSelected(true);
+		cbTrain2.setFont(plainFont);
+		cbTest2.setFont(plainFont);
+		cbVerify2.setFont(plainFont);
+		setButtonStyle(bDatesAF2);
+		setButtonStyle(bListSKs2);
+		setButtonStyle(bCompute2);
+		setButtonStyle(bShowPlot);
 		for(int i = 0; i < bgmList.length; i++){
 			cbBgm2.addItem(bgmList[i]);
 		}
@@ -536,21 +578,19 @@ public class PA_BimSomOpt extends JFrame {
 		});
 		bDatesAF2.addActionListener(new ActionListener(){
 			public void actionPerformed(ActionEvent e){
+				String bgmUC = cbBgm2.getSelectedItem().toString().toUpperCase();
 				String bgmLC = cbBgm2.getSelectedItem().toString().toLowerCase();
 				String knum = cbKeyNum2.getSelectedItem().toString();
+				String bsPath = "";
 				if(rbSK2.isSelected()){
-					String ksPath = "./../out/sk/log/"+bgmLC+"/keys_struct.txt";
-					FCI fciKS = new FCI(true, ksPath);
-					ArrayList<String> fline = AhrIO.scanRow(ksPath, ",", knum);
-					tfSDate2.setText(fline.get(fciKS.getIdx("start_date")));
-					tfEDate2.setText(fline.get(fciKS.getIdx("end_date")));
+					bsPath = "./../out/sk/baseis/"+bgmLC+"/"+bgmUC+"_"+knum+".txt";
 				}else{
-					String alPath = "./../out/ak/log/ak_log.txt";
-					FCI fciAL = new FCI(true, alPath);
-					ArrayList<String> fline = AhrIO.scanRow(alPath, ",", knum);
-					tfSDate2.setText(fline.get(fciAL.getIdx("start_date")));
-					tfEDate2.setText(fline.get(fciAL.getIdx("end_date")));
+					bsPath = "./../out/ak/baseis/"+bgmLC+"/"+bgmUC+"_"+knum+".txt";
 				}
+				FCI fciBS = new FCI(false, bsPath);
+				ArrayList<ArrayList<String>> basis = AhrIO.scanFile(bsPath, ",");
+				tfSDate2.setText(basis.get(0).get(fciBS.getIdx("date")));
+				tfEDate2.setText(basis.get(basis.size()-1).get(fciBS.getIdx("date")));
 			}
 		});
 		bCompute2.addActionListener(new ActionListener(){
@@ -720,6 +760,13 @@ public class PA_BimSomOpt extends JFrame {
 		tpBSO.add("Multiple", pMult);
 		this.add(tpBSO);
 		this.setVisible(true);
+	}
+	//GUI related, sets style to a JButton
+	public void setButtonStyle(JButton btn){
+		Font plainFont = new Font(Font.SANS_SERIF, Font.PLAIN, 12);
+		btn.setFont(plainFont);
+		btn.setBackground(new Color(230, 230, 230));
+		btn.setBorder(BorderFactory.createLineBorder(Color.GRAY));
 	}
 
 	//gets list of all possible keys given BGM and SK or AK

@@ -23,12 +23,18 @@ public class RCode {
 	//chart data
 	//ArrayList<ArrayList<String>> melt_data;
 	//plot coord limit vars
-	double xLoLim = Double.MIN_VALUE;
-	double xHiLim = Double.MAX_VALUE;
-	double yLoLim = Double.MIN_VALUE;
-	double yHiLim = Double.MAX_VALUE;
-	boolean limit_x_coords = false;
-	boolean limit_y_coords = false;
+	double hardLimLoX = Double.MIN_VALUE;
+	double hardLimHiX = Double.MAX_VALUE;
+	double hardLimLoY = Double.MIN_VALUE;
+	double hardLimHiY = Double.MAX_VALUE;
+	boolean hard_lim_x = false;
+	boolean hard_lim_y = false;
+	double softLimLoX = Double.MIN_VALUE;
+	double softLimHiX = Double.MAX_VALUE;
+	double softLimLoY = Double.MIN_VALUE;
+	double softLimHiY = Double.MAX_VALUE;
+	boolean soft_lim_x = false;
+	boolean soft_lim_y = false;
 	//intercept lines
 	ArrayList<String> xiVals = new ArrayList<String>();
 	ArrayList<String> yiVals = new ArrayList<String>();
@@ -75,51 +81,39 @@ public class RCode {
 	public void setYLabel(String ylab){
 		this.yLabel = ylab;
 	}
-	public double getLoLimX(){
-		return this.xLoLim;
-	}
-	public void setLoLimX(double xval){
-		this.xLoLim = xval;
-		this.limit_x_coords = true;
-	}
-	public double getHiLimX(){
-		return this.xHiLim;
-	}
-	public void setHiLimX(double xval){
-		this.xHiLim = xval;
-		this.limit_x_coords = true;
-	}
-	public double getLoLimY(){
-		return this.yLoLim;
-	}
-	public void setLoLimY(double yval){
-		this.yLoLim = yval;
-		this.limit_y_coords = true;
-	}
-	public double getHiLimY(){
-		return this.yHiLim;
-	}
-	public void setHiLimY(double yval){
-		this.yHiLim = yval;
-		this.limit_y_coords = true;
-	}
 	
 	//other attr functions
-	public void limX(double lo, double hi){
-		this.xLoLim = lo;
-		this.xHiLim = hi;
-		this.limit_x_coords = true;
+	public void hardLimX(double lo, double hi){//hard lim = visual & points deleted
+		this.hardLimLoX = lo;
+		this.hardLimHiX = hi;
+		this.hard_lim_x = true;
 	}
-	public void limY(double lo, double hi){
-		this.yLoLim = lo;
-		this.yHiLim = hi;
-		this.limit_y_coords = true;
+	public void hardLimY(double lo, double hi){
+		this.hardLimLoY = lo;
+		this.hardLimHiY = hi;
+		this.hard_lim_y = true;
 	}
-	public void turnOffLimX(){
-		this.limit_x_coords = false;
+	public void softLimX(double lo, double hi){//soft lim = just visual
+		this.softLimLoX = lo;
+		this.softLimHiX = hi;
+		this.soft_lim_x = true;
 	}
-	public void turnOffLimY(){
-		this.limit_y_coords = false;
+	public void softLimY(double lo, double hi){
+		this.softLimLoY = lo;
+		this.softLimHiY = hi;
+		this.soft_lim_y = true;
+	}
+	public void turnOffHardLimX(){
+		this.hard_lim_x = false;
+	}
+	public void turnOffHardLimY(){
+		this.hard_lim_y = false;
+	}
+	public void turnOffSoftLimX(){
+		this.soft_lim_x = false;
+	}
+	public void turnOffSoftLimY(){
+		this.hard_lim_y = false;
 	}
 	public void flipCoords(){
 		this.flip_coords = !this.flip_coords;
@@ -166,6 +160,9 @@ public class RCode {
 
 	public void addCode(String strcode){
 		code.add(strcode);
+	}
+	public void resetCode(){
+		code = new ArrayList<String>();
 	}
 	public void addPackage(String strpkg){
 		code.add(0 , "require(" + strpkg + ")");
@@ -278,8 +275,23 @@ public class RCode {
 		addCode(ggLine);
 		endPlot();
 	}
+	public void createBAW(String inPath, String outPath, int xdim, int ydim, boolean include_mean){
+		xDataType = "double";
+		yDataType = "none";
+		addPackage("ggplot2");
+		addCode("df <- data.frame(read.csv(\""+inPath+"\"))");
+		startPlot(outPath, xdim, ydim);
+		String ggLine = "ggplot(df, aes(x = factor(variable), y = value)) + geom_boxplot()";
+		if(include_mean){
+			ggLine += " + stat_summary(fun.y=mean, geom=\"point\", shape=18, size=3, color=\"goldenrod\")";
+		}
+		ggLine = finishGG(ggLine);
+		addCode(ggLine);
+		endPlot();
+	}
 
 	//CDF plot (normal R)
+	/* delete?
 	public void createCDF_R(ArrayList<Double> al, String outPath, int xdim, int ydim){
 		xDataType = "double";
 		yDataType = "double";
@@ -305,6 +317,7 @@ public class RCode {
 		addCode(pline+")");
 		endPlot();
 	}
+	*/
 
 	//CDF plot (ggplot)
 	public void createCDF(ArrayList<Double> al, String outPath, int xdim, int ydim){
@@ -392,11 +405,17 @@ public class RCode {
 		}else{
 			ggline += ")";
 		}
-		if(limit_x_coords){
-			ggline += " + xlim("+String.valueOf(xLoLim)+","+String.valueOf(xHiLim)+")";
+		if(hard_lim_x){
+			ggline += " + xlim("+String.valueOf(hardLimLoX)+","+String.valueOf(hardLimHiX)+")";
 		}
-		if(limit_y_coords){
-			ggline += " + ylim("+String.valueOf(yLoLim)+","+String.valueOf(yHiLim)+")";
+		if(hard_lim_y){
+			ggline += " + ylim("+String.valueOf(hardLimLoY)+","+String.valueOf(hardLimHiY)+")";
+		}
+		if(soft_lim_x){
+			ggline += " + coord_cartesian(xlim = c("+String.valueOf(softLimLoX)+","+String.valueOf(softLimHiX)+"))";
+		}
+		if(soft_lim_y){
+			ggline += " + coord_cartesian(ylim = c("+String.valueOf(softLimLoY)+","+String.valueOf(softLimHiY)+"))";
 		}
 		if(!legTitle.equals("") && this.show_legend){
 			ggline += " + guides(fill = guide_legend(title = \""+legTitle+"\"))"; 

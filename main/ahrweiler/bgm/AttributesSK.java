@@ -1,11 +1,13 @@
 package ahrweiler.bgm;
 import ahrweiler.util.AhrIO;
 import ahrweiler.util.AhrAL;
+import ahrweiler.support.FCI;
 import java.util.ArrayList;
 
 //class only for holding all attrs of a BGM SK
 public class AttributesSK {
 
+	private String bgm;
 	private boolean call;
 	private String annMethod;
 	private String gaMethod;
@@ -20,12 +22,12 @@ public class AttributesSK {
 	private String indMask;
 	private int activeIndNum;
 	private ArrayList<String> activeIndNames;
-	
 
 	//constructors
 
 	//default attrs
 	public AttributesSK(){
+		this.bgm = "ann";
 		this.call = true;
 		this.annMethod = "CR";			//continuous range
 		this.gaMethod = "FD";			//fast decrease
@@ -39,9 +41,10 @@ public class AttributesSK {
 		this.narMask = "1111";
 		this.indMask = "111111111111111111111111";
 	}
-	//get attrs from file
+	//get attrs from file (./../data/tmp/sk_attrs.txt)
 	public AttributesSK(String path){
 		//default values in case line is not in file
+		this.bgm = "ann";
 		this.call = true;
 		this.annMethod = "CR";			//continuous range
 		this.gaMethod = "FD";			//fast decrease
@@ -56,6 +59,10 @@ public class AttributesSK {
 		this.indMask = "111111111111111111111111";
 		//get data from file is possible
 		ArrayList<ArrayList<String>> fc = AhrIO.scanFile(path, ",");
+		int bgmIdx = AhrAL.getRowIdx(fc, "bgm");
+		if(bgmIdx != -1){
+			this.bgm = fc.get(bgmIdx).get(1);
+		}
 		int callIdx = AhrAL.getRowIdx(fc, "call");
 		if(callIdx != -1){
 			String callStr = fc.get(callIdx).get(1).toLowerCase();
@@ -112,12 +119,72 @@ public class AttributesSK {
 		}
 	}
 
-	//can pull attrs saved in file
-	public AttributesSK(String bgm, int id){
-
+	//can pull attrs saved in keys_struct file
+	public AttributesSK(String bgm, String path, String rowName){
+		this.bgm = bgm.toLowerCase();
+		FCI fciKS = new FCI(true, path);
+		ArrayList<String> ksRow = AhrIO.scanRow(path, ",", rowName);
+		int callIdx = fciKS.getIdx("call");
+		if(callIdx != -1){
+			String callInt = ksRow.get(callIdx);
+			if(callInt.equals("0")){
+				this.call = false;
+			}else if(callInt.equals("1")){
+				this.call = true;
+			}
+		}
+		int methIdx = fciKS.getIdx("method");
+		if(methIdx != -1){
+			if(this.bgm.equals("ann")){
+				this.annMethod = ksRow.get(methIdx);
+			}
+		}
+		int sdateIdx = fciKS.getIdx("start_date");
+		if(sdateIdx != -1){
+			this.sdate = ksRow.get(sdateIdx);
+		}
+		int edateIdx = fciKS.getIdx("end_date");
+		if(edateIdx != -1){
+			this.edate = ksRow.get(edateIdx);
+		}
+		int spdIdx = fciKS.getIdx("spd");
+		if(spdIdx != -1){
+			this.spd = Integer.parseInt(ksRow.get(spdIdx));
+		}
+		int tviIdx = fciKS.getIdx("tvi");
+		if(tviIdx != -1){
+			this.tvi = Integer.parseInt(ksRow.get(tviIdx));
+		}
+		int plateauIdx = fciKS.getIdx("plateau");
+		if(plateauIdx != -1){
+			this.plateau = Double.parseDouble(ksRow.get(plateauIdx));
+		}
+		int lrateIdx = fciKS.getIdx("learn_rate");
+		if(lrateIdx != -1){
+			this.learnRate = Double.parseDouble(ksRow.get(lrateIdx));
+		}
+		int msmIdx = fciKS.getIdx("ms_mask");
+		if(msmIdx != -1){
+			this.msMask = ksRow.get(msmIdx);
+		}
+		int narIdx = fciKS.getIdx("nar_mask");
+		if(narIdx != -1){
+			this.narMask = ksRow.get(narIdx);
+		}
+		int indmIdx = fciKS.getIdx("ind_mask");
+		if(indmIdx != -1){
+			this.indMask = ksRow.get(indmIdx);
+		}
+		
 	}
 
 	//getters & setters
+	public String getBGM(){
+		return this.bgm;
+	}
+	public void setBGM(String bgm){
+		this.bgm = bgm;
+	}
 	public boolean getCall(){
 		return this.call;
 	}
@@ -188,6 +255,7 @@ public class AttributesSK {
 	//save attrs to file
 	public void saveToFile(String path){
 		ArrayList<ArrayList<String>> tf = new ArrayList<ArrayList<String>>();
+		tf.add(AhrAL.toAL(new String[]{"bgm", this.bgm}));
 		tf.add(AhrAL.toAL(new String[]{"call", (new Boolean(this.call)).toString()}));
 		tf.add(AhrAL.toAL(new String[]{"ann_method", this.annMethod}));
 		tf.add(AhrAL.toAL(new String[]{"ga_method", this.gaMethod}));

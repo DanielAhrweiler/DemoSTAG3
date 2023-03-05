@@ -22,6 +22,7 @@ import ahrweiler.gui.PA_KeyPerf;
 import ahrweiler.gui.AutoDemo;
 import ahrweiler.gui.AD_Params;
 import ahrweiler.gui.AD_Acronyms;
+import ahrweiler.gui.TableSortPanel;
 import java.io.*;
 import java.net.*;
 import java.util.*;
@@ -42,11 +43,16 @@ public class STAG3 {
 
 	public void init(){
 		System.out.print("--> Initializing Data ... ");
-		//remove lines from rnd keys_perf
+		//remove lines from rnd keys_Struct & keys_perf
+		String ksPath = "./../out/sk/log/rnd/keys_struct.txt";
 		String kpPath = "./../out/sk/log/rnd/keys_perf.txt";
-		ArrayList<String> kpLine = AhrIO.scanRow(kpPath, ",", 0);
+		ArrayList<String> ksRow = AhrIO.scanRow(ksPath, ",", 0);
+		ArrayList<String> kpRow = AhrIO.scanRow(kpPath, ",", 0);
+		ArrayList<ArrayList<String>> ksFile = new ArrayList<ArrayList<String>>();
 		ArrayList<ArrayList<String>> kpFile = new ArrayList<ArrayList<String>>();
-		kpFile.add(kpLine);
+		ksFile.add(ksRow);
+		kpFile.add(kpRow);
+		AhrIO.writeToFile(ksPath, ksFile, ",");
 		AhrIO.writeToFile(kpPath, kpFile, ",");
 		//remove rnd tmp basis files
 		String rbPath = "./../out/sk/baseis/rnd/";
@@ -57,6 +63,9 @@ public class STAG3 {
 				file.delete();
 			}
 		}
+		//set sk_attrs.txt to default values
+		AttributesSK kattr = new AttributesSK();
+		kattr.saveToFile("./../data/tmp/sk_attrs.txt");
 		System.out.println("DONE");
 	}
 
@@ -69,17 +78,17 @@ public class STAG3 {
 		mframe.setLocationRelativeTo(null);
 		mframe.setLayout(null);
 		JLabel lbDB = new JLabel("Database");
-		Button bCharting = new Button("Stock & Indicator Charting");
-		Button bFilter = new Button("Stock Filter");
+		JButton bCharting = new JButton("Stock & Indicator Charting");
+		JButton bFilter = new JButton("Stock Filter");
 		JLabel lbML = new JLabel("Machine Learning");
-		Button bCreateSK = new Button("Create SK");
-		Button bCreateAK = new Button("Create AK");
-		Button bBasis = new Button("Basis Files");
+		JButton bCreateSK = new JButton("Create SK");
+		JButton bCreateAK = new JButton("Create AK");
+		JButton bBasis = new JButton("SK, AK, & Basis Info");
 		JLabel lbPA = new JLabel("Post Analysis");
-		Button bBuyInOpt = new Button("BIM/SOM Optimization");
-		Button bKeyPerf = new Button("Key Performance");
-		Button bDemo = new Button("Run Automated Demo");
-		Button bOther = new Button("Other");
+		JButton bBuyInOpt = new JButton("BIM/SOM Optimization");
+		JButton bKeyPerf = new JButton("Key Performance");
+		JButton bAutoDemo = new JButton("Run Automated Demo");
+		JButton bOther = new JButton("Other");
 
 		//component bounds
 		lbDB.setBounds(10, 20, 160, 35);
@@ -92,8 +101,19 @@ public class STAG3 {
 		lbPA.setBounds(10, 300, 160, 35);
 		bBuyInOpt.setBounds(40, 340, 200, 35);
 		bKeyPerf.setBounds(40, 380, 200, 35);
-		bDemo.setBounds(10, 430, 250, 45);
+		bAutoDemo.setBounds(10, 430, 250, 45);
 		bOther.setBounds(10, 480, 250, 45);
+	
+		//change look of the buttons
+		setButtonStyle(bCharting);
+		setButtonStyle(bFilter);
+		setButtonStyle(bCreateSK);
+		setButtonStyle(bCreateAK);
+		setButtonStyle(bBasis);
+		setButtonStyle(bBuyInOpt);
+		setButtonStyle(bKeyPerf);
+		setButtonStyle(bAutoDemo);
+		setButtonStyle(bOther);
 
 		//component funtionality
 		bCharting.addActionListener(new ActionListener() {
@@ -131,7 +151,7 @@ public class STAG3 {
 				PA_KeyPerf paperf = new PA_KeyPerf();
 			}
 		});
-		bDemo.addActionListener(new ActionListener() {
+		bAutoDemo.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e){
 				AutoDemo demo = new AutoDemo();
 				//TestSwing tswing = new TestSwing();
@@ -153,9 +173,17 @@ public class STAG3 {
 		mframe.add(lbPA);
 		mframe.add(bBuyInOpt);
 		mframe.add(bKeyPerf);
-		mframe.add(bDemo);
+		mframe.add(bAutoDemo);
 		mframe.add(bOther);
 		mframe.setVisible(true);
+	}
+
+	//GUI related, set specific style for a JButton
+	public void setButtonStyle(JButton btn){
+		Font plainFont = new Font(Font.SANS_SERIF, Font.PLAIN, 12);
+		btn.setFont(plainFont);
+		btn.setBackground(new Color(230, 230, 230));
+		btn.setBorder(BorderFactory.createLineBorder(Color.GRAY));
 	}
 
 
@@ -190,9 +218,30 @@ public class STAG3 {
 	}
 
 	public void tempCode(){
-		ArrayList<String> test = AhrAL.toAL(new String[]{"rnd1", "rnd55", "rnd3", "rnd2", "rnd8"});
-		Collections.sort(test);
-		System.out.println(test);
+		for(int i = 0; i < 5; i++){ 
+			AttributesSK kattr = new AttributesSK("./../data/tmp/sk_attrs.txt");
+			kattr.setBGM("rnd");
+			//create rnd basis (using saved key params)
+			BGM_Manager bgmm = new BGM_Manager(kattr);
+			bgmm.genBasisRnd(0.75);
+			OrderSim osim = new OrderSim("rnd", i);
+			osim.calcBSO();
+			osim.printData();
+		}
+
+
+		//test OrderSim->clacGrowth functions
+		/*
+		OrderSim osim = new OrderSim(10);
+		osim.calcOrderList();
+		ArrayList<ArrayList<String>> growth1 = osim.calcGrowth(1000000.0);
+		growth1.add(0, AhrAL.toAL(new String[]{"date", "tot_value"}));
+		AhrIO.writeToFile("./../data/tmp/os_growth1.csv", growth1, ",");
+		ArrayList<ArrayList<String>> growth2 = osim.calcGrowth2(1000000.0);
+		growth2.add(0, AhrAL.toAL(new String[]{"date", "cash_on_hand", "tot_value", "price_per_trade"}));
+		AhrIO.writeToFile("./../data/tmp/os_growth2.csv", growth2, ",");
+		*/
+
 
 		/*
 		//test diff in basis files (cl before pred) and orderlist (open after pred)
@@ -210,7 +259,7 @@ public class STAG3 {
 		osim.setBIM(0.01);
 		osim.setSOM(50.0);
 		osim.setTtvMask(ttvMask);
-		osim.setMaxOrderSize(10000.0);
+		osim.setMaxOrderPrice(10000.0);
 		osim.calcOrderList();
 		try{
 			Thread.sleep(500);
@@ -242,7 +291,7 @@ public class STAG3 {
 
 	//calc clean lines that have tbd
 	public void updateCleanFiles(){
-		BGM_Manager bgmm = new BGM_Manager();
+		BGM_Manager bgmm = new BGM_Manager(new AttributesSK());
 		ArrayList<ArrayList<String>> tf = new ArrayList<ArrayList<String>>();
 		ArrayList<String> bdFiles = AhrIO.getNamesInPath("./../../DB_Intrinio/Clean/ByDate/");
 		for(int i = 0; i < bdFiles.size(); i++){

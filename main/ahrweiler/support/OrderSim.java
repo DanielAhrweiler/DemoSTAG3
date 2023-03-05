@@ -14,16 +14,16 @@ public class OrderSim {	//simulates ordering in reality
 	String edate = "";
 	double bim = 0.0;		//buy-in mult (of last close)
 	double som = 0.0;		//sell-off mult (of buy-in)
-	String ttvMask = "010";	//train test verify bit mask
+	String ttvMask = "111";	//train test verify bit mask
 	ArrayList<ArrayList<ArrayList<String>>> techBuf;
-	ArrayList<String> uniqDates;
 	int techLen = 0;
 	//ML algo related vars
 	boolean is_long;
 	String dbUsed = "";
 	int tvi = -1;
 	double cmult = 10.0;
-	double maxOrderSize = 25000;	//limit (in $) of any 1 order
+	double principal = 100000;		//def start value of a portfolio
+	double maxOrderPrice = 10000;	//upper limit (in $) of any 1 order
 	//calculations and results
 	ArrayList<ArrayList<String>> orders;
 	double posPer = 0.0;		//% of triggered orders that are positive
@@ -36,27 +36,34 @@ public class OrderSim {	//simulates ordering in reality
 	boolean ismt = false;		//min-max true appr (false = min true appr)
 
 	//constructors
+	public OrderSim(){
+		this.techBuf = new ArrayList<ArrayList<ArrayList<String>>>();
+		this.orders = new ArrayList<ArrayList<String>>();
+		this.is_long = true;
+		this.cmult = 1.0;
+		this.tvi = 1;	
+	}
 	public OrderSim(String basisPath){//empty init
-		System.out.println("==> In OrderSim() (CUST)");
+		System.out.println("--> In OrderSim() (CUST)");
 		this.bfPath = basisPath;
 		this.fciBF = new FCI(false, basisPath);
 		this.techBuf = new ArrayList<ArrayList<ArrayList<String>>>();
 		this.orders = new ArrayList<ArrayList<String>>();
-		this.uniqDates = new ArrayList<String>();
 		this.is_long = true;
 		this.cmult = 1.0;
 		this.tvi = 1;	
 	}
 	public OrderSim(int keyID){//for agg key (dont need bgm)
-		System.out.println("==> In OrderSim() (AK)");
+		System.out.println("--> In OrderSim() (AK)");
 		this.keyNum = keyID;
 		//read in this keys row in ak_log
 		String laPath = "./../out/ak/log/ak_log.txt";
 		ArrayList<String> laRow = AhrIO.scanRow(laPath, ",", String.valueOf(keyID));
 		FCI fciLA = new FCI(true, laPath);
-		//assign class objs accroding to file row
-		String bgm = laRow.get(fciLA.getIdx("bgm"));
-		this.bfPath = "./../out/ak/baseis/"+bgm.toLowerCase()+"/"+bgm+"_"+String.valueOf(keyID)+".txt";
+		//assign class objs according to file row
+		String bgmLC = laRow.get(fciLA.getIdx("bgm")).toLowerCase();
+		String bgmUC = bgmLC.toUpperCase();
+		this.bfPath = "./../out/ak/baseis/"+bgmLC+"/"+bgmUC+"_"+String.valueOf(keyID)+".txt";
 		this.dbUsed = laRow.get(fciLA.getIdx("db_used"));
 		if(this.dbUsed .equals("YH")){
 			this.dbUsed = "Yahoo";
@@ -76,52 +83,42 @@ public class OrderSim {	//simulates ordering in reality
 		//init empty ALs
 		this.techBuf = new ArrayList<ArrayList<ArrayList<String>>>();
 		this.orders = new ArrayList<ArrayList<String>>();
-		this.uniqDates = new ArrayList<String>();
 	}
-	//TODO: double check entire function
 	public OrderSim(String bgm, int keyID){//for single key
-		System.out.println("==> In OrderSim() (SK)");
+		System.out.println("--> In OrderSim() (SK)");
+		//get info from keys_struct
 		String bgmLC = bgm.toLowerCase();
+		String bgmUC = bgm.toUpperCase();
+		String ksPath = "./../out/sk/log/"+bgmLC+"/keys_struct.txt";
+		FCI fciKS = new FCI(true, ksPath);
+		ArrayList<String> ksRow = AhrIO.scanRow(ksPath, ",", String.valueOf(keyID));
+		System.out.println("--> ksRow = "+ksRow);
+		//fill out attrs from keys_struct file
 		this.keyNum = keyID;
-		this.techBuf = new ArrayList<ArrayList<ArrayList<String>>>();
-		this.orders = new ArrayList<ArrayList<String>>();
-		this.uniqDates = new ArrayList<String>();//TODO: check if init for techBuf and uniqDates is correct
-		ArrayList<ArrayList<String>> ksFile = AhrIO.scanFile("./../out/sk/log/"+bgmLC+"/keys_struct.txt", ",");
-		FCI fciKS = new FCI(true, "./../out/sk/log/"+bgmLC+"/keys_struct.txt");
-		int ksIdx = AhrDTF.transpose(ksFile).get(fciKS.getIdx("sk_num")).indexOf(String.valueOf(keyID));
-		System.out.println("**********\n--> ksFile : " + ksFile.get(ksIdx));
-		this.dbUsed = ksFile.get(ksIdx).get(fciKS.getIdx("db_used"));
+		this.dbUsed = ksRow.get(fciKS.getIdx("db_used"));
 		if(this.dbUsed.equals("YH")){
 			this.dbUsed = "Yahoo";
 		}else{
 			this.dbUsed = "Intrinio";
 		}
-		this.tvi = Integer.parseInt(ksFile.get(ksIdx).get(fciKS.getIdx("tvi")));
-		//set call and cmult
-		if(fciKS.getIdx("call") != -1){
-			if(Integer.parseInt(ksFile.get(ksIdx).get(fciKS.getIdx("call"))) == 0){
-				this.is_long = false;
-				this.cmult = -1.0;
-			}else{
-				this.is_long = true;
-				this.cmult = 1.0;
-			}
+		this.tvi = Integer.parseInt(ksRow.get(fciKS.getIdx("tvi")));
+		String call = ksRow.get(fciKS.getIdx("call"));
+		if(call.equals("0")){
+			this.is_long = false;
+			this.cmult = -1.0;
+		}else if(call.equals("1")){
+			this.is_long = true;
+			this.cmult = 1.0;
+		}else{
+			System.out.println("ERR: Call for SK"+keyID+" not found.");
 		}
-		if(this.cmult == 10.0){
-			Scanner scanner = new Scanner(System.in);
-			System.out.print("Call is null, is this a long call? (y/n) : ");
-			String callStr = scanner.nextLine();
-			if(callStr.equals("y") || callStr.equals("Y")){
-				this.is_long = true;
-				this.cmult = 1.0;
-			}else{
-				this.is_long = false;
-				this.cmult = -1.0;
-			}
-		}
+		this.setDateRange(ksRow.get(fciKS.getIdx("start_date")), ksRow.get(fciKS.getIdx("end_date")));
 		//set path and FCI for basis file
-		this.bfPath = "./../out/sk/baseis/"+bgmLC+"/"+bgm+"_"+String.valueOf(keyID)+".txt";
+		this.bfPath = "./../out/sk/baseis/"+bgmLC+"/"+bgmUC+"_"+String.valueOf(keyID)+".txt";
 		this.fciBF = new FCI(false, this.bfPath);
+		//init empty ALs
+		this.techBuf = new ArrayList<ArrayList<ArrayList<String>>>();
+		this.orders = new ArrayList<ArrayList<String>>();
 	}
 	//getters & setters
 	public int getID(){
@@ -160,11 +157,11 @@ public class OrderSim {	//simulates ordering in reality
 	public double getCMULT(){
 		return this.cmult;
 	}
-	public double getMaxOrderSize(){
-		return this.maxOrderSize;
+	public double getPrincipal(){
+		return this.principal;
 	}
-	public ArrayList<String> getUniqDates(){
-		return this.uniqDates;
+	public double getMaxOrderPrice(){
+		return this.maxOrderPrice;
 	}
 	public double getPosPer(){
 		return this.posPer;
@@ -248,8 +245,11 @@ public class OrderSim {	//simulates ordering in reality
 	public void setISMT(boolean ismtVal){
 		this.ismt = ismtVal;
 	}
-	public void setMaxOrderSize(double mosVal){
-		this.maxOrderSize = mosVal;
+	public void setPrincipal(double principalVal){
+		this.principal = principalVal;
+	}
+	public void setMaxOrderPrice(double mopVal){
+		this.maxOrderPrice = mopVal;
 	}
 	public void setOrderList(ArrayList<ArrayList<String>> orderAL){
 		this.orders = orderAL;
@@ -280,6 +280,7 @@ public class OrderSim {	//simulates ordering in reality
 				}
 			}
 		}
+
 		//itr thru each passed line and calc order line
 		for(int i = 0; i < slist.size(); i++){
 			String date = slist.get(i).get(0);
@@ -297,9 +298,6 @@ public class OrderSim {	//simulates ordering in reality
 			line.add("ph");								// [7] % appr from method
 			line.add("ph");								// [8] # of days cash needs to be reserved
 			this.orders.add(line);
-			if(!this.uniqDates.contains(date)){
-				this.uniqDates.add(date);
-			}
 			//# of lines needed in the buffer
 			this.techLen = 0;
 			if(this.tvi == 0 || this.tvi == 1){//1-day
@@ -383,8 +381,6 @@ public class OrderSim {	//simulates ordering in reality
 	}
 
 	public void calcOrderList(){
-		System.out.println("In calcOL, TechBuf size1 = " + techBuf.size());
-
 		if(this.techBuf.size() < 1){
 			calcBuffer();
 		}else{
@@ -397,8 +393,6 @@ public class OrderSim {	//simulates ordering in reality
 		int bimCount = 0;
 		int somCount = 0;
 		//System.out.println("***** Calculating Order List *****");
-		System.out.println("In calcOL, TechBuf size2 = " + techBuf.size());
-
 		for(int i = 0; i < this.techBuf.size(); i++){
 			if(i%500==0){
 				//System.out.println("   "+i+" out of "+this.techBuf.size());
@@ -653,23 +647,22 @@ public class OrderSim {	//simulates ordering in reality
 		this.posPer = this.posPer / (double)bimCount;
 		this.tpr = this.tpr / (double)bimCount;
 		this.trigAppr = this.trigAppr / (double)bimCount;
-
-		//calc compound interest values
 		this.bimPer = ((double)bimCount / (double)this.techBuf.size()) * 100.0;
 		this.somPer = ((double)somCount / (double)this.techBuf.size()) * 100.0;
-		int compounds = AhrDate.getDatesBetween(sdate, edate).size();
-		double secStart = 30000;
-		this.secAppr = secStart;
-		for(int i = 0; i < (int)Math.floor(compounds/this.tpr); i++){
-			this.secAppr += (this.secAppr * (this.bimPer/100.0)) * ((this.cmult*this.trigAppr)/100.0);
-		}
-		this.secAppr = ((this.secAppr - secStart) / secStart) * 100.0;
-		double yoyStart = 30000;
-		this.yoyAppr = yoyStart;
-		for(int i = 0; i < (int)Math.floor(250.0/tpr); i++){
-			this.yoyAppr += (this.yoyAppr * (this.bimPer/100.0)) * ((this.cmult*this.trigAppr)/100.0);
-		}
-		this.yoyAppr = ((this.yoyAppr - yoyStart) / yoyStart) * 100.0;
+
+		AhrIO.writeToFile("./../data/tmp/os_orderlist.txt", this.orders, ",");
+
+		//calc active trades
+		calcActiveTrades();
+		//calc compound interest values
+		ArrayList<ArrayList<String>> growth = calcGrowth(this.principal);
+		double startVal = Double.parseDouble(growth.get(0).get(1));
+		double endVal = Double.parseDouble(growth.get(growth.size()-1).get(1));
+		this.secAppr = ((endVal - startVal) / startVal) * 100.0;
+		double intervals = (double)growth.size() / 252.0;
+		double amtGained = endVal - this.principal;
+		this.yoyAppr = Math.pow((0.0 - ((0.0 - this.principal - amtGained) / this.principal)), (1.0/intervals)) - 1.0;
+		this.yoyAppr = this.yoyAppr * 100.0;
 
 		//write to file OL earlier to test
 		AhrIO.writeToFile("./../data/tmp/os_orderlist.txt", this.orders, ",");
@@ -677,14 +670,6 @@ public class OrderSim {	//simulates ordering in reality
 		String olPath = "./../data/tmp/os_orderlist.txt";
 		FCI fciOL = new FCI(false, olPath);
 		ArrayList<ArrayList<String>> olByAppr = new ArrayList<ArrayList<String>>(this.orders);
-		//test line for ph vals
-		for(int i = 0; i < olByAppr.size(); i++){
-			String itrAppr = olByAppr.get(i).get(fciOL.getIdx("method_appr"));
-			if(itrAppr.equals("ph")){
-				System.out.println("ol line = " + olByAppr.get(i));
-			}			
-		}
-
 		Collections.sort(olByAppr, new Comparator<ArrayList<String>>(){
 			@Override
 			public int compare(ArrayList<String> obj1, ArrayList<String> obj2){
@@ -697,62 +682,158 @@ public class OrderSim {	//simulates ordering in reality
 		AhrIO.writeToFile("./../data/tmp/os_orderlist_byappr.txt", olByAppr, ",");
 	}
 
-	//calc growth on a porfolio using the calcualted order list
-	public ArrayList<ArrayList<String>> calcGrowth2(double principle){
-		int orderLim = 10000;	//no single order can worth more than this in $
-		//TODO make sure you calc order list first??
-		ArrayList<ArrayList<String>> growth = new ArrayList<ArrayList<String>>();
-		double value = principle;
-		String date = orders.get(0).get(0);
-		double dayAppr = Double.parseDouble(orders.get(0).get(7)) * cmult;
-		int daySize = 1;
-		for(int i = 1; i < orders.size(); i++){
-			if(this.orders.get(i).get(0).equals(date)){
-				dayAppr += (Double.parseDouble(orders.get(i).get(7)) * cmult);
-				daySize++;
-			}else{
-				dayAppr = dayAppr / (double)daySize;
-				value += value * (dayAppr / 100.0);
-				ArrayList<String> line = new ArrayList<String>();
-				line.add(date);
-				line.add(String.format("%.4f", value));
-				growth.add(line);
-				date = orders.get(i).get(0);
-				dayAppr = (Double.parseDouble(orders.get(i).get(7)) * cmult);
-				daySize = 1;
-			}
-		}
-		return growth;
-	}
-
 	//calc growth on a porfolio using the calculated order list
-	public ArrayList<ArrayList<String>> calcGrowth(double principle){
+	public ArrayList<ArrayList<String>> calcGrowth2(double value){
+		FCI fciOL = new FCI(false, "./../data/tmp/os_orderlist.txt");
 		ArrayList<ArrayList<String>> growth = new ArrayList<ArrayList<String>>();
-		double value = principle;
-		String date = orders.get(0).get(0);
+		String date = this.orders.get(0).get(fciOL.getIdx("date"));
+		//itr thru orders, calcing growth
 		ArrayList<Double> apprs = new ArrayList<Double>();
-		apprs.add(Double.parseDouble(orders.get(0).get(7)) * cmult);
-		for(int i = 1; i < orders.size(); i++){
-			if(orders.get(i).get(0).equals(date)){	//on same date
-				apprs.add(Double.parseDouble(orders.get(i).get(7)) * cmult);
-			}else{									//date changes
+		apprs.add(Double.parseDouble(this.orders.get(0).get(fciOL.getIdx("method_appr"))) * cmult);
+		for(int i = 1; i < this.orders.size(); i++){
+			String itrDate = this.orders.get(i).get(fciOL.getIdx("date"));
+			String itrAppr = this.orders.get(i).get(fciOL.getIdx("method_appr"));
+			int itrDaysRes = Integer.parseInt(this.orders.get(i).get(fciOL.getIdx("days_reserved")));
+			if(itrDate.equals(date)){	//on same date
+				apprs.add(Double.parseDouble(itrAppr) * cmult);
+			}else{						//date changes
+				double orderSize = (value / apprs.size());
+				if(orderSize > this.maxOrderPrice){
+					orderSize = this.maxOrderPrice;
+				}
 				for(int j = 0; j < apprs.size(); j++){
-					double orderSize = (value / apprs.size());
-					if(orderSize > maxOrderSize){
-						orderSize = maxOrderSize;
-					}
 					value += orderSize * (apprs.get(j) / 100.0);
 				}
 				ArrayList<String> line = new ArrayList<String>();
 				line.add(date);
 				line.add(String.format("%.4f", value));
 				growth.add(line);
-				date = orders.get(i).get(0);
+				date = itrDate;
 				apprs = new ArrayList<Double>();
-				apprs.add(Double.parseDouble(orders.get(i).get(7)) * cmult);
+				apprs.add(Double.parseDouble(itrAppr) * cmult);
 			}
 		}
 		return growth;
+	}
+
+	//calc growth on a porfolio using the calculated order list
+	//totValue = cash on hand + sum of all invested into trades
+	public ArrayList<ArrayList<String>> calcGrowth(double totValue){
+		ArrayList<ArrayList<String>> portfolioValue = new ArrayList<ArrayList<String>>();
+		FCI fciOL = new FCI(false, "./../data/tmp/os_orderlist.txt");
+		//find out SPD to calc # of max active trades at one time
+		String date = this.orders.get(0).get(fciOL.getIdx("date"));
+		int spd = -1;
+		for(int i = 1; i < this.orders.size(); i++){
+			String itrDate = this.orders.get(i).get(fciOL.getIdx("date"));
+			if(!itrDate.equals(date)){
+				spd = i;
+				break;
+			}
+		}
+		//setup vars to track portfolio value and $ per trade to opt it
+		double cashOnHand = totValue;
+		int maxActiveTrades = spd * (this.techLen-1);
+		maxActiveTrades = (int)((double)maxActiveTrades * (this.bimPer/100.0));
+		double pricePerTrade = totValue / (double)maxActiveTrades;
+		if(pricePerTrade > this.maxOrderPrice){
+			pricePerTrade = this.maxOrderPrice;
+		}
+		//itr thru orders, calcing growth
+		ArrayList<ArrayList<String>> activeTradesBuf = new ArrayList<ArrayList<String>>();
+		for(int i = 0; i < this.orders.size(); i++){
+			String itrDate = this.orders.get(i).get(fciOL.getIdx("date"));
+			String itrTrigCode = this.orders.get(i).get(fciOL.getIdx("trigger_code"));
+			String itrAppr = this.orders.get(i).get(fciOL.getIdx("method_appr"));
+			String itrDaysRes = this.orders.get(i).get(fciOL.getIdx("days_reserved"));
+			if(!itrDate.equals(date)){
+				//decrease day left by 1, free the money of those with 0 days left
+				ArrayList<ArrayList<String>> tmpBuf = new ArrayList<ArrayList<String>>();
+				for(int j = 0; j < activeTradesBuf.size(); j++){
+					int daysLeft = Integer.parseInt(activeTradesBuf.get(j).get(0)) - 1;
+					if(daysLeft > 0){//money still sequestered, keep in buffer
+						activeTradesBuf.get(j).set(0, String.valueOf(daysLeft));
+						tmpBuf.add(activeTradesBuf.get(j));
+					}else{//sell out of the trade, cash goes back into hand, add money made to totValue
+						cashOnHand += Double.parseDouble(activeTradesBuf.get(j).get(1));
+						cashOnHand += Double.parseDouble(activeTradesBuf.get(j).get(2));
+						totValue += Double.parseDouble(activeTradesBuf.get(j).get(2));
+					}
+				}
+				//update portfolio value file
+				ArrayList<String> pvLine = new ArrayList<String>();
+				pvLine.add(date);
+				//pvLine.add(String.format("%.2f", cashOnHand));
+				pvLine.add(String.format("%.2f", totValue));
+				//pvLine.add(String.format("%.2f", pricePerTrade));
+				portfolioValue.add(pvLine);
+				//recalibrate vals for next date
+				activeTradesBuf = tmpBuf;
+				pricePerTrade = totValue / (double)maxActiveTrades;
+				if(pricePerTrade > this.maxOrderPrice){
+					pricePerTrade = this.maxOrderPrice;
+				}
+				date = itrDate;
+			}
+			if(!itrTrigCode.equals("NO")){
+				double priceThisTrade = pricePerTrade;
+				if(cashOnHand < pricePerTrade){//bottoms at 0 so cant be negative
+					priceThisTrade = cashOnHand;
+				}
+				cashOnHand -= priceThisTrade;
+				double tradeProfit = (priceThisTrade * ((Double.parseDouble(itrAppr)*this.cmult)/100.0));					
+				ArrayList<String> atbLine = new ArrayList<String>();
+				atbLine.add(itrDaysRes);							//[0] days left til trade is sold
+				atbLine.add(String.format("%.2f", priceThisTrade));	//[1] money ($) into trade
+				atbLine.add(String.format("%.2f", tradeProfit));	//[2] money ($) made from trade, can be neg
+				activeTradesBuf.add(atbLine);
+			}
+		}
+		return portfolioValue;
+	}
+
+	//calc num of ongoing trading going on on every date (goes up w/ SPD and TVI)
+	public void calcActiveTrades(){
+		FCI fciOL = new FCI(false, "./../data/tmp/os_orderlist.txt");
+		ArrayList<ArrayList<String>> activeTrades = new ArrayList<ArrayList<String>>();
+		activeTrades.add(AhrAL.toAL(new String[]{"date", "active_count"}));
+		ArrayList<String> activeBuf = new ArrayList<String>();
+		String date = this.orders.get(0).get(fciOL.getIdx("date"));
+		for(int i = 1; i < this.orders.size(); i++){
+			String itrDate = this.orders.get(i).get(fciOL.getIdx("date"));
+			int itrDaysRes = Integer.parseInt(this.orders.get(i).get(fciOL.getIdx("days_reserved")));
+
+			if(itrDate.equals(date)){
+				String buf = "";
+				for(int j = 0; j < itrDaysRes; j++){
+					buf += "0";
+				}
+				activeBuf.add(buf);		
+			}else{
+				//remove 1day from all buf strings, update activeBuf
+				ArrayList<String> tmpBuf = new ArrayList<String>();
+				for(int j = 0; j < activeBuf.size(); j++){
+					activeBuf.set(j, activeBuf.get(j).substring(1));
+					if(activeBuf.get(j).length() > 0){
+						tmpBuf.add(activeBuf.get(j));
+					}
+				}
+				activeBuf = tmpBuf;
+				//add line to activeTrades
+				ArrayList<String> line = new ArrayList<String>();
+				line.add(date);
+				line.add(String.valueOf(activeBuf.size()));
+				activeTrades.add(line);
+				//update date and add val
+				date = itrDate;
+				String buf = "";
+				for(int j = 0; j < itrDaysRes; j++){
+					buf += "0";
+				}
+				activeBuf.add(buf);
+			}
+		}
+		AhrIO.writeToFile("./../data/tmp/os_activetrades.csv", activeTrades, ",");
 	}
 	
 	//calc best BIM/SOM from narrowing down on ever increasing BIM/SOM combo precision

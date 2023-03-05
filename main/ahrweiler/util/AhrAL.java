@@ -11,16 +11,45 @@ public class AhrAL {
 		}
 		return al;
 	}
+	//converts String 2D-Arr to 2D-AL
+	public static ArrayList<ArrayList<String>> toAL2D(String[][] arr){
+		ArrayList<ArrayList<String>> al = new ArrayList<ArrayList<String>>();
+		for(int i = 0; i < arr.length; i++){
+			ArrayList<String> line = new ArrayList<String>();
+			for(int j = 0; j < arr[i].length; j++){
+				line.add(arr[i][j]);
+			}
+			al.add(line);
+		}
+		return al;
+	}
 
 	//converts String AL to Array
-	public static String[][] toArr(ArrayList<ArrayList<String>> al){
-		String[][] arr = new String[al.size()][al.get(0).size()];
-		for(int i = 0; i < al.size(); i++){
-			for(int j = 0; j < al.get(0).size(); j++){
-				arr[i][j] = al.get(i).get(j);
+	public static String[] toArr(ArrayList<String> al){
+		if(al.size() > 0){
+			String[] arr = new String[al.size()];
+			for(int i = 0; i < al.size(); i++){
+				arr[i] = al.get(i);
 			}
+			return arr;
+		}else{
+			return new String[0];
 		}
-		return arr;
+	}
+	//converts String 2D-AL to 2D-Array
+	public static String[][] toArr2D(ArrayList<ArrayList<String>> al){
+		System.out.println("--> In toArr2D: rows = "+al.size());
+		if(al.size() > 0){
+			String[][] arr = new String[al.size()][al.get(0).size()];
+			for(int i = 0; i < al.size(); i++){
+				for(int j = 0; j < al.get(0).size(); j++){
+					arr[i][j] = al.get(i).get(j);
+				}
+			}
+			return arr;
+		}else{
+			return new String[0][0];
+		}
 	}
 
 	//return row of AL with given row name

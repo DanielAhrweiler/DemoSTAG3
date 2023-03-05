@@ -13,13 +13,14 @@ import java.util.ArrayList;
 
 public class ML_CreateSK extends JFrame {
 
+	final Font plainFont = new Font(Font.SANS_SERIF, Font.PLAIN, 12);
+
 	public ML_CreateSK(){
 		drawGUI();
 	}
 
 	public void drawGUI(){
 		//lists and overarching structs
-		String[] tvarList = {"Intra 1", "Inter 1", "Inter 2", "Inter 3", "Inter 5", "Inter 10"};
 		String[] geneticBgmList = {"GAD2", "GAB3"};
 		String[] geneticFitFuncts = {"Fast Decrease"};
 		String defIndMask = "";		//default ind mask string
@@ -37,7 +38,7 @@ public class ML_CreateSK extends JFrame {
 		//layout components
 		setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
 		setTitle("Basis Generating Methods: Single Key");
-		setSize(550, 587);
+		setSize(550, 500);
 		setLayout(null);
 		JPanel pANN = new JPanel();
 		pANN.setLayout(null);
@@ -83,11 +84,11 @@ public class ML_CreateSK extends JFrame {
 		JLabel lbMsMask1 = new JLabel("MS Mask:");
 		JTextField tfMsMask1 = new JTextField("xxxxxxxx");
 		JLabel lbNarMask1 = new JLabel("NAR Mask: ");
-		JTextField tfNarMask1 = new JTextField("111");		
+		JTextField tfNarMask1 = new JTextField("1111");		
 		JLabel lbIndMask1 = new JLabel("Indicator Mask");
 		JTextArea taIndMask1 = new JTextArea(defIndMask, 2, 40);
-		Button bListInds1 = new Button("List");
-		Button bCalcSK1 = new Button("Calculate SK");
+		JButton bListInds1 = new JButton("List");
+		JButton bCalcSK1 = new JButton("Calculate SK");
 
 		//bounds of components
 		lbMethod1.setBounds(10, 20, 65, 25);				//Basic Panel
@@ -96,7 +97,7 @@ public class ML_CreateSK extends JFrame {
 		lbSPD1.setBounds(350, 20, 100, 25);
 		tfSPD1.setBounds(450, 20, 50, 25);
 		lbTargetVars1.setBounds(10, 60, 90, 25);
-		cbTargetVars1.setBounds(100, 60, 100, 25);
+		cbTargetVars1.setBounds(100, 60, 150, 25);
 		lbPlat1.setBounds(350, 60, 100, 25);
 		tfPlat1.setBounds(450, 60, 50, 25);
 		lbLearnRate1.setBounds(350, 100, 100, 25);
@@ -115,9 +116,13 @@ public class ML_CreateSK extends JFrame {
 		bCalcSK1.setBounds(200, 370, 150, 40);
 
 		//basic functionality
+		rbContRange1.setFont(plainFont);
+		rbBinomial1.setFont(plainFont);
+		setButtonStyle(bListInds1);
+		setButtonStyle(bCalcSK1);
 		rbContRange1.setSelected(true);
-		for(int i = 0; i < tvarList.length; i++){
-			cbTargetVars1.addItem(tvarList[i]);
+		for(int i = 0; i < Globals.target_var_num; i++){
+			cbTargetVars1.addItem(Globals.tvi_monikers[i]);
 		}
 		taIndMask1.setLineWrap(true);
 
@@ -233,11 +238,11 @@ public class ML_CreateSK extends JFrame {
 		JLabel lbMsMask2 = new JLabel("MS Mask: ");		//Mask Panel
 		JTextField tfMsMask2 = new JTextField("xxxxxxxx");
 		JLabel lbNarMask2 = new JLabel("NAR Mask:");
-		JTextField tfNarMask2 = new JTextField("111");
+		JTextField tfNarMask2 = new JTextField("1111");
 		JLabel lbIndMask2 = new JLabel("Indicator Mask");
 		JTextArea taIndMask2 = new JTextArea(defIndMask, 2, 40);
-		Button bListSLI2 = new Button("List");
-		Button bCalcSK2 = new Button("Calculate SK");	//Calc SK Button
+		JButton bListInds2 = new JButton("List");
+		JButton bCalcSK2 = new JButton("Calculate SK");	//Calc SK Button
 		
 		//bounds of components
 		lbBgm2.setBounds(10, 10, 80, 25);
@@ -252,7 +257,7 @@ public class ML_CreateSK extends JFrame {
 		lbSPD2.setBounds(310, 55, 90, 25);
 		tfSPD2.setBounds(410, 55, 60, 25);
 		lbTVar2.setBounds(10, 90, 100, 25);
-		cbTVar2.setBounds(100, 90, 130, 25);
+		cbTVar2.setBounds(100, 90, 150, 25);
 		lbPlateau2.setBounds(310, 90, 80, 25);
 		tfPlateau2.setBounds(410, 90, 60, 25);
 		lbSDate2.setBounds(10, 125, 800, 25);
@@ -265,10 +270,12 @@ public class ML_CreateSK extends JFrame {
 		tfNarMask2.setBounds(410, 20, 50, 25);
 		lbIndMask2.setBounds(10, 50, 300, 25);
 		taIndMask2.setBounds(10, 85, 420, 50);
-		bListSLI2.setBounds(440, 90, 60, 40);
+		bListInds2.setBounds(440, 90, 60, 40);
 		bCalcSK2.setBounds(200, 370, 150, 40);			//Calc SK button
 		
 		//basic functionality
+		setButtonStyle(bListInds2);
+		setButtonStyle(bCalcSK2);
 		for(int i = 0; i < geneticBgmList.length; i++){
 			cbBgm2.addItem(geneticBgmList[i]);
 		}
@@ -276,11 +283,11 @@ public class ML_CreateSK extends JFrame {
 		for(int i = 0 ; i < geneticFitFuncts.length; i++){
 			cbFit2.addItem(geneticFitFuncts[i]);
 		}
-		for(int i = 0; i < tvarList.length; i++){
-			cbTVar2.addItem(tvarList[i]);
+		for(int i = 0; i < Globals.target_var_num; i++){
+			cbTVar2.addItem(Globals.tvi_monikers[i]);
 		}
 		taIndMask2.setLineWrap(true);
-		bListSLI2.setEnabled(false);
+		bListInds2.setEnabled(false);
 		bCalcSK2.setEnabled(false);
 		
 		//button functionality
@@ -331,7 +338,7 @@ public class ML_CreateSK extends JFrame {
 		pMasks2.add(tfNarMask2);
 		pMasks2.add(lbIndMask2);
 		pMasks2.add(taIndMask2);
-		pMasks2.add(bListSLI2);
+		pMasks2.add(bListInds2);
 		pANN.add(pBasic1);
 		pANN.add(pDBS1);
 		pANN.add(bCalcSK1);
@@ -346,5 +353,10 @@ public class ML_CreateSK extends JFrame {
 		this.setVisible(true);
 		
 	}
-
+	//GUI related, sets style to a JButton
+	public void setButtonStyle(JButton btn){
+		btn.setFont(plainFont);
+		btn.setBackground(new Color(230, 230, 230));
+		btn.setBorder(BorderFactory.createLineBorder(Color.GRAY));
+	}
 }

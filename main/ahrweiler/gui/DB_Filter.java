@@ -5,6 +5,7 @@ import ahrweiler.util.AhrAL;
 import ahrweiler.util.AhrGen;
 import ahrweiler.support.FCI;
 import ahrweiler.support.StockFilter;
+import ahrweiler.gui.TableSortPanel;
 import java.io.*;
 import java.util.*;
 import javax.swing.*;
@@ -24,6 +25,9 @@ public class DB_Filter extends JFrame {
 		String[] indicatorList = {"S/M 20", "S/M 10", "S/M 5", "S/M 2", "S/I 20", "S/I 10", "S/I 5", "S/I 2", "SMA 20",
 								"SMA 10", "SMA 5", "SMA 2", "RSI", "MACD", "MACD Histogram", "CMF", "Bollinger Bandwidth",
 								"%B", "ROC", "MFI", "CCI", "Mass Index", "TSI", "Ult Osc"};
+		String[] startHeader = {"ticker", "market_cap", "sector"};
+		String[][] startData = {{"","",""},{"","",""},{"","",""},{"","",""},{"","",""},
+								{"","",""},{"","",""},{"","",""},{"","",""},{"","",""}};
 		ArrayList<ArrayList<String>> rules = new ArrayList<ArrayList<String>>();
 		ArrayList<ArrayList<String>> fdAL = new ArrayList<ArrayList<String>>();
 
@@ -43,32 +47,35 @@ public class DB_Filter extends JFrame {
 
 		//components
 		JLabel lbMC = new JLabel("Market Cap:");
-		JTextField tfStartMC = new JTextField("300");
+		JTextField tfStartMC = new JTextField("0");
 		JLabel lbMil1 = new JLabel("mil  to");
-		JTextField tfEndMC = new JTextField("10000");
+		JTextField tfEndMC = new JTextField("10000000");//$10 trillion
 		JLabel lbMil2 = new JLabel("mil"); 
 		JLabel lbSector = new JLabel("Sector:");
 		JTextField tfSector = new JTextField("01,02,03,04,05,06,07,08,09,10,11,12");
-		Button bSectorList = new Button("List");
-		Button bSectorAll = new Button("All");
+		JButton bSectorList = new JButton("List");
+		JButton bSectorAll = new JButton("All");
 		JLabel lbIndustry = new JLabel("Industry:");
 		JTextArea taIndustry = new JTextArea(2, 30);
-		Button bIndustryAll = new Button("All");
-		Button bIndustryList = new Button("List");
+		JButton bIndustryAll = new JButton("All");
+		JButton bIndustryList = new JButton("List");
 		JLabel lbIndicator = new JLabel("Indicator:");
 		JComboBox cbIndicator = new JComboBox();
 		JLabel lbIndRangeStart = new JLabel("Start:");
 		JTextField tfIndRangeStart = new JTextField();
 		JLabel lbIndRangeEnd = new JLabel("End:");
 		JTextField tfIndRangeEnd = new JTextField();
-		Button bIndAdd = new Button("Add");
+		JButton bIndAdd = new JButton("Add");
 		JLabel lbFilterDetails = new JLabel("Filter Details:");
 		JTextArea taFilterDetails = new JTextArea();
 		JScrollPane spFilterDetails = new JScrollPane(taFilterDetails, JScrollPane.VERTICAL_SCROLLBAR_ALWAYS,
 											JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
-		Button bApply = new Button("Apply Inputs");
-		Button bReset = new Button("Reset Inputs");
-		JLabel lbStockList = new JLabel("Stock List:");
+		JButton bApply = new JButton("Apply Inputs");
+		JButton bReset = new JButton("Reset Inputs");
+		JLabel lbStockNum = new JLabel("Number of Stocks: 0");
+		TableSortPanel pTableSort = new TableSortPanel(startData, startHeader);
+
+		/*
 		JLabel lbStockSort = new JLabel("Sort By:");
 		JComboBox cbStockSort = new JComboBox();
 		ButtonGroup bgSort = new ButtonGroup();
@@ -76,12 +83,12 @@ public class DB_Filter extends JFrame {
 		JRadioButton rbDes = new JRadioButton("Des");
 		bgSort.add(rbAsc);
 		bgSort.add(rbDes);
-		Button bStockSort = new Button("Sort");
+		JButton bStockSort = new JButton("Sort");
 		JTextArea taStockList = new JTextArea();
 		JScrollPane spStockList = new JScrollPane(taStockList, JScrollPane.VERTICAL_SCROLLBAR_ALWAYS,
 											JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
-		Button bToFile = new Button("Save To File");
-
+		*/
+		JButton bToFile = new JButton("Save To File");
 		
 		//component bounds
 		pInputs.setBounds(10, 10, 515, 550);
@@ -111,7 +118,9 @@ public class DB_Filter extends JFrame {
 		bApply.setBounds(100, 500, 150, 35);
 		bReset.setBounds(300, 500, 150, 35);
 		pOutputs.setBounds(540, 10, 480, 550);
-		lbStockList.setBounds(10, 10, 300, 25);
+		lbStockNum.setBounds(10, 10, 330, 25);
+		pTableSort.setBounds(10, 40, 460, 450);
+		/*
 		lbStockSort.setBounds(10, 40, 90, 25);
 		cbStockSort.setBounds(90, 40, 150, 25);
 		rbAsc.setBounds(260, 40, 55, 25);
@@ -119,9 +128,19 @@ public class DB_Filter extends JFrame {
 		bStockSort.setBounds(390, 40, 50, 25);
 		taStockList.setBounds(10, 90, 460, 400);
 		spStockList.setBounds(10, 90, 460, 400);
+		*/
 		bToFile.setBounds(10, 500, 150, 35);
 
 		//basic functionality
+		setButtonStyle(bSectorList);
+		setButtonStyle(bSectorAll);
+		setButtonStyle(bIndustryList);
+		setButtonStyle(bIndustryAll);
+		setButtonStyle(bIndAdd);
+		setButtonStyle(bApply);
+		setButtonStyle(bReset);
+		//setButtonStyle(bStockSort);
+		setButtonStyle(bToFile);
 		taIndustry.setLineWrap(true);
 		taIndustry.setBorder(BorderFactory.createLineBorder(Color.GRAY));
 		for(int i = 0; i < indicatorList.length; i++){
@@ -131,9 +150,9 @@ public class DB_Filter extends JFrame {
 		taFilterDetails.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 12));
 		taFilterDetails.setText(sf.getText());
 		System.out.println("--> Filter Text : " + sf.getText());
-		rbDes.setSelected(true);
-		taStockList.setLineWrap(true);
-		taStockList.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 12));
+		//rbDes.setSelected(true);
+		//taStockList.setLineWrap(true);
+		//taStockList.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 12));
 
 		//init starting filter lines
 		sf.setMarketCap(Integer.parseInt(tfStartMC.getText()), Integer.parseInt(tfEndMC.getText()));
@@ -304,28 +323,20 @@ public class DB_Filter extends JFrame {
 					setVisible(true);
 					String mrDate = AhrDate.mostRecentDate(AhrIO.getNamesInPath("./../../DB_Intrinio/Clean/ByDate/"));
 					sf.applyFilter(mrDate);
-					ArrayList<ArrayList<String>> res = formatStockList(sf.getResults());
-					lbStockList.setText("Stock List: ("+res.size()+" results)");
-					//reset and print stocks to taStockList
-					taStockList.setText("");
-					for(int i = 0; i < res.size(); i++){
-						if(i==0){
-							taStockList.append(res.get(i).get(0));
-						}else{
-							taStockList.append("\n"+res.get(i).get(0));
-						}
-					}
-					//add to cbStockSort
-					cbStockSort.removeAllItems();
-					cbStockSort.addItem("ticker");
-					cbStockSort.addItem("market cap");
-					cbStockSort.addItem("sector code");
+					//ArrayList<ArrayList<String>> res = formatStockList(sf.getResults());
+					ArrayList<ArrayList<String>> res = sf.getResults();
+					lbStockNum.setText("Number of Stocks: "+res.size()+" results");
+					//update table in table sort
 					ArrayList<String> inds = sf.getIndicators();
+					String[] header = new String[3+inds.size()];
+					header[0] = "ticker";
+					header[1] = "market_cap";
+					header[2] = "sector";
 					for(int i = 0; i < inds.size(); i++){
-						if(!inds.get(i).equals("industry")){
-							cbStockSort.addItem(inds.get(i));
-						}
+						header[3+i] = inds.get(i);
 					}
+					String[][] data = AhrAL.toArr2D(res);
+					pTableSort.updateModel(data, header);
 				}
 				
 			}
@@ -333,24 +344,8 @@ public class DB_Filter extends JFrame {
 		bReset.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e){
 				sf.resetFilter();
-				taFilterDetails.setText(sf.getText());
-				taStockList.setText("");
-				lbStockList.setText("Stock List:");
-				cbStockSort.removeAllItems();
 			}
 		});
-		bStockSort.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e){
-				int colIdx = cbStockSort.getSelectedIndex();
-				boolean is_asc = rbAsc.isSelected();
-				ArrayList<ArrayList<String>> sorted = sortStockList(sf.getResults(), colIdx, is_asc);
-				sorted = formatStockList(sorted);
-				taStockList.setText("");
-				for(int i = 0; i < sorted.size(); i++){
-					taStockList.append(sorted.get(i)+"\n");
-				}
-			}
-		});	
 		bToFile.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e){
 				String tfPath = "./../data/filters/sfilter_";
@@ -392,17 +387,27 @@ public class DB_Filter extends JFrame {
 		pInputs.add(spFilterDetails);
 		pInputs.add(bApply);
 		pInputs.add(bReset);
-		pOutputs.add(lbStockList);
+		pOutputs.add(lbStockNum);
+		/*
 		pOutputs.add(lbStockSort);
 		pOutputs.add(cbStockSort);
 		pOutputs.add(rbAsc);
 		pOutputs.add(rbDes);
 		pOutputs.add(bStockSort);
 		pOutputs.add(spStockList);
+		*/
+		pOutputs.add(pTableSort);
 		pOutputs.add(bToFile);
 		this.add(pInputs);
 		this.add(pOutputs);
 		this.setVisible(true);
+	}
+	//GUI related, sets style to a JButton
+	public void setButtonStyle(JButton btn){
+		Font plainFont = new Font(Font.SANS_SERIF, Font.PLAIN, 12);
+		btn.setFont(plainFont);
+		btn.setBackground(new Color(230, 230, 230));
+		btn.setBorder(BorderFactory.createLineBorder(Color.GRAY));
 	}
 
 	//update the text in taFilterDetails according to state of a StockFilter obj

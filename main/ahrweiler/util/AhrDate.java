@@ -24,6 +24,20 @@ public class AhrDate {
 			}
 		});
 	}
+	public static void sortDates2D(ArrayList<ArrayList<String>> al, boolean lr_first, int colIdx){
+		Collections.sort(al, new Comparator<ArrayList<String>>(){
+			@Override
+			public int compare(ArrayList<String> str1, ArrayList<String> str2){
+				LocalDate date1 = LocalDate.parse(str1.get(colIdx));
+				LocalDate date2 = LocalDate.parse(str2.get(colIdx));
+				if(lr_first){
+					return date1.compareTo(date2);
+				}else{
+					return (date1.compareTo(date2) * -1);
+				}
+			}
+		});
+	}
 	
 	//get todays date in YYYY-MM-DD format
 	public static String getTodaysDate(){

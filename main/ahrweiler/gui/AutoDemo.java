@@ -2,6 +2,7 @@ package ahrweiler.gui;
 import ahrweiler.util.AhrIO;
 import ahrweiler.util.AhrAL;
 import ahrweiler.util.AhrDate;
+import ahrweiler.util.AhrDTF;
 import ahrweiler.support.FCI;
 import ahrweiler.support.RCode;
 import ahrweiler.support.OrderSim;
@@ -10,6 +11,7 @@ import ahrweiler.bgm.BGM_Manager;
 import ahrweiler.bgm.AttributesSK;
 import ahrweiler.gui.AD_Params;
 import ahrweiler.gui.AD_Acronyms;
+import ahrweiler.gui.TableSortPanel;
 import javax.swing.*;
 import java.lang.Thread;
 import java.awt.Dimension;
@@ -19,11 +21,13 @@ import java.awt.Component;
 import java.awt.Button;
 import java.awt.event.*;
 import java.awt.Color;
+import java.awt.Font;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeEvent;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.io.File;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.text.StyledDocument;
@@ -51,22 +55,17 @@ class BenchmarkWorker extends SwingWorker<ArrayList<ArrayList<Double>>, ArrayLis
 		for(int i = 0; i < totSamplings; i++){ 
 			if(!isCancelled()){
 				AttributesSK kattr = new AttributesSK("./../data/tmp/sk_attrs.txt");
+				kattr.setBGM("rnd");
 				//create rnd basis (using saved key params)
-				String sdate = kattr.getSDate();
-				String edate = kattr.getEDate();
-				int spd = kattr.getSPD();
-				int tvi = kattr.getTVI();
-				String msMask = kattr.getMsMask();
-				String narMask = kattr.getNarMask();
-				BGM_Manager bgmm = new BGM_Manager();
-				bgmm.genBasisRnd(sdate, edate, spd, tvi, msMask, narMask, 0.50);
+				BGM_Manager bgmm = new BGM_Manager(kattr);
+				bgmm.genBasisRnd(0.75);
 				//get rnd data back from file
 				ArrayList<ArrayList<String>> kpFile = AhrIO.scanFile(kpPath, ",");
 				double itrAPAPT = 0.0;
 				double itrPosp = 0.0;
 				try{
-					itrAPAPT = Double.parseDouble(kpFile.get(kpFile.size()-1).get(fciKP.getIdx("apapt")));
-					itrPosp = Double.parseDouble(kpFile.get(kpFile.size()-1).get(fciKP.getIdx("posp")));
+					itrAPAPT = Double.parseDouble(kpFile.get(kpFile.size()-1).get(fciKP.getIdx("true_apapt")));
+					itrPosp = Double.parseDouble(kpFile.get(kpFile.size()-1).get(fciKP.getIdx("true_posp")));
 				}catch(NumberFormatException ex){
 					System.out.println("ERR: " + ex.getMessage());
 				}
@@ -138,6 +137,7 @@ class SingleKeyWorker extends SwingWorker<Void, String>{
 	protected Void doInBackground() {
 		System.out.println("======= In skWork"+this.itr+" doInBackground() =======");
 		double progress = 0;
+		setProgress((int)progress);
 		int progDB = 10;
 		int progBasis = 10;	
 		//create attr set and ANN instance
@@ -159,14 +159,15 @@ class SingleKeyWorker extends SwingWorker<Void, String>{
 
 		//calc step value for progressbar
 		int totSections = ann.getTrainFilesSize();
-		double step = (100-(progDB+progDB+progBasis+progBasis)) / (double)totSections;
+		int loopNum = 2;//num of times to loop thru entire train DB
+		double step = (100-(progDB+progDB+progBasis+progBasis)) / ((double)totSections * loopNum);
 		//calc SK
 		publish("Running ANN algorithm ... ");
 		System.out.println("Total Sections : " + totSections);
-		for(int i = 0; i < totSections; i++){
+		for(int i = 0; i < (totSections*loopNum); i++){
 			if(!isCancelled()){
 				System.out.print(i+",");
-				ann.calcSKBySection(i);
+				ann.calcSKBySection(i%totSections);
 				progress += step;
 				setProgress((int)Math.round(progress));
 			}else{
@@ -236,6 +237,7 @@ class AggKeyWorker extends SwingWorker<Void, String>{
 	@Override
 	protected Void doInBackground(){
 		System.out.println("======= In akWork doInBackground() =======");
+		setProgress(0);
 		publish("Writing Basic AK Info To File ...");
 		ArrayList<ArrayList<String>> laFile = AhrIO.scanFile(this.laPath, ",");
 		ArrayList<ArrayList<String>> ksFile = AhrIO.scanFile(this.ksPath, ",");
@@ -345,13 +347,15 @@ class BimSomOptWorker extends SwingWorker<Void, String>{
 	private JProgressBar pb;
 	private int picDimX;
 	private int picDimY;
-	public BimSomOptWorker(JLabel lb, JProgressBar pb, int dimX, int dimY){
+	private int totSamplings;
+	public BimSomOptWorker(JLabel lb, JProgressBar pb, int dimX, int dimY, int totSamplings){
 		this.laPath = "./../out/ak/log/ak_log.txt";
 		this.fciLA = new FCI(true, this.laPath);
 		this.lb = lb;
 		this.pb = pb;
 		this.picDimX = dimX;
 		this.picDimY = dimY;
+		this.totSamplings = totSamplings;
 		//add property change listener to update progress bar
 		this.addPropertyChangeListener(new PropertyChangeListener(){
 			public void propertyChange(PropertyChangeEvent e){	
@@ -367,8 +371,8 @@ class BimSomOptWorker extends SwingWorker<Void, String>{
 		String bmPath = "./../data/tmp/bso_multiple.txt";
 		FCI fciBM = new FCI(false, bmPath);
 		int progress = 0;
-		int startProgress = 8;
-		int stepProgress = 23;
+		setProgress(progress);
+		int[] progressSteps = new int[]{8, 28, 28, 28, 8};
 		//get short AK and long AK
 		publish("Retrieving AK Information ... ");
 		ArrayList<ArrayList<String>> laFile = AhrIO.scanFile(this.laPath, ",");
@@ -380,9 +384,9 @@ class BimSomOptWorker extends SwingWorker<Void, String>{
 		}else{
 			System.out.println("ERR: Not enough AKs in ak_log.txt");
 		}
-		progress += startProgress;
+		progress += progressSteps[0];
 		setProgress(progress);
-		//short AK
+		//===== short AK =====
 		String sakName = "AK"+String.valueOf(shortID);
 		String shortDataPath = "./../data/r/rdata/demo_short_heat.csv";
 		String shortPlotPath = "./../resources/demo_short_heat.png";
@@ -391,9 +395,12 @@ class BimSomOptWorker extends SwingWorker<Void, String>{
 		publish("Calculating BIM/SOM Optimization for "+sakName+" (short calls) ...");
 		BGM_Manager akShort = new BGM_Manager(shortID);
 		OrderSim osimShort = new OrderSim(shortID);
+		osimShort.setTtvMask("010");
 		osimShort.calcBSO();
+		ArrayList<ArrayList<String>> orderlist = AhrIO.scanFile("./../data/tmp/os_orderlist.txt", ",");
+		AhrIO.writeToFile("./../data/tmp/ad_ol_short_bso.txt", orderlist, ",");
 		akShort.bsoPerfToFileAK(osimShort);
-		progress += stepProgress;
+		progress += progressSteps[1];
 		setProgress(progress);
 		//[2] write data needed for R plot to file
 		ArrayList<ArrayList<String>> shortBM = AhrIO.scanFile(bmPath, ",");
@@ -407,18 +414,7 @@ class BimSomOptWorker extends SwingWorker<Void, String>{
 			shortRF.add(line);
 		}
 		AhrIO.writeToFile(shortDataPath, shortRF, ",");
-		//[3] run R script and save heatmap plot
-		publish("Run R Program to Plot Heatmap for "+sakName+" (short calls) ...");
-		RCode rcHeat = new RCode();
-		rcHeat.setXLabel("Buy-In Multiple");
-		rcHeat.setYLabel("Sell-Out Multiple");
-		rcHeat.setTitle("Heatmap of "+sakName+" YoY %s For Each BIM/SOM Combination");
-		rcHeat.createHeatmap(shortDataPath, shortPlotPath, this.picDimX, this.picDimY);
-		rcHeat.writeCode(shortScriptPath);
-		rcHeat.runScript(shortScriptPath);
-		progress += stepProgress;
-		setProgress(progress);
-		//long AK
+		//===== long AK =====
 		String lakName = "AK"+String.valueOf(longID);
 		String longDataPath = "./../data/r/rdata/demo_long_heat.csv";
 		String longPlotPath = "./../resources/demo_long_heat.png";
@@ -427,9 +423,12 @@ class BimSomOptWorker extends SwingWorker<Void, String>{
 		publish("Calculating BIM/SOM Optimization for "+lakName+" (long calls) ...");
 		BGM_Manager akLong = new BGM_Manager(longID);
 		OrderSim osimLong = new OrderSim(longID);
+		osimLong.setTtvMask("010");
 		osimLong.calcBSO();
+		orderlist = AhrIO.scanFile("./../data/tmp/os_orderlist.txt", ",");
+		AhrIO.writeToFile("./../data/tmp/ad_ol_long_bso.txt", orderlist, ",");
 		akLong.bsoPerfToFileAK(osimLong);
-		progress += stepProgress;
+		progress += progressSteps[2];
 		setProgress(progress);
 		//[2] write data needed for R plot to file
 		ArrayList<ArrayList<String>> longBM = AhrIO.scanFile(bmPath, ",");
@@ -443,16 +442,79 @@ class BimSomOptWorker extends SwingWorker<Void, String>{
 			longRF.add(line);
 		}
 		AhrIO.writeToFile(longDataPath, longRF, ",");
-		//[3] run R scripts and save heatmap plot
-		publish("Run R Program to Plot Heatmap for "+lakName+" (long calls) ...");
-		rcHeat = new RCode();
-		rcHeat.setXLabel("Buy-In Multiple");
-		rcHeat.setYLabel("Sell-Out Multiple");
-		rcHeat.setTitle("Heatmap of "+lakName+" YoY %s For Each BIM/SOM Combination");
-		rcHeat.createHeatmap(longDataPath, longPlotPath, this.picDimX, this.picDimY);
-		rcHeat.writeCode(longScriptPath);
-		rcHeat.runScript(longScriptPath);
-		progress += stepProgress;
+		//===== RND =====
+		publish("Calculating BIM/SOM Optimization for RND ... ");
+		AttributesSK kattr = new AttributesSK("./../data/tmp/sk_attrs.txt");
+		ArrayList<String> dates = AhrDate.getDatesBetween(kattr.getSDate(), kattr.getEDate());
+		//create another rnd basis file using all others to fill all dates
+		String bsPath = "./../out/sk/baseis/rnd/";
+		FCI fciBS = new FCI(false, bsPath);
+		ArrayList<String> rndBasisFiles = AhrIO.getFilesInPath(bsPath);
+		ArrayList<ArrayList<String>> allRND = new ArrayList<ArrayList<String>>();
+		for(int i = 0; i < rndBasisFiles.size(); i++){
+			ArrayList<String> elimDates = new ArrayList<String>();//eliminate at end of file
+			ArrayList<ArrayList<String>> fc = AhrIO.scanFile(bsPath+rndBasisFiles.get(i), ",");
+			for(int j = 0; j < fc.size(); j++){
+				String itrDate = fc.get(j).get(fciBS.getIdx("date"));
+				if(dates.contains(itrDate)){
+					allRND.add(fc.get(j));
+					if(!elimDates.contains(itrDate)){
+						elimDates.add(itrDate);
+					}
+				}
+			}
+			for(int j = 0; j < elimDates.size(); j++){
+				dates.remove(elimDates.get(j));
+			}
+		}
+		System.out.println("--> In bsoWork, dates left after rnd basis creation : " + dates);
+		//write rnd basis file
+		AhrIO.writeToFile("./../out/sk/baseis/rnd/RND_"+String.valueOf(totSamplings)+".txt", allRND, ",");
+		//write new lines to keys_struct & keys_perf
+		String ksPath = "./../out/sk/log/rnd/keys_struct.txt";
+		String kpPath = "./../out/sk/log/rnd/keys_perf.txt";
+		FCI fciKS= new FCI(true, ksPath);
+		FCI fciKP = new FCI(true, kpPath);
+		ArrayList<ArrayList<String>> ksFile = AhrIO.scanFile(ksPath, ",");
+		ArrayList<ArrayList<String>> kpFile = AhrIO.scanFile(kpPath, ",");
+		ArrayList<String> ksRow = new ArrayList<String>(ksFile.get(ksFile.size()-1));
+		ArrayList<String> kpRow = new ArrayList<String>(kpFile.get(kpFile.size()-1));
+		ksRow.set(fciKS.getIdx("sk_num"), String.valueOf(totSamplings));
+		kpRow.set(fciKP.getIdx("sk_num"), String.valueOf(totSamplings));
+		kpRow.set(fciKP.getIdx("true_apapt"), "tbd");
+		kpRow.set(fciKP.getIdx("true_posp"), "tbd");
+		ksFile.add(ksRow);
+		kpFile.add(kpRow);
+		AhrIO.writeToFile(ksPath, ksFile, ",");
+		AhrIO.writeToFile(kpPath, kpFile, ",");
+		//calc rnd BSO
+		OrderSim osimRnd = new OrderSim("rnd", totSamplings);
+		osimRnd.setTtvMask("010");
+		osimRnd.calcBSO();
+		orderlist = AhrIO.scanFile("./../data/tmp/os_orderlist.txt", ",");
+		AhrDate.sortDates2D(orderlist, true, 0);
+		AhrIO.writeToFile("./../data/tmp/ad_ol_rnd_bso.txt", orderlist, ",");
+		progress += progressSteps[3];
+		setProgress(progress);	
+
+		//calc orderlists for all methods for no BSO
+		publish("Saving BSO Information ... ");
+		osimShort.setBIM(0.001);
+		osimShort.setSOM(50.0);
+		osimShort.calcOrderList();
+		orderlist = AhrIO.scanFile("./../data/tmp/os_orderlist.txt", ",");
+		AhrIO.writeToFile("./../data/tmp/ad_ol_short_normal.txt", orderlist, ",");	
+		osimLong.setBIM(50.0);
+		osimLong.setSOM(0.001);
+		osimLong.calcOrderList();
+		orderlist = AhrIO.scanFile("./../data/tmp/os_orderlist.txt", ",");
+		AhrIO.writeToFile("./../data/tmp/ad_ol_long_normal.txt", orderlist, ",");	
+		osimRnd.setBIM(50.0);
+		osimRnd.setSOM(0.001);
+		osimRnd.calcOrderList();
+		orderlist = AhrIO.scanFile("./../data/tmp/os_orderlist.txt", ",");
+		AhrIO.writeToFile("./../data/tmp/ad_ol_rnd_normal.txt", orderlist, ",");	
+		progress += progressSteps[4];
 		setProgress(progress);
 
 		System.out.println("--> End of doInBackground()");
@@ -469,49 +531,50 @@ class BimSomOptWorker extends SwingWorker<Void, String>{
 
 	}
 
-
 }
 
 
 public class AutoDemo {
 
+	private JFrame frame;
 	private int minimumX = 400;
 	private int preferredX = 600;
 	private int maximumX = 800;
-	private int fillItr = 0;
+	private int totSamplings = 5;	//# of rnd samplings to create a benchmark
 
 	public AutoDemo(){
+		frame = new JFrame();
+		frame.setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
+		frame.setTitle("STAG3 Demonstration");
+		frame.setSize(600, 700);	
 		runDemo();
 	}
 
 	public void runDemo(){
 		//lists and over-arching data
-		int totSamplings = 5;	//# of random samplings to create a benchmark
 		int picDimX = 440;
-		int picDimY = 440;
+		int picDimY = 500;
 		ImageIcon iiPic = new ImageIcon("./../resources/cool.png");
 		AttributesSK defAttrs = new AttributesSK();
 		defAttrs.saveToFile("./../data/tmp/sk_attrs.txt");
-
+		String[] resultPlotList = new String[]{"Appr Distribution (B&W)", "Portfolio Growth ($)"};
+		String[] simTradeList = new String[]{"Short", "Random", "Long"};
 
 		//layout
-		int xdim = 600;
-		int ydim = 700;
-		JFrame frame = new JFrame();
-		frame.setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
-		frame.setTitle("STAG3 Demonstration");
-		frame.setSize(xdim, ydim);
 		JPanel pMain = new JPanel();
 		pMain.setLayout(new BoxLayout(pMain, BoxLayout.Y_AXIS));
 		pMain.setOpaque(false);
 		JScrollPane spMain = new JScrollPane(pMain, JScrollPane.VERTICAL_SCROLLBAR_ALWAYS,
 											JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+		JPanel pPlots = new JPanel();
+		pPlots.setLayout(null);
+		JPanel pTrades = new JPanel();
+		pTrades.setLayout(null);
 
 		//init components
-		HashMap<String, JComponent> jcTracker = new HashMap<String, JComponent>();
-		JButton bAcronymRef = new JButton("Acronym Reference Table");
-		JButton bEditInputs = new JButton("Edit Input Params");
 		JButton bStartDemo = new JButton("Start Demo");
+		JButton bEditInputs = new JButton("Edit Input Params");
+		JButton bAcronymRef = new JButton("Acronym Reference Table");
 		JButton bTestComps = new JButton("Test Components");
 		JTextPane tpDesc = new JTextPane();
 		tpDesc.setText("This demonstration will show the effectiveness of using an Artificial "+
@@ -525,12 +588,12 @@ public class AutoDemo {
 		tpStep1.setText("Step 1 :  Create a set of random samples to show innate market performance before any"+
 						" machine learning algorithm is applied"); 
 		JTextPane tpStep2 = new JTextPane();
-		tpStep2.setText("Step 2 :  Apply ANN algorithm to all dates in which the market price is below the 3-day"+
+		tpStep2.setText("Step 2 :  Apply ANN algorithm to all dates in which the market price is below the 5-day"+
 						" SMA of the market (MS Mask = xxxxxx0x).");
 		JLabel lbProgressSK1 = new JLabel("Placeholder");
 		JProgressBar pbProgressSK1 = new JProgressBar();
 		JTextPane tpStep3 = new JTextPane();
-		tpStep3.setText("Step 3 :  Apply ANN algorithm to all dates in which the market price is above the 3-day"+
+		tpStep3.setText("Step 3 :  Apply ANN algorithm to all dates in which the market price is above the 5-day"+
 						" SMA of the market (MS Mask = xxxxxx1x).");
 		JLabel lbProgressSK2 = new JLabel("Placeholder");
 		JProgressBar pbProgressSK2 = new JProgressBar();
@@ -549,34 +612,17 @@ public class AutoDemo {
 						" trades. The multiplier would be in regards to the stocks last price.");
 		JLabel lbProgressBSO = new JLabel("Placeholder");
 		JProgressBar pbProgressBSO = new JProgressBar();
-		JLabel lbShortHeatmap = new JLabel("Placeholder");
-		JLabel lbShortHeatmapPic = new JLabel();
-		JLabel lbLongHeatmap = new JLabel("Placeholder");
-		JLabel lbLongHeatmapPic = new JLabel();
 		JLabel lbDescTableBSO = new JLabel("Final results, with BIM/SOM optimization.");
-		//JLabel lbRndHeatmap = new JLabel("Placeholder");
-		//JLabel lbRndHeatmapPic = new JLabel();
 		JTextPane tpResults = new JTextPane();
 		tpResults.setText("Final Results: Now that we have two comprehensive trading strategies, one for short calls"+
 						", and one for long calls, plots comparing the two alongside the random sampling can be shown.");
-		JLabel lbResultsBW = new JLabel();
-		JLabel lbResultsProfits = new JLabel();
+		JLabel lbPlotType = new JLabel("Plot Type:");
+		JComboBox cbPlotType = new JComboBox();
+		JButton bPlot = new JButton("Plot");
+		JLabel lbTrades = new JLabel("View Simulated Trades:");
+		JComboBox cbTrades = new JComboBox();
+		JButton bTrades = new JButton("View");
 				
-
-		//add elements to comp tracker
-		jcTracker.put("pMain", pMain);
-		jcTracker.put("spMain", spMain);
-		jcTracker.put("bAcronymRef", bAcronymRef);
-		jcTracker.put("bEditInputs", bEditInputs);
-		jcTracker.put("bStartDemo", bStartDemo);
-		jcTracker.put("bTestComps", bTestComps);
-		jcTracker.put("tpDesc", tpDesc);
-		jcTracker.put("tpStep1", tpStep1);
-		jcTracker.put("tpStep2", tpStep2);
-		jcTracker.put("tpStep3", tpStep3);
-		jcTracker.put("tpStep4", tpStep4);
-		jcTracker.put("tpStep5", tpStep5);
-
 		//---------- init tables -----------
 		int tableRowHeight = 17;
 		//create random sample (benchmark) table and scrollpane
@@ -590,7 +636,8 @@ public class AutoDemo {
 		benchmarkData[totSamplings][0] = "Avg";
 		benchmarkData[totSamplings][1] = "";
 		benchmarkData[totSamplings][2] = "";
-		JTable tBenchmark = new JTable(benchmarkData, benchmarkHeader);
+		DefaultTableModel dtmBench = new DefaultTableModel(benchmarkData, benchmarkHeader);
+		JTable tBenchmark = new JTable(dtmBench);
 		centerCols(tBenchmark);
 		tBenchmark.getColumnModel().getColumn(0).setPreferredWidth(25);
 		tBenchmark.setRowHeight(tableRowHeight);
@@ -643,30 +690,32 @@ public class AutoDemo {
 										JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
 
 
-			
-		jcTracker.put("tBenchmark", tBenchmark);
-		jcTracker.put("spBenchmark", spBenchmark);
-		jcTracker.put("tSK1", tSK1);
-		jcTracker.put("spSK1", spSK1);
-		jcTracker.put("tSK2", tSK2);
-		jcTracker.put("spSK2", spSK2);
-
-
 		//component placement
-		bAcronymRef.setAlignmentX(Component.CENTER_ALIGNMENT);
-		bEditInputs.setAlignmentX(Component.CENTER_ALIGNMENT);
 		bStartDemo.setAlignmentX(Component.CENTER_ALIGNMENT);
+		bEditInputs.setAlignmentX(Component.CENTER_ALIGNMENT);
+		bAcronymRef.setAlignmentX(Component.CENTER_ALIGNMENT);
 		bTestComps.setAlignmentX(Component.CENTER_ALIGNMENT);
 		int tBenchmarkHeight = ((totSamplings+1)*tableRowHeight)+22;
 		int tSK1Height = ((4*tableRowHeight)+22);
 		int tSK2Height = ((4*tableRowHeight)+22);
 		int tAK1Height = ((4*tableRowHeight)+22);
 		int tBSOHeight = ((2*tableRowHeight)+22);
-
+		lbPlotType.setBounds(10, 5, 100, 25);
+		cbPlotType.setBounds(100, 5, 200, 25);
+		bPlot.setBounds(310, 5, 60, 25);
+		lbTrades.setBounds(10, 5, 180, 25);
+		cbTrades.setBounds(190, 5, 110, 25);
+		bTrades.setBounds(310, 5, 60, 25);
 		
 		//basic functionality and aesthetic
-		spMain.getViewport().setBackground(new Color(233, 225, 212));
+		Color backColor = new Color(233, 225, 212);
+		spMain.getViewport().setBackground(backColor);
 		spMain.getVerticalScrollBar().setUnitIncrement(16);
+		setButtonStyle(bStartDemo);
+		setButtonStyle(bEditInputs);
+		setButtonStyle(bAcronymRef);
+		setButtonStyle(bPlot);
+		setButtonStyle(bTrades);
 		disguiseAndUnderlineTextPane(tpDesc, 0);
 		disguiseAndUnderlineTextPane(tpNoteLen, 6);
 		disguiseAndUnderlineTextPane(tpStep1, 8);
@@ -675,17 +724,27 @@ public class AutoDemo {
 		disguiseAndUnderlineTextPane(tpStep4, 8);
 		disguiseAndUnderlineTextPane(tpNoteDatasets, 6);
 		disguiseAndUnderlineTextPane(tpStep5, 8);
+		disguiseAndUnderlineTextPane(tpResults, 14);
+		for(int i = 0; i < resultPlotList.length; i++){
+			cbPlotType.addItem(resultPlotList[i]);
+		}
+		for(int i = 0; i < simTradeList.length; i++){
+			cbTrades.addItem(simTradeList[i]);
+		}
+		pPlots.setBackground(backColor);
+		pTrades.setBackground(backColor);
 		//lbPic.setIcon(iiPic);
 
 		//add everything
-		pMain.add(compPlacer(bAcronymRef, false, 25, 0.80));
+		pMain.add(Box.createRigidArea(new Dimension(0, 5)));
+		pMain.add(compPlacer(bStartDemo, false, 25, 0.80));
 		pMain.add(Box.createRigidArea(new Dimension(0, 10)));
 		pMain.add(compPlacer(bEditInputs, false, 25, 0.80));
 		pMain.add(Box.createRigidArea(new Dimension(0, 10)));
-		pMain.add(compPlacer(bStartDemo, false, 25, 0.80));
+		pMain.add(compPlacer(bAcronymRef, false, 25, 0.80));
 		pMain.add(Box.createRigidArea(new Dimension(0, 10)));
-		pMain.add(compPlacer(bTestComps, false, 25, 0.80));
-		pMain.add(Box.createRigidArea(new Dimension(0, 10)));
+		//pMain.add(compPlacer(bTestComps, false, 25, 0.80));
+		//pMain.add(Box.createRigidArea(new Dimension(0, 10)));
 		pMain.add(compPlacer(tpDesc, false, 80, 1.00));
 		pMain.add(Box.createRigidArea(new Dimension(0, 10)));
 		pMain.add(compPlacer(tpNoteLen, false, 30, 0.80));
@@ -714,21 +773,23 @@ public class AutoDemo {
 		pMain.add(Box.createRigidArea(new Dimension(0, 10)));
 		pMain.add(compPlacer(tpNoteDatasets, false, 70, 0.80));
 		pMain.add(Box.createRigidArea(new Dimension(0, 10)));
-		pMain.add(compPlacer(tpStep5, false, 60, 1.00));
-		pMain.add(Box.createRigidArea(new Dimension(0, 10)));
-		pMain.add(compPlacer(lbShortHeatmap, true, 20, 0.80));
-		pMain.add(picPlacer(lbShortHeatmapPic, picDimX, picDimY));
-		pMain.add(Box.createRigidArea(new Dimension(0, 10)));
-		pMain.add(compPlacer(lbLongHeatmap, true, 20, 0.80));
-		pMain.add(picPlacer(lbLongHeatmapPic, picDimX, picDimY));
+		pMain.add(compPlacer(tpStep5, false, 45, 1.00));
 		pMain.add(Box.createRigidArea(new Dimension(0, 10)));
 		pMain.add(compPlacer(lbProgressBSO, true, 20, 0.80));
 		pMain.add(compPlacer(pbProgressBSO, true, 15, 0.80));
 		pMain.add(compPlacer(lbDescTableBSO, true, 20, 0.80));
 		pMain.add(compPlacer(spBSO, true, tBSOHeight, 0.80));
 		pMain.add(Box.createRigidArea(new Dimension(0, 10)));
-
-
+		pMain.add(compPlacer(tpResults, false, 45, 1.00));
+		pMain.add(Box.createRigidArea(new Dimension(0, 10)));
+		pPlots.add(lbPlotType);
+		pPlots.add(cbPlotType);
+		pPlots.add(bPlot);
+		pMain.add(compPlacer(pPlots, false, 40, 1.00));
+		pTrades.add(lbTrades);
+		pTrades.add(cbTrades);
+		pTrades.add(bTrades);
+		pMain.add(compPlacer(pTrades, false, 40, 1.00));
 
 		//reset button as visible
 		bAcronymRef.setVisible(true);
@@ -750,41 +811,32 @@ public class AutoDemo {
 		frame.setVisible(true);
 		//iiPic.getImage().flush();	
 
-		//worker threads
-		BimSomOptWorker bsoWork = new BimSomOptWorker(lbProgressBSO, pbProgressBSO, picDimX, picDimY);
-		bsoWork.addPropertyChangeListener(new PropertyChangeListener(){
+		//worker thread listeners
+		PropertyChangeListener bsoPCL = new PropertyChangeListener(){
 			public void propertyChange(PropertyChangeEvent e){
 				if("progress".equals(e.getPropertyName())){
 					int progress = Integer.parseInt(e.getNewValue().toString());
 					if(progress >= 50){
-						//lbShortHeatmap.setText("Heatmap of brute force calculation of the short AKs BIM/SOM Optimization");
-						//ImageIcon iiShortHeat = new ImageIcon("./../resources/demo_short_heat.png");
-						//lbShortHeatmapPic.setIcon(iiShortHeat);
-						//lbShortHeatmap.setVisible(true);
-						//lbShortHeatmapPic.setVisible(true);
-						//iiShortHeat.getImage().flush();
 					}
 				}
 				if("state".equals(e.getPropertyName())){
 					if("DONE".equals(e.getNewValue().toString())){
-						bEditInputs.setEnabled(true);
-						//lbLongHeatmap.setText("Brute force calculation of the long AKs BIM/SOM optimization.");
-						//ImageIcon iiLongHeat = new ImageIcon("./../resources/demo_long_heat.png");
-						//lbLongHeatmapPic.setIcon(iiLongHeat);
-						//lbLongHeatmap.setVisible(true);
-						//lbLongHeatmapPic.setVisible(true);
-						//iiLongHeat.getImage().flush();
 						//setup final table (AK BSO)
 						lbProgressBSO.setVisible(false);
 						pbProgressBSO.setVisible(false);
 						spBSO.setVisible(true);
 						fillTableBSO(tBSO);
+						//enabled buttons, make results stuff visible
+						bStartDemo.setEnabled(true);
+						bEditInputs.setEnabled(true);
+						tpResults.setVisible(true);
+						pPlots.setVisible(true);
+						pTrades.setVisible(true);
 					}
 				}
 			}
-		});
-		AggKeyWorker akWork = new AggKeyWorker(lbProgressAK1, pbProgressAK1);
-		akWork.addPropertyChangeListener(new PropertyChangeListener(){
+		};
+		PropertyChangeListener akPCL = new PropertyChangeListener(){
 			public void propertyChange(PropertyChangeEvent e){
 				if("state".equals(e.getPropertyName())){
 					if("DONE".equals(e.getNewValue().toString())){	
@@ -795,14 +847,15 @@ public class AutoDemo {
 						fillTableAK(tAK1);
 						lbProgressBSO.setVisible(true);
 						pbProgressBSO.setVisible(true);
+						BimSomOptWorker bsoWork = new BimSomOptWorker(lbProgressBSO, pbProgressBSO, picDimX, 
+																					picDimY, totSamplings);
+						bsoWork.addPropertyChangeListener(bsoPCL);
 						bsoWork.execute();					
 					}
-
 				}
 			}
-		});
-		SingleKeyWorker skWork2 = new SingleKeyWorker(lbProgressSK2, pbProgressSK2, "xxxxxx1x", 2);
-		skWork2.addPropertyChangeListener(new PropertyChangeListener(){
+		};
+		PropertyChangeListener sk2PCL = new PropertyChangeListener(){
 			public void propertyChange(PropertyChangeEvent e){
 				//System.out.println("PCL Triggered : " + e.toString());
 				if("state".equals(e.getPropertyName())){
@@ -814,13 +867,14 @@ public class AutoDemo {
 						fillTableSK(tSK2);
 						lbProgressAK1.setVisible(true);
 						pbProgressAK1.setVisible(true);
+						AggKeyWorker akWork = new AggKeyWorker(lbProgressAK1, pbProgressAK1);
+						akWork.addPropertyChangeListener(akPCL);
 						akWork.execute();
 					}
 				}
 			}
-		});
-		SingleKeyWorker skWork1 = new SingleKeyWorker(lbProgressSK1, pbProgressSK1, "xxxxxx0x", 1);
-		skWork1.addPropertyChangeListener(new PropertyChangeListener(){
+		};
+		PropertyChangeListener sk1PCL = new PropertyChangeListener(){
 			public void propertyChange(PropertyChangeEvent e){
 				//System.out.println("PCL Triggered : " + e.toString());
 				if("state".equals(e.getPropertyName())){
@@ -832,13 +886,14 @@ public class AutoDemo {
 						fillTableSK(tSK1);
 						lbProgressSK2.setVisible(true);
 						pbProgressSK2.setVisible(true);
+						SingleKeyWorker skWork2 = new SingleKeyWorker(lbProgressSK2, pbProgressSK2, "xxxxxx1x", 2);
+						skWork2.addPropertyChangeListener(sk2PCL);
 						skWork2.execute();
 					}
 				}
 			}
-		});
-		BenchmarkWorker bmWork = new BenchmarkWorker(tBenchmark, totSamplings);
-		bmWork.addPropertyChangeListener(new PropertyChangeListener(){
+		};
+		PropertyChangeListener bmPCL = new PropertyChangeListener(){
 			public void propertyChange(PropertyChangeEvent e){
 				//System.out.println("PCL Triggered : " + e.toString());
 				//do something upon completion of the thread
@@ -847,11 +902,14 @@ public class AutoDemo {
 					if("DONE".equals(e.getNewValue().toString())){
 						lbProgressSK1.setVisible(true);
 						pbProgressSK1.setVisible(true);
+						//test new way to execute next threads
+						SingleKeyWorker skWork1 = new SingleKeyWorker(lbProgressSK1, pbProgressSK1, "xxxxxx0x", 1);
+						skWork1.addPropertyChangeListener(sk1PCL);
 						skWork1.execute();
 					}
 				}
 			}
-		});
+		};
 
 		//listener functionality
 		bAcronymRef.addActionListener(new ActionListener(){
@@ -866,90 +924,295 @@ public class AutoDemo {
 		});
 		bStartDemo.addActionListener(new ActionListener(){
 			public void actionPerformed(ActionEvent e){
+				//reset tables
+				for(int i = 0; i < tBenchmark.getRowCount(); i++){
+					tBenchmark.setValueAt("", i, 1);
+					tBenchmark.setValueAt("", i, 2);	
+				}
+				for(int i = 0; i < tSK1.getRowCount(); i++){
+					tSK1.setValueAt("", i, 0);
+					tSK1.setValueAt("", i, 3);
+					tSK1.setValueAt("", i, 4);
+				}
+				for(int i = 0; i < tSK2.getRowCount(); i++){
+					tSK2.setValueAt("", i, 0);
+					tSK2.setValueAt("", i, 3);
+					tSK2.setValueAt("", i, 4);
+				}
+				for(int i = 0; i < tAK1.getRowCount(); i++){
+					tAK1.setValueAt("", i, 0);
+					tAK1.setValueAt("", i, 3);
+					tAK1.setValueAt("", i, 4);
+				}
+				for(int i = 0; i < tBSO.getRowCount(); i++){
+					tBSO.setValueAt("", i, 0);
+					tBSO.setValueAt("", i, 2);
+					tBSO.setValueAt("", i, 3);
+					tBSO.setValueAt("", i, 4);
+				}
+				//reset whats visible
+				spSK1.setVisible(false);
+				spSK2.setVisible(false);
+				spAK1.setVisible(false);
+				spBSO.setVisible(false);
+				tpResults.setVisible(false);
+				pPlots.setVisible(false);
+				pTrades.setVisible(false);
+
+				//remove lines from rnd keys_Struct & keys_perf
+				String ksPath = "./../out/sk/log/rnd/keys_struct.txt";
+				String kpPath = "./../out/sk/log/rnd/keys_perf.txt";
+				ArrayList<String> ksRow = AhrIO.scanRow(ksPath, ",", 0);
+				ArrayList<String> kpRow = AhrIO.scanRow(kpPath, ",", 0);
+				ArrayList<ArrayList<String>> ksFile = new ArrayList<ArrayList<String>>();
+				ArrayList<ArrayList<String>> kpFile = new ArrayList<ArrayList<String>>();
+				ksFile.add(ksRow);
+				kpFile.add(kpRow);
+				AhrIO.writeToFile(ksPath, ksFile, ",");
+				AhrIO.writeToFile(kpPath, kpFile, ",");
+				//remove rnd tmp basis files
+				String rbPath = "./../out/sk/baseis/rnd/";
+				ArrayList<String> rndFiles = AhrIO.getFilesInPath(rbPath);
+				for(int i = 0; i < rndFiles.size(); i++){
+					File file = new File(rbPath+rndFiles.get(i));
+					if(file.exists()){
+						file.delete();
+					}
+				}
+
+				//start worker threads
+				bStartDemo.setEnabled(false);
 				bEditInputs.setEnabled(false);
 				spBenchmark.setVisible(true);
 				frame.revalidate();
 				frame.repaint();
+				BenchmarkWorker bmWork = new BenchmarkWorker(tBenchmark, totSamplings);
+				bmWork.addPropertyChangeListener(bmPCL);
 				bmWork.execute();
 				System.out.println("--> Post bmWork thread.");
 			}
 		});
-		bTestComps.addActionListener(new ActionListener(){
+		bPlot.addActionListener(new ActionListener(){
 			public void actionPerformed(ActionEvent e){
-				printComps(jcTracker);
+				int plotIdx = cbPlotType.getSelectedIndex();
+				double[] avgs = new double[6];
+				int[] counts = new int[6];
+				if(plotIdx == 0){//B&W, appr distn
+					FCI fciOL = new FCI(false, "./../data/tmp/os_orderlist.txt");
+					//data to write to file for R to use
+					ArrayList<ArrayList<String>> rdata = new ArrayList<ArrayList<String>>();
+					rdata.add(AhrAL.toAL(new String[]{"variable", "value"}));
+					ArrayList<ArrayList<String>> orderlist = AhrIO.scanFile("./../data/tmp/ad_ol_short_normal.txt", ",");
+					for(int i = 0; i < orderlist.size(); i++){
+						String itrMethAppr = orderlist.get(i).get(fciOL.getIdx("method_appr"));
+						avgs[0] += Double.parseDouble(itrMethAppr);
+						counts[0]++;
+						ArrayList<String> line = new ArrayList<String>();
+						line.add("short_normal");
+						line.add(itrMethAppr);
+						rdata.add(line);
+					}
+					orderlist = AhrIO.scanFile("./../data/tmp/ad_ol_short_bso.txt",",");
+					for(int i = 0; i < orderlist.size(); i++){
+						String itrMethAppr = orderlist.get(i).get(fciOL.getIdx("method_appr"));
+						String itrTrigCode = orderlist.get(i).get(fciOL.getIdx("trigger_code"));
+						if(!itrTrigCode.equals("NO")){
+							avgs[1] += Double.parseDouble(itrMethAppr);
+							counts[1]++;
+							ArrayList<String> line = new ArrayList<String>();
+							line.add("short_bso");
+							line.add(itrMethAppr);
+							rdata.add(line);
+						}
+					}
+					orderlist = AhrIO.scanFile("./../data/tmp/ad_ol_rnd_normal.txt", ",");
+					for(int i = 0; i < orderlist.size(); i++){
+						String itrMethAppr = orderlist.get(i).get(fciOL.getIdx("method_appr"));
+						avgs[2] += Double.parseDouble(itrMethAppr);
+						counts[2]++;
+						ArrayList<String> line = new ArrayList<String>();
+						line.add("rnd_normal");
+						line.add(itrMethAppr);
+						rdata.add(line);
+					}
+					orderlist = AhrIO.scanFile("./../data/tmp/ad_ol_rnd_bso.txt",",");
+					for(int i = 0; i < orderlist.size(); i++){
+						String itrMethAppr = orderlist.get(i).get(fciOL.getIdx("method_appr"));
+						String itrTrigCode = orderlist.get(i).get(fciOL.getIdx("trigger_code"));
+						if(!itrTrigCode.equals("NO")){
+							avgs[3] += Double.parseDouble(itrMethAppr);
+							counts[3]++;
+							ArrayList<String> line = new ArrayList<String>();
+							line.add("rnd_bso");
+							line.add(itrMethAppr);
+							rdata.add(line);
+						}
+					}
+					orderlist = AhrIO.scanFile("./../data/tmp/ad_ol_long_normal.txt", ",");
+					for(int i = 0; i < orderlist.size(); i++){
+						String itrMethAppr = orderlist.get(i).get(fciOL.getIdx("method_appr"));
+						avgs[4] += Double.parseDouble(itrMethAppr);
+						counts[4]++;
+						ArrayList<String> line = new ArrayList<String>();
+						line.add("long_normal");
+						line.add(itrMethAppr);
+						rdata.add(line);
+					}
+					orderlist = AhrIO.scanFile("./../data/tmp/ad_ol_long_bso.txt",",");
+					for(int i = 0; i < orderlist.size(); i++){
+						String itrMethAppr = orderlist.get(i).get(fciOL.getIdx("method_appr"));
+						String itrTrigCode = orderlist.get(i).get(fciOL.getIdx("trigger_code"));
+						if(!itrTrigCode.equals("NO")){
+							avgs[5] += Double.parseDouble(itrMethAppr);
+							counts[5]++;
+							ArrayList<String> line = new ArrayList<String>();
+							line.add("long_bso");
+							line.add(itrMethAppr);
+							rdata.add(line);
+						}
+					}
+					for(int i = 0; i < 6; i++){
+						avgs[i] = avgs[i] / (double)counts[i];
+						System.out.println("Avg"+i+" : "+String.format("%.3f", avgs[i]));
+					}
+					//R related paths and plot dims
+					String dataPath = "./../data/r/rdata/ad_mappr_baw.csv";
+					String scriptPath = "./../data/r/rscripts/ad_mappr_baw.R";
+					String plotPath1 = "./../resources/ad_mappr_baw1.png";
+					String plotPath2 = "./../resources/ad_mappr_baw2.png";
+					int xdim = 500;
+					int ydim = 500;
+					//create R plot
+					AhrIO.writeToFile(dataPath, rdata, ",");
+					RCode rcode = new RCode();
+					rcode.setTitle("Trade Appr Distribution By Method");
+					rcode.setXLabel("Method");
+					rcode.setYLabel("Trade Appr (%)");
+					rcode.createBAW(dataPath, plotPath1, xdim, ydim, false);
+					rcode.writeCode(scriptPath);
+					rcode.runScript(scriptPath);
+					rcode.resetCode();
+					rcode.setTitle("Trade Appr Distribution By Method w/ Averages (zoomed)");
+					rcode.softLimY(-20, 20);
+					rcode.createBAW(dataPath, plotPath2, xdim, ydim, true);
+					rcode.writeCode(scriptPath);
+					rcode.runScript(scriptPath); 
+					//show plot on popout frame
+					JFrame rframe = new JFrame();
+					rframe.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+					rframe.setTitle("Demo Results");
+					JLabel lbBAW1 = new JLabel();
+					JLabel lbBAW2 = new JLabel();
+					lbBAW1.setPreferredSize(new Dimension(xdim, ydim));
+					lbBAW2.setPreferredSize(new Dimension(xdim, ydim));
+					ImageIcon iiBAW1 = new ImageIcon(plotPath1);
+					ImageIcon iiBAW2 = new ImageIcon(plotPath2);
+					lbBAW1.setIcon(iiBAW1);
+					lbBAW2.setIcon(iiBAW2);
+					rframe.getContentPane().add(lbBAW1, BorderLayout.CENTER);
+					rframe.getContentPane().add(lbBAW2, BorderLayout.EAST);
+					rframe.pack();
+					rframe.setVisible(true);
+					iiBAW1.getImage().flush();
+					iiBAW2.getImage().flush();
+				}else if(plotIdx == 1){//portfolio growth, short
+					//R related paths and plot dims
+					String dataPath = "./../data/r/rdata/ad_growth.csv";
+					String scriptPath = "./../data/r/rscripts/ad_growth.R";
+					String plotPath = "./../resources/ad_growth.png";
+					int xdim = 800;
+					int ydim = 600;
+					//create growth data
+					double principal = 100000.0;
+					ArrayList<ArrayList<String>> rdata = new ArrayList<ArrayList<String>>();
+					rdata.add(AhrAL.toAL(new String[]{"date", "variable", "value"}));
+					OrderSim osim = new OrderSim();
+					ArrayList<ArrayList<String>> orderlist = AhrIO.scanFile("./../data/tmp/ad_ol_short_bso.txt", ",");
+					osim.setIsLong(false);
+					osim.setOrderList(orderlist);
+					ArrayList<ArrayList<String>> growth = osim.calcGrowth(principal);
+					for(int i = 0; i < growth.size(); i++){
+						ArrayList<String> line = new ArrayList<String>();
+						line.add(growth.get(i).get(0));
+						line.add("short_bso");
+						line.add(growth.get(i).get(1));
+						rdata.add(line);
+					}
+					orderlist = AhrIO.scanFile("./../data/tmp/ad_ol_rnd_bso.txt", ",");
+					osim.setIsLong(true);
+					osim.setOrderList(orderlist);
+					growth = osim.calcGrowth(principal);
+					for(int i = 0; i < growth.size(); i++){
+						ArrayList<String> line = new ArrayList<String>();
+						line.add(growth.get(i).get(0));
+						line.add("rnd_bso");
+						line.add(growth.get(i).get(1));
+						rdata.add(line);
+					}
+					orderlist = AhrIO.scanFile("./../data/tmp/ad_ol_long_bso.txt", ",");
+					osim.setIsLong(true);
+					osim.setOrderList(orderlist);
+					growth = osim.calcGrowth(principal);
+					for(int i = 0; i < growth.size(); i++){
+						ArrayList<String> line = new ArrayList<String>();
+						line.add(growth.get(i).get(0));
+						line.add("long_bso");
+						line.add(growth.get(i).get(1));
+						rdata.add(line);
+					}
+					AhrIO.writeToFile(dataPath, rdata, ",");
+					//create R plot
+					RCode rcode = new RCode();
+					rcode.setTitle("Simulated Portfolio Growth By Method");
+					rcode.setXLabel("Date");
+					rcode.setYLabel("Portfolio Value ($)");
+					rcode.createTimeSeries(dataPath, plotPath, xdim, ydim);
+					rcode.writeCode(scriptPath);
+					rcode.runScript(scriptPath);
+					//show plot on popout frame
+					JFrame rframe = new JFrame();
+					rframe.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+					rframe.setTitle("Demo Results");
+					JLabel lbGrowth = new JLabel();
+					lbGrowth.setPreferredSize(new Dimension(xdim, ydim));
+					ImageIcon iiGrowth = new ImageIcon(plotPath);
+					lbGrowth.setIcon(iiGrowth);
+					rframe.getContentPane().add(lbGrowth, BorderLayout.CENTER);
+					rframe.pack();
+					rframe.setVisible(true);
+					iiGrowth.getImage().flush();
+				}else if(plotIdx == 2){//portolio growth, long
+
+				}
 			}
 		});
-
+		bTrades.addActionListener(new ActionListener(){
+			public void actionPerformed(ActionEvent e){
+				//get col names for data to be displayed
+				FCI fciOL = new FCI(false, "./../data/tmp/os_orderlist.txt");
+				String[] header = AhrAL.toArr(fciOL.getTags());
+				//get orderlist file path according to cb selection
+				int cbIdx = cbTrades.getSelectedIndex();
+				String olPath = "";
+				if(cbIdx == 0){
+					olPath = "./../data/tmp/ad_ol_short_bso.txt";
+				}else if(cbIdx == 1){
+					olPath = "./../data/tmp/ad_ol_rnd_bso.txt";
+				}else if(cbIdx == 2){
+					olPath = "./../data/tmp/ad_ol_long_bso.txt";
+				}
+				//create sperate frame to show data
+				JFrame rframe = new JFrame();
+				rframe.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+				rframe.setTitle("All Trades for AK (short trading strategy)");
+				JPanel pTableSort = new TableSortPanel(olPath, header);
+				rframe.getContentPane().add(pTableSort);
+				rframe.pack();
+				rframe.setVisible(true);
+			}
+		});
 	}
-
-	//----------------- GUI Helper Functions ------------------
-
-	//places a JTable onto the GUI (needs strict height coords and needs indenting)
-	private JComponent compPlacer(JComponent jcomp, boolean strict_height, int height, double indent){
-		int minX = (int)(this.minimumX*indent);
-		int prefX = (int)(this.preferredX*indent);
-		int maxX = (int)(this.maximumX*indent);
-		jcomp.setMinimumSize(new Dimension(minX, 20));
-		jcomp.setPreferredSize(new Dimension(prefX, height));
-		jcomp.setMaximumSize(new Dimension(maxX, 200));
-		jcomp.setVisible(false);
-		Box box = Box.createHorizontalBox();
-		box.add(Box.createHorizontalGlue());
-		box.add(jcomp);
-		box.add(Box.createHorizontalGlue());
-		return box;
-	}
-	//places a JLabel that has pic in it
-	private JLabel picPlacer(JLabel lb, int width, int height){
-		lb.setSize(new Dimension(width, height));
-		lb.setAlignmentX(Component.CENTER_ALIGNMENT);
-		lb.setVisible(false);
-		return lb;
-	}
-	//places a JTextPane onto the GUI
-	private JComponent textPanePlacer(JTextPane tpane){
-		tpane.setMaximumSize(new Dimension(1000, 1000));
-		Box box = Box.createHorizontalBox();
-		box.add(Box.createHorizontalGlue());
-		box.add(tpane);
-		box.add(Box.createHorizontalGlue());	
-		return box;
-	}
-
-	//fill out given JTable w/ data from last AKs in ak_log.txt
-	private void fillTableAK(JTable table){
-		String laPath = "./../out/ak/log/ak_log.txt";
-		FCI fciLA = new FCI(true, laPath);
-		ArrayList<ArrayList<String>> laFile = AhrIO.scanFile(laPath, ",");
-		if(laFile.size() > 2){
-			int lastShortRowIdx = laFile.size()-2;
-			int lastLongRowIdx = laFile.size()-1;
-			String sakID = laFile.get(lastShortRowIdx).get(fciLA.getIdx("ak_num"));
-			String sTrainAPAPT = laFile.get(lastShortRowIdx).get(fciLA.getIdx("true_train_apapt"));
-			String sTrainPosp = laFile.get(lastShortRowIdx).get(fciLA.getIdx("true_train_posp"));
-			String sTestAPAPT = laFile.get(lastShortRowIdx).get(fciLA.getIdx("true_test_apapt"));
-			String sTestPosp = laFile.get(lastShortRowIdx).get(fciLA.getIdx("true_test_posp"));
-			String lakID = laFile.get(lastLongRowIdx).get(fciLA.getIdx("ak_num"));
-			String lTrainAPAPT = laFile.get(lastLongRowIdx).get(fciLA.getIdx("true_train_apapt"));
-			String lTrainPosp = laFile.get(lastLongRowIdx).get(fciLA.getIdx("true_train_posp"));
-			String lTestAPAPT = laFile.get(lastLongRowIdx).get(fciLA.getIdx("true_test_apapt"));
-			String lTestPosp = laFile.get(lastLongRowIdx).get(fciLA.getIdx("true_test_posp"));
-			table.setValueAt(sakID, 0, 0);
-			table.setValueAt(sTrainAPAPT, 0, 3);
-			table.setValueAt(sTrainPosp, 0, 4);
-			table.setValueAt(sakID, 1, 0);
-			table.setValueAt(sTestAPAPT, 1, 3);
-			table.setValueAt(sTestPosp, 1, 4);
-			table.setValueAt(lakID, 2, 0);
-			table.setValueAt(lTrainAPAPT, 2, 3);
-			table.setValueAt(lTrainPosp, 2, 4);
-			table.setValueAt(lakID, 3, 0);
-			table.setValueAt(lTestAPAPT, 3, 3);
-			table.setValueAt(lTestPosp, 3, 4);
-		}else{
-			System.out.println("ERR: not enough AKs in ak_log.txt");
-		}
-	}
+	//----------------- Table Data Functions ------------------
 	//fill out given JTable w/ data from last SKs in keys_perf.txt
 	private void fillTableSK(JTable table){
 		String kpPath = "./../out/sk/log/ann/keys_perf.txt";
@@ -982,6 +1245,40 @@ public class AutoDemo {
 			table.setValueAt(lTestPosp, 3, 4);	
 		}else{
 			System.out.println("ERR: not enough SKs in ann/keys_perf.txt");
+		}
+	}
+	//fill out given JTable w/ data from last AKs in ak_log.txt
+	private void fillTableAK(JTable table){
+		String laPath = "./../out/ak/log/ak_log.txt";
+		FCI fciLA = new FCI(true, laPath);
+		ArrayList<ArrayList<String>> laFile = AhrIO.scanFile(laPath, ",");
+		if(laFile.size() > 2){
+			int lastShortRowIdx = laFile.size()-2;
+			int lastLongRowIdx = laFile.size()-1;
+			String sakID = laFile.get(lastShortRowIdx).get(fciLA.getIdx("ak_num"));
+			String sTrainAPAPT = laFile.get(lastShortRowIdx).get(fciLA.getIdx("true_train_apapt"));
+			String sTrainPosp = laFile.get(lastShortRowIdx).get(fciLA.getIdx("true_train_posp"));
+			String sTestAPAPT = laFile.get(lastShortRowIdx).get(fciLA.getIdx("true_test_apapt"));
+			String sTestPosp = laFile.get(lastShortRowIdx).get(fciLA.getIdx("true_test_posp"));
+			String lakID = laFile.get(lastLongRowIdx).get(fciLA.getIdx("ak_num"));
+			String lTrainAPAPT = laFile.get(lastLongRowIdx).get(fciLA.getIdx("true_train_apapt"));
+			String lTrainPosp = laFile.get(lastLongRowIdx).get(fciLA.getIdx("true_train_posp"));
+			String lTestAPAPT = laFile.get(lastLongRowIdx).get(fciLA.getIdx("true_test_apapt"));
+			String lTestPosp = laFile.get(lastLongRowIdx).get(fciLA.getIdx("true_test_posp"));
+			table.setValueAt(sakID, 0, 0);
+			table.setValueAt(sTrainAPAPT, 0, 3);
+			table.setValueAt(sTrainPosp, 0, 4);
+			table.setValueAt(sakID, 1, 0);
+			table.setValueAt(sTestAPAPT, 1, 3);
+			table.setValueAt(sTestPosp, 1, 4);
+			table.setValueAt(lakID, 2, 0);
+			table.setValueAt(lTrainAPAPT, 2, 3);
+			table.setValueAt(lTrainPosp, 2, 4);
+			table.setValueAt(lakID, 3, 0);
+			table.setValueAt(lTestAPAPT, 3, 3);
+			table.setValueAt(lTestPosp, 3, 4);
+		}else{
+			System.out.println("ERR: not enough AKs in ak_log.txt");
 		}
 	}
 	//fill out given JTable w/ data from AKs BSO data
@@ -1017,6 +1314,45 @@ public class AutoDemo {
 		}
 	}
 
+	//----------------- GUI Helper Functions ------------------
+	//GUI related, sets style to a JButton
+	public void setButtonStyle(JButton btn){
+		Font plainFont = new Font(Font.SANS_SERIF, Font.PLAIN, 12);
+		btn.setFont(plainFont);
+		btn.setBackground(new Color(230, 230, 230));
+		btn.setBorder(BorderFactory.createLineBorder(Color.GRAY));
+	}
+	//places a JTable onto the GUI (needs strict height coords and needs indenting)
+	private JComponent compPlacer(JComponent jcomp, boolean strict_height, int height, double indent){
+		int minX = (int)(this.minimumX*indent);
+		int prefX = (int)(this.preferredX*indent);
+		int maxX = (int)(this.maximumX*indent);
+		jcomp.setMinimumSize(new Dimension(minX, 20));
+		jcomp.setPreferredSize(new Dimension(prefX, height));
+		jcomp.setMaximumSize(new Dimension(maxX, 200));
+		jcomp.setVisible(false);
+		Box box = Box.createHorizontalBox();
+		box.add(Box.createHorizontalGlue());
+		box.add(jcomp);
+		box.add(Box.createHorizontalGlue());
+		return box;
+	}
+	//places a JLabel that has pic in it
+	private JLabel picPlacer(JLabel lb, int width, int height){
+		lb.setSize(new Dimension(width, height));
+		lb.setAlignmentX(Component.CENTER_ALIGNMENT);
+		lb.setVisible(false);
+		return lb;
+	}
+	//places a JTextPane onto the GUI
+	private JComponent textPanePlacer(JTextPane tpane){
+		tpane.setMaximumSize(new Dimension(1000, 1000));
+		Box box = Box.createHorizontalBox();
+		box.add(Box.createHorizontalGlue());
+		box.add(tpane);
+		box.add(Box.createHorizontalGlue());	
+		return box;
+	}
 	//center all rows in a JTable
 	private void centerCols(JTable tbl){
 		int cols = tbl.getColumnCount();
@@ -1026,7 +1362,6 @@ public class AutoDemo {
 			tbl.getColumnModel().getColumn(i).setCellRenderer(centerRenderer);
 		}
 	}
-
 	//add flowlayout to each section of GUI to left justify them
 	private Component leftJustify(JComponent jcomp, int leftPadding){
 		Box box = Box.createHorizontalBox();

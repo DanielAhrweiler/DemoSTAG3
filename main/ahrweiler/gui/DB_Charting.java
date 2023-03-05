@@ -10,6 +10,7 @@ import java.awt.event.*;
 
 public class DB_Charting extends JFrame {
 
+	Font plainFont = new Font(Font.SANS_SERIF, Font.PLAIN, 12);
 	RCode rcode = new RCode();
 
 	public DB_Charting(){
@@ -95,19 +96,18 @@ public class DB_Charting extends JFrame {
 		bgAddComp.add(rbSecInd);
 		bgAddComp.add(rbExchange);
 		bgAddComp.add(rbIndex);
-		Button bAddComp = new Button("Add To Chart");
+		JButton bAddComp = new JButton("Add To Chart");
 		JLabel lbNormDate = new JLabel("Normalization Date:");	//Popout Panel
 		JTextField tfNormDate = new JTextField("");
-		Button bNormGraph = new Button("Graph");
+		JButton bNormGraph = new JButton("Graph");
 		JLabel lbSpecial = new JLabel("Specials:");
 		JComboBox cbSpecial = new JComboBox();
-		Button bSpecial = new Button("Graph");
-		Button bClear = new Button("Clear");					//bottom toolbar
+		JButton bSpecial = new JButton("Graph");
+		JButton bClear = new JButton("Clear");					//bottom toolbar
 		JLabel lbSeries = new JLabel("Series:");
 		JComboBox cbListSeries = new JComboBox();	
-		Button bRemoveSeries = new Button("Remove");
-		Button bDistnSeries = new Button("Distn");
-		Button bOptions = new Button("Options");
+		JButton bRemoveSeries = new JButton("Remove");
+		JButton bDistnSeries = new JButton("Distn");
 
 		//components bounds
 		lbSDate.setBounds(10, 20, 100, 25);					//General Params Panel
@@ -136,16 +136,15 @@ public class DB_Charting extends JFrame {
 		bAddComp.setBounds(10, 305, 360, 40);
 		lbNormDate.setBounds(10, 20, 150, 25);				//Popout Panel
 		tfNormDate.setBounds(170, 20, 100, 25);
-		bNormGraph.setBounds(285, 20, 80, 30);
+		bNormGraph.setBounds(285, 20, 80, 25);
 		lbSpecial.setBounds(10, 55, 80, 25);
 		cbSpecial.setBounds(90, 55, 180, 25);
-		bSpecial.setBounds(285, 55, 80, 30);
-		bClear.setBounds(400, 720, 90, 35);					//bottom toolbar
+		bSpecial.setBounds(285, 55, 80, 25);
+		bClear.setBounds(405, 720, 90, 30);					//bottom toolbar
 		lbSeries.setBounds(590, 720, 70, 30);
 		cbListSeries.setBounds(660, 720, 150, 30);
 		bRemoveSeries.setBounds(820, 720, 100, 30);
 		bDistnSeries.setBounds(940, 720, 100, 30);
-		bOptions.setBounds(1060, 720, 100, 30);
 
 		//basic functionality
 		rbStock.setSelected(true);							//Add Comp Panel
@@ -156,6 +155,11 @@ public class DB_Charting extends JFrame {
 		cbExchange.setEnabled(false);
 		cbIndex.setEnabled(false);
 		rbQuantNo.setSelected(true);
+		setButtonStyle(bAddComp);
+		setButtonStyle(bNormGraph);
+		setButtonStyle(bSpecial);
+		setButtonStyle(bClear);
+		setButtonStyle(bRemoveSeries);
 		for(int i = 0; i < cblStockInds.length; i++){
 			cbStockInds.addItem(cblStockInds[i]);
 		}
@@ -380,6 +384,7 @@ public class DB_Charting extends JFrame {
 						AhrIO.writeToFile(dataPath, AhrDTF.melt(newData, "date"), ",");	
 					}
 					//gen R code
+					rcode.resetCode();
 					rcode.setTitle("Stock Market Charting");
 					rcode.setXLabel("Date");
 					rcode.setYLabel("Value");
@@ -613,10 +618,6 @@ public class DB_Charting extends JFrame {
 				//create pop-up graph showing histogram of distribution of selected indicator
 			}
 		});
-		bOptions.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e){
-			}
-		});
 
 		//add everything
 		pMainGraph.add(lbPlot);
@@ -661,8 +662,13 @@ public class DB_Charting extends JFrame {
 		this.add(cbListSeries);
 		this.add(bRemoveSeries);
 		//this.add(bDistnSeries);
-		//this.add(bOptions);
 		this.setVisible(true);
+	}
+	//GUI related, sets specific style to a JButton
+	public void setButtonStyle(JButton btn){
+		btn.setFont(plainFont);
+		btn.setBackground(new Color(230, 230, 230));
+		btn.setBorder(BorderFactory.createLineBorder(Color.GRAY));
 	}
 
 	//Database -> Stock Charting: retrieves data from DB according to GUI params

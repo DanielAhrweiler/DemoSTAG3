@@ -12,7 +12,7 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
 
-public class AD_Params extends JFrame {
+public class AD_Params {
 
 	public AD_Params(){
 		drawGUI();
@@ -21,17 +21,17 @@ public class AD_Params extends JFrame {
 	//GUI for Database -> Stock Filter
 	public void drawGUI(){
 		//lists and structs
-		AttributesSK kattr = new AttributesSK();
+		AttributesSK kattr = new AttributesSK("./../data/tmp/sk_attrs.txt");
 
 		//layout components
-		this.setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
-		this.setTitle("Single Key Parameters");
-		this.setSize(400, 410);
-		this.setLayout(null);	
+		JFrame frame = new JFrame();
+		frame.setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
+		frame.setTitle("Single Key Parameters");
+		frame.setSize(400, 410);
+		frame.setLayout(null);	
 		JPanel pInputs = new JPanel();
 		pInputs.setLayout(null);
 		pInputs.setBorder(BorderFactory.createTitledBorder("Inputs"));
-
 
 		//components
 		JLabel lbSDate = new JLabel("Start Date :");
@@ -40,7 +40,7 @@ public class AD_Params extends JFrame {
 		JTextField tfEDate = new JTextField();
 		JLabel lbSPD = new JLabel("Stocks / Day :");
 		JTextField tfSPD = new JTextField();
-		JLabel lbTVI = new JLabel("Target Var Index :");
+		JLabel lbTVI = new JLabel("Target Variable :");
 		JComboBox cbTVI = new JComboBox();
 		JLabel lbPlateau = new JLabel("Plateau :");
 		JTextField tfPlateau = new JTextField();
@@ -50,10 +50,9 @@ public class AD_Params extends JFrame {
 		JTextField tfMsMask = new JTextField();
 		JLabel lbIndMask = new JLabel("Ind Mask :");
 		JTextField tfIndMask = new JTextField();
-		JButton bSaveParams = new JButton("Save Parameters");
+		JButton bSaveParams = new JButton("Save And Close");
 		JButton bRevertDef = new JButton("Revert To Default Values");
 
-		
 		//component bounds
 		pInputs.setBounds(10, 10, 370, 280);
 		lbSDate.setBounds(10, 20, 140, 20);
@@ -63,7 +62,7 @@ public class AD_Params extends JFrame {
 		lbSPD.setBounds(10, 90, 140, 20);
 		tfSPD.setBounds(150, 90, 100, 20);
 		lbTVI.setBounds(10, 125, 140, 20);
-		cbTVI.setBounds(150, 125, 120, 20);
+		cbTVI.setBounds(150, 125, 150, 20);
 		lbPlateau.setBounds(10, 160, 140, 20);
 		tfPlateau.setBounds(150, 160, 100, 20);
 		lbLearnRate.setBounds(10, 195, 140, 20);
@@ -73,16 +72,18 @@ public class AD_Params extends JFrame {
 		bSaveParams.setBounds(30, 300, 220, 25);
 		bRevertDef.setBounds(30, 335, 220, 25);
 
-
 		//basic functionality
 		for(int i = 0; i < Globals.target_var_num; i++){
 			cbTVI.addItem(Globals.tvi_monikers[i]);
 		}
+		setButtonStyle(bSaveParams);
+		setButtonStyle(bRevertDef);
 
 		//init fields, also use for bRevertDef
 		tfSDate.setText(kattr.getSDate());
 		tfEDate.setText(kattr.getEDate());
 		tfSPD.setText(String.valueOf(kattr.getSPD()));
+		cbTVI.setSelectedIndex(kattr.getTVI());
 		tfPlateau.setText(String.format("%.3f", kattr.getPlateau()));
 		tfLearnRate.setText(String.format("%.4f", kattr.getLearnRate()));
 		tfMsMask.setText(kattr.getMsMask());
@@ -115,6 +116,7 @@ public class AD_Params extends JFrame {
 				}
 				kattr.setIndMask(tfIndMask.getText());
 				kattr.saveToFile("./../data/tmp/sk_attrs.txt");
+				frame.dispose();
 			}
 		});
 		bRevertDef.addActionListener(new ActionListener() {
@@ -146,10 +148,17 @@ public class AD_Params extends JFrame {
 		pInputs.add(tfMsMask);
 		pInputs.add(lbIndMask);
 		pInputs.add(tfIndMask);
-		this.add(pInputs);
-		this.add(bSaveParams);
-		this.add(bRevertDef);
-		this.setVisible(true);
+		frame.add(pInputs);
+		frame.add(bSaveParams);
+		frame.add(bRevertDef);
+		frame.setVisible(true);
+	}
+	//GUI related, sets style to a JButton
+	public void setButtonStyle(JButton btn){
+		Font plainFont = new Font(Font.SANS_SERIF, Font.PLAIN, 12);
+		btn.setFont(plainFont);
+		btn.setBackground(new Color(230, 230, 230));
+		btn.setBorder(BorderFactory.createLineBorder(Color.GRAY));
 	}
 
 }
