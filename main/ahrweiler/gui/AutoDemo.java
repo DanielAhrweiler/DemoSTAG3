@@ -586,7 +586,7 @@ public class AutoDemo {
 		tpNoteLen.setText("NOTE :  Each step many take several minutes to compute.");
 		JTextPane tpStep1 = new JTextPane();
 		tpStep1.setText("Step 1 :  Create a set of random samples to show innate market performance before any"+
-						" machine learning algorithm is applied"); 
+						" machine learning algorithm is applied."); 
 		JTextPane tpStep2 = new JTextPane();
 		tpStep2.setText("Step 2 :  Apply ANN algorithm to all dates in which the market price is below the 5-day"+
 						" SMA of the market (MS Mask = xxxxxx0x).");
@@ -609,7 +609,7 @@ public class AutoDemo {
 		JTextPane tpStep5 = new JTextPane();
 		tpStep5.setText("Step 5 :  The APAPT can be optimized farther by simulating real world trading conditions"+
 						" and calculating the best buy-in multiplier (BIM) and sell-out multiplier (SOM) of the"+
-						" trades. The multiplier would be in regards to the stocks last price.");
+						" trades. The multiplier would be in regards to the stocks last closing price.");
 		JLabel lbProgressBSO = new JLabel("Placeholder");
 		JProgressBar pbProgressBSO = new JProgressBar();
 		JLabel lbDescTableBSO = new JLabel("Final results, with BIM/SOM optimization.");
@@ -773,7 +773,7 @@ public class AutoDemo {
 		pMain.add(Box.createRigidArea(new Dimension(0, 10)));
 		pMain.add(compPlacer(tpNoteDatasets, false, 70, 0.80));
 		pMain.add(Box.createRigidArea(new Dimension(0, 10)));
-		pMain.add(compPlacer(tpStep5, false, 45, 1.00));
+		pMain.add(compPlacer(tpStep5, false, 60, 1.00));
 		pMain.add(Box.createRigidArea(new Dimension(0, 10)));
 		pMain.add(compPlacer(lbProgressBSO, true, 20, 0.80));
 		pMain.add(compPlacer(pbProgressBSO, true, 15, 0.80));
@@ -1194,17 +1194,21 @@ public class AutoDemo {
 				//get orderlist file path according to cb selection
 				int cbIdx = cbTrades.getSelectedIndex();
 				String olPath = "";
+				String rfTitle = "";
 				if(cbIdx == 0){
 					olPath = "./../data/tmp/ad_ol_short_bso.txt";
+					rfTitle = "All Trades for AK (short trading strategy)";
 				}else if(cbIdx == 1){
 					olPath = "./../data/tmp/ad_ol_rnd_bso.txt";
+					rfTitle = "All Trades for AK (random trading strategy)";
 				}else if(cbIdx == 2){
 					olPath = "./../data/tmp/ad_ol_long_bso.txt";
+					rfTitle = "All Trades for AK (long trading strategy)";
 				}
 				//create sperate frame to show data
 				JFrame rframe = new JFrame();
 				rframe.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-				rframe.setTitle("All Trades for AK (short trading strategy)");
+				rframe.setTitle(rfTitle);
 				JPanel pTableSort = new TableSortPanel(olPath, header);
 				rframe.getContentPane().add(pTableSort);
 				rframe.pack();

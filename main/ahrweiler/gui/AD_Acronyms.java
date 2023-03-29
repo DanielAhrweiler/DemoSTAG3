@@ -36,7 +36,7 @@ public class AD_Acronyms extends JFrame {
 	//GUI for AutoDemo -> bAcronymRef
 	public void drawGUI(){
 		//lists and structs
-		int[] rowHeights = new int[]{80, 80, 80, 210, 180, 80, 80, 80};
+		int[] rowHeights = new int[]{140, 140, 140, 140, 140, 140, 260, 140, 110, 110, 110, 110};
 
 		//layout components
 		this.setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);

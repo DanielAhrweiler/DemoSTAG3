@@ -68,7 +68,7 @@ public class ML_Basis extends JFrame {
 		FCI fciAK = new FCI(true, ksPath);
 		ArrayList<ArrayList<String>> akLog = AhrIO.scanFile(ksPath, ",");
 		akLog.remove(0);
-		String akColMask = "1101111111110111001100";
+		String akColMask = "1100001110110111001100";
 		ArrayList<ArrayList<String>> akData = new ArrayList<ArrayList<String>>();
 		for(int i = 0; i < akLog.size(); i++){
 			ArrayList<String> line = new ArrayList<String>();

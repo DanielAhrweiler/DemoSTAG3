@@ -22,6 +22,7 @@ public class TableSortPanel extends JPanel {
 	private String[][] data;
 	private DefaultTableModel dtm;
 	private JTable table;
+	private JComboBox cbSortCol;
 	private int tableWidth;
 
 	//----------------- CONSTRUCTORS --------------------
@@ -111,7 +112,10 @@ public class TableSortPanel extends JPanel {
 		table.setModel(dtm);
 		System.out.println("Table :\n  -> Cols = "+table.getColumnCount()+"\n  -> Rows = "+table.getRowCount());	
 		setColWidths();
-
+		cbSortCol.removeAllItems();
+		for(int i = 0; i < this.header.length; i++){
+			cbSortCol.addItem(this.header[i]);
+		}
 	}
 	//get width of table
 	public int getTableWidth(){
@@ -164,7 +168,7 @@ public class TableSortPanel extends JPanel {
 		pSort.setMaximumSize(new Dimension(2000, 50));
 		//init components
 		JLabel lbSortCol = new JLabel("Sort Col:");
-		JComboBox cbSortCol = new JComboBox();
+		cbSortCol = new JComboBox();
 		JRadioButton rbAsc = new JRadioButton("Asc");
 		JRadioButton rbDesc = new JRadioButton("Desc");
 		ButtonGroup bgSort = new ButtonGroup();

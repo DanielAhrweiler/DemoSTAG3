@@ -314,8 +314,8 @@ public class StockFilter {
 				//check market cap
 				FCI fciSB = new FCI(false, "./../../DB_Intrinio/Main/S_Base/");
 				ArrayList<String> sbLine = AhrIO.scanRow("./../../DB_Intrinio/Main/S_Base/"+ticker+".txt","~",date);
-				System.out.println("--> Date: "+date+"  |  Ticker: "+ticker+"  | sbLine: "+sbLine);
-				if(sbLine.size() < 6){
+				//System.out.println("--> Date: "+date+"  |  Ticker: "+ticker+"  | sbLine: "+sbLine);
+				if(sbLine.size() < fciSB.getTags().size()){
 					//System.out.println("ERR ==> sbLine: "+sbLine);
 					//errTicks.add(ticker);
 				}else{
@@ -325,7 +325,7 @@ public class StockFilter {
 					passes_mc = false;
 				}
 			}
-			System.out.println("Is In BD: "+is_in_bd+"  |  Passes Ind Rules: "+passes_ind_rules+"  |  Passes MC: "+passes_mc);
+			//System.out.println("Is In BD: "+is_in_bd+"  |  Passes Ind Rules: "+passes_ind_rules+"  |  Passes MC: "+passes_mc);
 			if(is_in_bd && passes_ind_rules && passes_mc){
 				vals.add(0, scode);
 				vals.add(0, String.format("%.4f", mcVal));
@@ -335,8 +335,8 @@ public class StockFilter {
 		}
 		//print out results
 		//System.out.println("==> Error Ticks on "+date+" ("+errTicks.size()+" total): "+errTicks);
-		System.out.println("--> Final Results ... ");
-		AhrAL.print(this.results);
+		//System.out.println("--> Final Results ... ");
+		//AhrAL.print(this.results);
 	}
 
 	//return single string of filter data

@@ -388,7 +388,16 @@ public class PA_KeyPerf extends JFrame {
 					//get all trig %s (while trimming) from orderlist, bounds from orderlist_byappr
 					String olPath = "./../data/tmp/os_orderlist_byappr.txt";
 					FCI fciOL = new FCI(false, olPath);
-					ArrayList<String> methAppr = AhrIO.scanCol(olPath, ",", fciOL.getIdx("method_appr"));
+					ArrayList<String> methAppr = new ArrayList<String>();
+					ArrayList<ArrayList<String>> fcOL = AhrIO.scanFile(olPath, ",");
+					for(int i = 0; i < fcOL.size(); i++){
+						String itrTrigCode = fcOL.get(i).get(fciOL.getIdx("trigger_code"));
+						String itrMethAppr = fcOL.get(i).get(fciOL.getIdx("method_appr"));
+						if(!itrTrigCode.equals("NO")){
+							methAppr.add(itrMethAppr);
+						}
+					}
+					//ArrayList<String> methAppr = AhrIO.scanCol(olPath, ",", fciOL.getIdx("method_appr"));
 					ArrayList<Double> trimAppr = new ArrayList<Double>();
 					double trimVal = 0.025;	//0-1, what % of vals you want trimmed on top & bot
 					int startTrim = (int)((double)methAppr.size() * trimVal);

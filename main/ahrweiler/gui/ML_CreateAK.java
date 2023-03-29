@@ -171,7 +171,7 @@ public class ML_CreateAK extends JFrame {
 				String sdate = tfSDate.getText();
 				String edate = tfEDate.getText();
 				String spd = tfSPD.getText();
-				String tvi = String.valueOf(cbTargetVar.getSelectedItem());
+				String tvi = String.valueOf(cbTargetVar.getSelectedIndex());
 				String narMask = tfNarMask.getText();
 				String indMask = tfIndMask.getText();
 				//get matching SKs from keys_struct and best key that give 100% coverage

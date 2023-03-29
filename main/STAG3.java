@@ -74,7 +74,7 @@ public class STAG3 {
 		JFrame mframe = new JFrame();
 		mframe.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		mframe.setTitle("STAG 3");
-		mframe.setSize(275, 610);
+		mframe.setSize(275, 600);
 		mframe.setLocationRelativeTo(null);
 		mframe.setLayout(null);
 		JLabel lbDB = new JLabel("Database");
@@ -196,9 +196,7 @@ public class STAG3 {
 		Scanner scanner = new Scanner(System.in);
 		System.out.print("==> Pick Option: \n  1) Temp Code"+
 										  "\n  2) Update score_percentiles.txt"+
-										  "\n  3) Check Extreme Relative SMA Vals"+
-										  "\n  4) Check Health of Main/Intrinio/"+
-										  "\n  5) Count All Market States"+
+										  "\n  3) Count All Market States"+
 						"\nEnter: ");
 		int pick = Integer.parseInt(scanner.nextLine());
 		if(pick == 1){
@@ -206,10 +204,6 @@ public class STAG3 {
 		}else if(pick == 2){
 			updateScorePercentiles();
 		}else if(pick == 3){
-			checkRelativeSMAs();
-		}else if(pick == 4){
-			checkIntrinioFolderHealth();
-		}else if(pick == 5){
 			countMarketStates();
 		}else{
 			System.out.println("Invalid Option, Try Again.");
@@ -410,141 +404,7 @@ public class STAG3 {
 		System.out.println("--> score_precentiles.txt ... UPDATED");
 	}
 
-	//checks health of rel SMAs S_Norm (ind vals 1-8)
-	public void checkRelativeSMAs(){
-		String bdPath = "./../../DB_Intrinio/Clean/ByDate/";
-		String snPath = "./../../DB_Intrinio/Main/S_Norm/";
-		FCI fciBD = new FCI(false, bdPath);
-		FCI fciSN = new FCI(false, snPath);
-		ArrayList<String> bdFiles = AhrIO.getNamesInPath(bdPath);
-		AhrDate.sortDates(bdFiles, true);
-		ArrayList<String> snFiles = AhrIO.getNamesInPath(snPath);
-		HashMap<String, Integer> bdCount = new HashMap<String, Integer>();
-		HashMap<String, Integer> snCount = new HashMap<String, Integer>();
-		//count ByDate
-		int totCountBD = 0;
-		for(int i = 0; i < bdFiles.size(); i++){
-			int count = 0;
-			ArrayList<ArrayList<String>> fc = AhrIO.scanFile(bdPath+bdFiles.get(i)+".txt", "~");
-			for(int j = 0; j < fc.size(); j++){
-				totCountBD++;
-				for(int k = 1; k <= 8; k++){
-					int itrAttr = Integer.parseInt(fc.get(j).get(k));
-					if(itrAttr < 100 || itrAttr > 65435){
-						count++;
-						break;
-					}
-				}
-			}
-			bdCount.put(bdFiles.get(i), count);
-		}
-		//count S_Norm
-		int totCountSN = 0;
-		for(int i = 0; i < snFiles.size(); i++){
-			int count = 0;
-			ArrayList<ArrayList<String>> fc = AhrIO.scanFile(snPath+snFiles.get(i)+".txt", "~");
-			for(int j = 0; j < fc.size(); j++){
-				totCountSN++;
-				String itrDate = fc.get(j).get(fciSN.getIdx("date"));
-				for(int k = 1; k <= 8; k++){
-					int itrAttr = 20000;
-					if(!fc.get(j).get(k).equals("NA")){
-						itrAttr = Integer.parseInt(fc.get(j).get(k));
-					}
-					if(itrAttr < 100 || itrAttr > 65435){
-						if(snCount.containsKey(itrDate)){
-							snCount.put(itrDate, snCount.get(itrDate) + 1);
-						}else{
-							snCount.put(itrDate, 1);
-						}
-						break;
-					}
-				}
-			}
-		}
-		//get all dates and combine ByDate counts and S_Norm counts
-		ArrayList<ArrayList<String>> tf = new ArrayList<ArrayList<String>>();
-		ArrayList<String> allDates = AhrDate.getDatesBetween("2002-01-01", AhrDate.getTodaysDate());
-		for(int i = 0; i < allDates.size(); i++){
-			int countBD = 0;
-			int countSN = 0;
-			if(bdCount.containsKey(allDates.get(i))){
-				countBD = bdCount.get(allDates.get(i));
-			}
-			if(snCount.containsKey(allDates.get(i))){
-				countSN = snCount.get(allDates.get(i));
-			}
-			ArrayList<String> line = new ArrayList<String>();
-			line.add(allDates.get(i));
-			line.add(String.valueOf(countBD));
-			line.add(String.valueOf(countSN));
-			tf.add(line);
-		}
-		AhrIO.writeToFile("./../out/snorm_vs_bydate.txt", tf, ",");
 
-		System.out.println("--> Lines Analyzed In ByDate : "+totCountBD);
-		System.out.println("--> Lines Analyzed In S_Norm : "+totCountSN);
-	}
-
-	//check DB_Intrinio/Main/Intrinio/ for abnormalities
-	public void checkIntrinioFolderHealth(){
-		String itPath = "./../../DB_Intrinio/Main/Intrinio/";
-		String cpPath = "./../in/scraper/company_profile.txt";
-		FCI fciIT = new FCI(false, itPath);
-		FCI fciCP = new FCI(false, cpPath);
-		ArrayList<String> itTicks = AhrIO.getNamesInPath(itPath);
-		ArrayList<ArrayList<String>> cpData = AhrIO.scanFile(cpPath, "~");
-		String mrDate = AhrDate.closestDate(AhrDate.getTodaysDate());
-		int totBelowLim = 0;
-		int totOutOfDate = 0;
-		int totInComProfButBad = 0;
-		int totNotInComProf = 0;
-		int totTicksUsed = 0;
-		int totLinesUsed = 0;
-		int totLinesNotUsed = 0;
-		for(int i = 0; i < itTicks.size(); i++){
-			boolean will_be_used_in_sbase = true;
-			ArrayList<ArrayList<String>> fc = AhrIO.scanFile(itPath+itTicks.get(i)+".txt", "~");
-			//check file size
-			if(fc.size() < Globals.min_file_size){
-				totBelowLim++;
-				will_be_used_in_sbase = false;
-			}
-			//check out of date
-			String mrFileDate = fc.get(0).get(fciIT.getIdx("date"));
-			if(!mrDate.equals(mrFileDate)){
-				totOutOfDate++;
-				will_be_used_in_sbase = false;
-			}
-			//check if in company_profile (if yes check if BadT)
-			int cpIdx = AhrAL.getRowIdx(cpData, itTicks.get(i));
-			if(cpIdx != -1){
-				String itrGoodBad = cpData.get(cpIdx).get(fciCP.getIdx("good_bad"));
-				if(itrGoodBad.equals("BadT")){
-					totInComProfButBad++;
-					will_be_used_in_sbase = false;
-				}
-			}else{
-				totNotInComProf++;
-				will_be_used_in_sbase = false;
-			}
-			//tally up lines
-			if(will_be_used_in_sbase){
-				totTicksUsed++;
-				totLinesUsed += fc.size();
-			}else{
-				totLinesNotUsed += fc.size();
-			}
-		}
-		System.out.println("--> Total Files in Main/Intrinio/ : "+itTicks.size()+
-							"\n    -> Tot Below Limit : " + totBelowLim +
-							"\n    -> Tot Out of Date : " + totOutOfDate +
-							"\n    -> Tot In ComProf & Bad : " + totInComProfButBad +
-							"\n    -> Tot Not In ComProf  : " + totNotInComProf +
-							"\n    -> Tot Ticks Used In SBase : " + totTicksUsed + 
-							"\n    -> Tot Lines Used In SBase : " + totLinesUsed +
-							"\n    -> Tot Lines Not Used In SBase : " + totLinesNotUsed);
-	}
 
 	//counts hm instances of all market states and writes to file
 	public void countMarketStates(){

@@ -14,7 +14,10 @@ import java.awt.event.*;
 
 public class DB_Filter extends JFrame {
 
+	private StockFilter sf;
+
 	public DB_Filter(){
+		sf = new StockFilter();
 		drawGUI();
 	}
 	
@@ -31,8 +34,6 @@ public class DB_Filter extends JFrame {
 		ArrayList<ArrayList<String>> rules = new ArrayList<ArrayList<String>>();
 		ArrayList<ArrayList<String>> fdAL = new ArrayList<ArrayList<String>>();
 
-		StockFilter sf = new StockFilter();
-
 		//layout components
 		this.setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
 		this.setTitle("STAG 3");
@@ -47,7 +48,7 @@ public class DB_Filter extends JFrame {
 
 		//components
 		JLabel lbMC = new JLabel("Market Cap:");
-		JTextField tfStartMC = new JTextField("0");
+		JTextField tfStartMC = new JTextField("100");
 		JLabel lbMil1 = new JLabel("mil  to");
 		JTextField tfEndMC = new JTextField("10000000");//$10 trillion
 		JLabel lbMil2 = new JLabel("mil"); 
@@ -74,20 +75,6 @@ public class DB_Filter extends JFrame {
 		JButton bReset = new JButton("Reset Inputs");
 		JLabel lbStockNum = new JLabel("Number of Stocks: 0");
 		TableSortPanel pTableSort = new TableSortPanel(startData, startHeader);
-
-		/*
-		JLabel lbStockSort = new JLabel("Sort By:");
-		JComboBox cbStockSort = new JComboBox();
-		ButtonGroup bgSort = new ButtonGroup();
-		JRadioButton rbAsc = new JRadioButton("Asc");
-		JRadioButton rbDes = new JRadioButton("Des");
-		bgSort.add(rbAsc);
-		bgSort.add(rbDes);
-		JButton bStockSort = new JButton("Sort");
-		JTextArea taStockList = new JTextArea();
-		JScrollPane spStockList = new JScrollPane(taStockList, JScrollPane.VERTICAL_SCROLLBAR_ALWAYS,
-											JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
-		*/
 		JButton bToFile = new JButton("Save To File");
 		
 		//component bounds
@@ -120,15 +107,6 @@ public class DB_Filter extends JFrame {
 		pOutputs.setBounds(540, 10, 480, 550);
 		lbStockNum.setBounds(10, 10, 330, 25);
 		pTableSort.setBounds(10, 40, 460, 450);
-		/*
-		lbStockSort.setBounds(10, 40, 90, 25);
-		cbStockSort.setBounds(90, 40, 150, 25);
-		rbAsc.setBounds(260, 40, 55, 25);
-		rbDes.setBounds(325, 40, 55, 25);
-		bStockSort.setBounds(390, 40, 50, 25);
-		taStockList.setBounds(10, 90, 460, 400);
-		spStockList.setBounds(10, 90, 460, 400);
-		*/
 		bToFile.setBounds(10, 500, 150, 35);
 
 		//basic functionality
@@ -148,11 +126,9 @@ public class DB_Filter extends JFrame {
 		}
 		taFilterDetails.setLineWrap(true);
 		taFilterDetails.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 12));
-		taFilterDetails.setText(sf.getText());
+		taFilterDetails.setText(setBasicFilter(tfStartMC.getText(), tfEndMC.getText(),
+											 tfSector.getText(), taIndustry.getText()));
 		System.out.println("--> Filter Text : " + sf.getText());
-		//rbDes.setSelected(true);
-		//taStockList.setLineWrap(true);
-		//taStockList.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 12));
 
 		//init starting filter lines
 		sf.setMarketCap(Integer.parseInt(tfStartMC.getText()), Integer.parseInt(tfEndMC.getText()));
@@ -314,6 +290,7 @@ public class DB_Filter extends JFrame {
 					good_vals = false;
 				}
 				if(good_vals){
+					//apply filter from StockFilter
 					sf.clearSectorCodes();
 					sf.clearResults();
 					sf.setMarketCap(Integer.parseInt(mcStart), Integer.parseInt(mcEnd));
@@ -323,7 +300,6 @@ public class DB_Filter extends JFrame {
 					setVisible(true);
 					String mrDate = AhrDate.mostRecentDate(AhrIO.getNamesInPath("./../../DB_Intrinio/Clean/ByDate/"));
 					sf.applyFilter(mrDate);
-					//ArrayList<ArrayList<String>> res = formatStockList(sf.getResults());
 					ArrayList<ArrayList<String>> res = sf.getResults();
 					lbStockNum.setText("Number of Stocks: "+res.size()+" results");
 					//update table in table sort
@@ -343,7 +319,15 @@ public class DB_Filter extends JFrame {
 		});
 		bReset.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e){
+				//reset textboxes
+				tfStartMC.setText("100");
+				tfEndMC.setText("10000000");
+				tfSector.setText("01,02,03,04,05,06,07,08,09,10,11,12");
+				taIndustry.setText("");
 				sf.resetFilter();
+				String basicDetails = setBasicFilter(tfStartMC.getText(), tfEndMC.getText(),
+													 tfSector.getText(), taIndustry.getText());
+				taFilterDetails.setText(basicDetails);
 			}
 		});
 		bToFile.addActionListener(new ActionListener() {
@@ -402,140 +386,40 @@ public class DB_Filter extends JFrame {
 		this.add(pOutputs);
 		this.setVisible(true);
 	}
+
+	//set starting vals of a StockFilter and show in taFilterDetails
+	public String setBasicFilter(String startMC, String endMC, String sectors, String industries){
+		boolean good_vals = true;
+		if(!AhrGen.isInt(startMC) || !AhrGen.isInt(endMC)){
+			System.out.println("ERR: market cap values must be integers.");
+			good_vals = false;
+		}
+		if(!sectors.replace(",","").matches("[0-9]+")){
+			System.out.println("ERR: industry values must be comma seperated integers");
+			good_vals = false;
+		} 
+		if(!industries.replace(",","").matches("[0-9]+") && !industries.equals("")){
+			System.out.println("ERR: sector values must be comma seperated integers.");
+			good_vals = false;
+		}
+		if(good_vals){
+			//apply filter from StockFilter
+			sf.clearSectorCodes();
+			sf.clearResults();
+			sf.setMarketCap(Integer.parseInt(startMC), Integer.parseInt(endMC));
+			sf.setSectors(sectors);
+			sf.setIndustries(industries);
+			return sf.getText();
+		}else{
+			return "";
+		}
+	}
+
 	//GUI related, sets style to a JButton
 	public void setButtonStyle(JButton btn){
 		Font plainFont = new Font(Font.SANS_SERIF, Font.PLAIN, 12);
 		btn.setFont(plainFont);
 		btn.setBackground(new Color(230, 230, 230));
 		btn.setBorder(BorderFactory.createLineBorder(Color.GRAY));
-	}
-
-	//update the text in taFilterDetails according to state of a StockFilter obj
-	public String updateFilterDetailsText(ArrayList<ArrayList<String>> al){
-		System.out.println("--> In updateFilter ...");
-		AhrAL.print(al);
-		System.out.println("=======================");
-		String fdText = "";
-		String[] fdInit = {"========== General ==========", "--> Market Cap: ", "--> Sectors: ", "--> Industries: ",
-							"========== Indicators =========="};
-		boolean init_state_changed = false;
-		for(int i = 0; i < al.size(); i++){
-			if(al.get(i).get(0).equals("mc")){
-				init_state_changed = true;
-			}
-		}
-		if(init_state_changed){
-			fdText += fdInit[0]+"\n";
-			fdText += fdInit[1]+"["+al.get(0).get(1)+", "+al.get(0).get(2)+"]\n";		//market cap
-			fdText += fdInit[2]+al.get(1).get(1)+"\n";									//sectors
-			if(al.get(2).size() > 1){													//industries
-				fdText += fdInit[3]+al.get(2).get(1)+"\n";
-			}else{
-				fdText += fdInit[3]+"\n";
-			}
-			fdText += fdInit[4]+"\n";
-			//add all additional added indicators
-			if(al.size() > 3){
-				for(int i = 3; i < al.size(); i++){
-					fdText += "--> "+al.get(i).get(0)+" : ["+al.get(i).get(1)+", "+al.get(i).get(2)+"]\n";
-				}
-			}
-		}else{
-			for(int i = 0; i < fdInit.length; i++){
-				fdText += fdInit[i]+"\n";
-			}
-			for(int i = 0; i < al.size(); i++){
-				fdText += "--> "+al.get(i).get(0)+" : ["+al.get(i).get(1)+", "+al.get(i).get(2)+"]\n";
-			}
-		}
-
-		return fdText;
-	}
-
-	//sort 2D that is in taStockList by colIdx param
-	public ArrayList<ArrayList<String>> sortStockList(ArrayList<ArrayList<String>> al, int colIdx, boolean is_asc){
-		ArrayList<ArrayList<String>> sorted = new ArrayList<ArrayList<String>>(al);
-		Collections.sort(sorted, new Comparator<ArrayList<String>>(){
-			@Override
-			public int compare(ArrayList<String> obj1, ArrayList<String> obj2){
-				int mult = -1;
-				if(is_asc){
-					mult = 1;
-				}
-				String tick1 = obj1.get(0);
-				String tick2 = obj2.get(0);
-				double mc1 = Double.parseDouble(obj1.get(1).substring(0, obj1.get(1).length()));
-				double mc2 = Double.parseDouble(obj2.get(1).substring(0, obj2.get(1).length()));
-				if(colIdx == 0){
-					return (tick1.compareTo(tick2) * mult);
-				}else if(colIdx == 1){
-					return (Double.compare(mc1, mc2) * mult);
-				}else{
-					double dcomp1 = Double.parseDouble(obj1.get(colIdx));
-					double dcomp2 = Double.parseDouble(obj2.get(colIdx));
-					return (Double.compare(dcomp1, dcomp2) * mult);
-				}
-			}
-		});
-		return sorted;
-	}
-
-	//format stock list
-	public ArrayList<ArrayList<String>> formatStockList(ArrayList<ArrayList<String>> al){
-		ArrayList<ArrayList<String>> fmt = new ArrayList<ArrayList<String>>();
-		for(int i = 0; i < al.size(); i++){
-			String fline = "";
-			//format ticker
-			String ticker = al.get(i).get(0);
-			while(ticker.length() < 5){
-				ticker = ticker + " ";
-			}
-			fline += ticker;
-			//format market cap
-			String mcStr = "| "+al.get(i).get(1);
-			String mcLetter = "n/a";
-			double mcVal = Double.parseDouble(al.get(i).get(1));
-			if(mcVal > 1000000.0){
-				mcLetter = "T";
-				mcVal = mcVal / 1000000.0;
-			}else if(mcVal > 1000.0){
-				mcLetter = "B";
-				mcVal = mcVal / 1000.0;
-			}else{
-				mcLetter = "M";
-			}
-			if(mcVal < 10.0){
-				mcStr = " | " + String.format("%.3f", mcVal) + mcLetter;
-			}else if(mcVal < 100.0){
-				mcStr = " | " + String.format("%.2f", mcVal) + mcLetter;
-			}else{
-				mcStr = " | " + String.format("%.1f", mcVal) + mcLetter;
-			}
-			while(mcStr.length() < 9){
-				mcStr += " ";
-			}
-			fline += mcStr;
-			//format sector code
-			String scode = " | "+al.get(i).get(2);
-			while(scode.length() < 7){
-				scode += " ";
-			}
-			fline += scode;
-			//format indicators
-			if(al.get(i).size() > 3){
-				for(int j = 3; j < al.get(i).size(); j++){
-					String indVal = al.get(i).get(j);
-					while(indVal.length() < 5){
-						indVal = "0" + indVal;
-					}
-					indVal = " | " + indVal;
-					fline += indVal;
-				}
-			}
-			ArrayList<String> fmtLine = new ArrayList<String>();		
-			fmtLine.add(fline);
-			fmt.add(fmtLine);
-		}
-		return fmt;
 	}
 }

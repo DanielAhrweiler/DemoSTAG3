@@ -25,9 +25,9 @@ public class DB_Charting extends JFrame {
 							"Industrials [5xx]", "Cons Cyc [6xx]", "Energy [7xx]", "Real Estate [8xx]",
 							"Communication [9xx]", "Basic Mats [10xx]", "Cons Def [11xx]", "Utilities [12xx]"}; 
 		String[] cblIndustries;
-		String[] cblStockInds = {"Price", "Volume","S/M 20", "S/M 10", "S/M 5", "S/M 2", "S/I 20", "S/I 10", "S/I 5", "S/I 2",
-							 "S 20", "S 10", "S 5", "S 2", "RSI", "MACD", "MACDH", "CMF", "Bolliger BW", "%B", "ROC",
-							 "MFI", "CCI", "Mass Index", "TSI", "Ult Osc"};
+		String[] cblStockInds = {"Price", "Volume", "Adj Ratio", "S/M 20", "S/M 10", "S/M 5", "S/M 2", "S/I 20",
+							 "S/I 10", "S/I 5", "S/I 2", "S 20", "S 10", "S 5", "S 2", "RSI", "MACD", "MACDH",
+							 "CMF", "Bolliger BW", "%B", "ROC", "MFI", "CCI", "Mass Index", "TSI", "Ult Osc"};
 		String[] cblIndexes = {"QQQ - Top NASDAQ", "SPY - Top S&P500", "DIA - Top Dow Jones"};
 		String[] cblSpecial = {"Inflows by Sector", "Gold To Dow Ratio", "PM vs Intra"};
 		File fr_data = new File("./../data/r/rdata/db_chart.csv");
@@ -281,17 +281,20 @@ public class DB_Charting extends JFrame {
 				//calc the vars according to chosen option
 				if(rbStock.isSelected()){
 					//set column names
-					String ticker = tfStockTicker.getText();
+					String ticker = tfStockTicker.getText().toUpperCase();
 					int indIdx = cbStockInds.getSelectedIndex();
 					String dbColName = "adj_close";
 					csvColName = ticker;
 					String dbPath = "./../../DB_Intrinio/Main/Intrinio/"+ticker+".txt";
-					if(indIdx > 1){
+					if(indIdx > 2){
 						dbPath = "./../../DB_Intrinio/Main/S_Norm/"+ticker+".txt";
 					}
 					if(indIdx == 1){
 						dbColName = "adj_vol";
 						csvColName += ".vol";
+					}else if(indIdx == 2){
+						dbColName = "adj_ratio";
+						csvColName += ".adjr";
 					}else if(indIdx > 1){
 						dbColName = "ind" + String.valueOf(indIdx-2);
 						csvColName += "." + indList[indIdx-2];
