@@ -14,7 +14,7 @@ import java.awt.image.BufferedImage;
 import java.util.*;
 import java.io.File;
 
-public class PA_KeyPerf extends JFrame {
+public class PA_KeyPerf {
 
 	final Font monoFont = new Font(Font.MONOSPACED, Font.BOLD, 11);
 	final Font plainFont = new Font(Font.SANS_SERIF, Font.PLAIN, 12);
@@ -36,10 +36,11 @@ public class PA_KeyPerf extends JFrame {
 		//layout components
 		int fxDim = 510;
 		int fyDim = 475;
-		setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
-		setTitle("Key Performance");
-		setSize(fxDim, fyDim+37);
-		setLayout(null);
+		JFrame frame = new JFrame();
+		frame.setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
+		frame.setTitle("Key Performance");
+		frame.setSize(fxDim, fyDim+37);
+		frame.setLayout(null);
 		JTabbedPane tpKeyPerf = new JTabbedPane();
 		tpKeyPerf.setBounds(0, 0, fxDim, fyDim);
 		JPanel pBGM = new JPanel();
@@ -304,59 +305,75 @@ public class PA_KeyPerf extends JFrame {
 		});
 		bBgmCalcPerf.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e){
-				bBgmCalcPerf.setEnabled(false);
-				bBgmPlots.setEnabled(false);
-				//get inputs from GUI
+
+				//get params from GUI
 				String bgmUC = cbMethod.getSelectedItem().toString();
 				String bgmLC = bgmUC.toLowerCase();
 				int knum = Integer.parseInt(cbKeyNum.getSelectedItem().toString());
 				String ttvMask = "";
+				boolean has_no_datasets = true;
 				if(cbTrain.isSelected()){
 					ttvMask += "1";
+					has_no_datasets = false;
 				}else{
 					ttvMask += "0";
 				}
 				if(cbTest.isSelected()){
 					ttvMask += "1";
+					has_no_datasets = false;
 				}else{
 					ttvMask += "0";
 				}
 				if(cbVerify.isSelected()){
 					ttvMask += "1";
+					has_no_datasets = false;
 				}else{
 					ttvMask += "0";
 				}
 				double principal = Double.parseDouble(tfBgmPrincipal.getText());
 				double maxOrderPrice = Double.parseDouble(tfBgmMop.getText());
-				//create OrderSim obj and calc the order list
-				OrderSim osim;
-				if(rbSK.isSelected()){
-					osim = new OrderSim(bgmUC, knum);
+				//if > 1 datasets is selected, calc key perf
+				if(has_no_datasets){
+					JOptionPane.showMessageDialog(frame, "At least one dataset must be selected.", "Error",
+												JOptionPane.ERROR_MESSAGE);
 				}else{
-					osim = new OrderSim(knum);
+					//suspend GUI while working
+					bBgmCalcPerf.setEnabled(false);
+					bBgmPlots.setEnabled(false);
+					frame.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
+					//create OrderSim obj and calc the order list
+					OrderSim osim;
+					if(rbSK.isSelected()){
+						osim = new OrderSim(bgmUC, knum);
+					}else{
+						osim = new OrderSim(knum);
+					}
+					osim.setDateRange(tfBgmSDate.getText(), tfBgmEDate.getText());
+					osim.setBIM(Double.parseDouble(tfBgmBim.getText()));
+					osim.setSOM(Double.parseDouble(tfBgmSom.getText()));
+					osim.setTtvMask(ttvMask);
+					osim.setPrincipal(principal);
+					osim.setMaxOrderPrice(maxOrderPrice);
+					osim.calcOrderList();
+					lbBgmSPD.setText(baseOut[0] + String.valueOf(osim.getOrderListSPD()) + " (" + 
+									String.valueOf(osim.getOrderListSize()) + " total)");
+					lbBgmPosPer.setText(baseOut[1] + String.format("%.2f", (osim.getPosPer()*100.0)));
+					lbBgmAPAPT.setText(baseOut[2] + String.format("%.4f", osim.getTrigAppr()));
+					lbBgmYoyPer.setText(baseOut[3] + String.format("%.4f", osim.getYoyAppr()));
+					lbBgmSecPer.setText(baseOut[4] + String.format("%.4f", osim.getSecAppr()));
+					//Preserve data for graphing
+					ArrayList<ArrayList<String>> growth = osim.calcGrowth(principal);
+					ArrayList<String> growthHeader = new ArrayList<String>();
+					growthHeader.add("date");
+					growthHeader.add("growth");
+					growth.add(0, growthHeader);
+					AhrIO.writeToFile("./../data/r/rdata/pa_portgrowth.csv", AhrDTF.melt(growth, "date"), ",");
+					//resume GUI
+					bBgmCalcPerf.setEnabled(true);
+					bBgmPlots.setEnabled(true);
+					frame.setCursor(null);
 				}
-				osim.setDateRange(tfBgmSDate.getText(), tfBgmEDate.getText());
-				osim.setBIM(Double.parseDouble(tfBgmBim.getText()));
-				osim.setSOM(Double.parseDouble(tfBgmSom.getText()));
-				osim.setTtvMask(ttvMask);
-				osim.setPrincipal(principal);
-				osim.setMaxOrderPrice(maxOrderPrice);
-				osim.calcOrderList();
-				lbBgmSPD.setText(baseOut[0] + String.valueOf(osim.getOrderListSPD()) + " (" + 
-								String.valueOf(osim.getOrderListSize()) + " total)");
-				lbBgmPosPer.setText(baseOut[1] + String.format("%.2f", (osim.getPosPer()*100.0)));
-				lbBgmAPAPT.setText(baseOut[2] + String.format("%.4f", osim.getTrigAppr()));
-				lbBgmYoyPer.setText(baseOut[3] + String.format("%.4f", osim.getYoyAppr()));
-				lbBgmSecPer.setText(baseOut[4] + String.format("%.4f", osim.getSecAppr()));
-				//Preserve data for graphing
-				ArrayList<ArrayList<String>> growth = osim.calcGrowth(principal);
-				ArrayList<String> growthHeader = new ArrayList<String>();
-				growthHeader.add("date");
-				growthHeader.add("growth");
-				growth.add(0, growthHeader);
-				AhrIO.writeToFile("./../data/r/rdata/pa_portgrowth.csv", AhrDTF.melt(growth, "date"), ",");
-				bBgmCalcPerf.setEnabled(true);
-				bBgmPlots.setEnabled(true);
+
 			}
 		});
 		bBgmPlots.addActionListener(new ActionListener() {
@@ -732,7 +749,7 @@ public class PA_KeyPerf extends JFrame {
 				bCreateNewFilter.setEnabled(false);
 				bRndCalcPerf.setEnabled(false);
 				bRndPlots.setEnabled(false);
-				setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
+				frame.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
 				//setup attrs from GUI
 				AttributesSK kattr = new AttributesSK();
 				String sdate = tfRndSDate.getText();
@@ -804,7 +821,7 @@ public class PA_KeyPerf extends JFrame {
 					System.out.println("ERR: " + bsPath +" does not exist.");
 				}
 				//resume GUI
-				setCursor(null);
+				frame.setCursor(null);
 				bPrintFilter.setEnabled(true);
 				bCreateNewFilter.setEnabled(true);
 				bRndCalcPerf.setEnabled(true);
@@ -989,8 +1006,8 @@ public class PA_KeyPerf extends JFrame {
 		pRND.add(pRndOutputs);
 		tpKeyPerf.add("BGM Perf", pBGM);
 		tpKeyPerf.add("RND Perf", pRND);
-		this.add(tpKeyPerf);
-		this.setVisible(true);
+		frame.add(tpKeyPerf);
+		frame.setVisible(true);
 	}
 
 	//GUI related, set specific style for a JButton

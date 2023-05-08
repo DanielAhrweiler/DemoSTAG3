@@ -12,7 +12,7 @@ import java.awt.event.*;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 
-public class DB_DataIntegrity extends JFrame {
+public class DB_DataIntegrity {
 
 	public DB_DataIntegrity(){
 			drawGUI();
@@ -24,10 +24,11 @@ public class DB_DataIntegrity extends JFrame {
 		int fyDim = 440;
 
 		//layout components
-		setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
-		setTitle("Data Integrity of DB_Intrinio");
-		setSize(fxDim, fyDim);
-		setLayout(null);
+		JFrame frame = new JFrame();
+		frame.setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
+		frame.setTitle("Data Integrity of DB_Intrinio");
+		frame.setSize(fxDim, fyDim);
+		frame.setLayout(null);
 		JTabbedPane tpDI = new JTabbedPane();
 		tpDI.setBounds(0, 0, fxDim, fyDim-37);
 		JPanel pMC = new JPanel();
@@ -303,9 +304,9 @@ public class DB_DataIntegrity extends JFrame {
 				avgErr = (avgErr+Math.abs(diff)) / (double)dtm.getRowCount();
 				lbAvgErr.setText("Avg Error = "+String.format("%.2f",avgErr)+" %");
 				//update GUI
-				revalidate();
-				repaint();
-				setVisible(true);
+				frame.revalidate();
+				frame.repaint();
+				frame.setVisible(true);
 			}
 		});
 		bClearTable.addActionListener(new ActionListener() {
@@ -317,9 +318,9 @@ public class DB_DataIntegrity extends JFrame {
 				}
 				lbAvgErr.setText("Avg Error = 0.00 %");
 				//update GUI
-				revalidate();
-				repaint();
-				setVisible(true);
+				frame.revalidate();
+				frame.repaint();
+				frame.setVisible(true);
 			}
 		});
 
@@ -348,8 +349,8 @@ public class DB_DataIntegrity extends JFrame {
 		pTRI.add(pErrPlot);
 		tpDI.add("Test Market Cap", pMC);
 		tpDI.add("Test Rnd Indicators", pTRI);
-		this.add(tpDI);
-		this.setVisible(true);
+		frame.add(tpDI);
+		frame.setVisible(true);
 	}
 
 }

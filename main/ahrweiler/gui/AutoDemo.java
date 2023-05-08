@@ -1,4 +1,5 @@
 package ahrweiler.gui;
+import ahrweiler.Globals;
 import ahrweiler.util.AhrIO;
 import ahrweiler.util.AhrAL;
 import ahrweiler.util.AhrDate;
@@ -148,11 +149,19 @@ class SingleKeyWorker extends SwingWorker<Void, String>{
 		int secSize = 10000;
 		ann.deleteCustDB();
 		publish("Creating Train Database ... ");
-		ann.createTrainDB(secSize);
+		if(Globals.uses_mysql_source){
+			ann.createTrainDBFromWeb(secSize);
+		}else{
+			ann.createTrainDBFromLocal(secSize);
+		}
 		progress += (double)progDB;
 		setProgress((int)progress);
 		publish("Creating Test Database ... ");
-		ann.createTestDB(secSize);
+		if(Globals.uses_mysql_source){
+			ann.createTestDBFromWeb(secSize);
+		}else{
+			ann.createTestDBFromLocal(secSize);
+		}	
 		progress += (double)progDB;
 		setProgress((int)progress);
 		ann.initSK();
@@ -382,7 +391,7 @@ class BimSomOptWorker extends SwingWorker<Void, String>{
 			shortID = Integer.parseInt(laFile.get(laFile.size()-2).get(fciLA.getIdx("ak_num")));
 			longID = Integer.parseInt(laFile.get(laFile.size()-1).get(fciLA.getIdx("ak_num")));
 		}else{
-			System.out.println("ERR: Not enough AKs in ak_log.txt");
+			System.out.println("ERR: not enough AKs in ak_log.txt");
 		}
 		progress += progressSteps[0];
 		setProgress(progress);

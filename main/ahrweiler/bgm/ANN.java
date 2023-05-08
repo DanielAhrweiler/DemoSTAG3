@@ -2,6 +2,7 @@ package ahrweiler.bgm;
 import ahrweiler.Globals;
 import ahrweiler.util.*;
 import ahrweiler.support.FCI;
+import ahrweiler.support.SQLCode;
 import ahrweiler.bgm.ann.Network;
 import ahrweiler.bgm.ann.Node;
 import ahrweiler.bgm.AttributesSK;
@@ -292,6 +293,7 @@ public class ANN {
 		String trainPath = "./../data/ml/ann/cust/train/";
 		String testPath = "./../data/ml/ann/cust/test/";
 		//print out basic info
+		System.out.println("================= In calcSK ==================");
 		System.out.println("========== Algo Info ==========");
 		if(is_cr_method){
 			System.out.println(" --> Method Type: Continuous Range");
@@ -326,6 +328,7 @@ public class ANN {
 		}else{
 			System.out.println("Using same CUST DB");
 		}
+		cdbs = AhrIO.scanFile(dbsPath, ",");
 		System.out.println("--> Total DB Train Lines    : " + cdbs.get(2).get(0));
 		System.out.println("--> Total DB Train Sections : " + cdbs.get(3).get(0));
 		System.out.println("--> Total DB Test  Lines    : " + cdbs.get(2).get(1));
@@ -418,6 +421,7 @@ public class ANN {
 		}
 		int sskID = maxID+1;
 		int lskID = sskID+1;
+		System.out.println("--> sskID = " + sskID+"\n--> lskID = " + lskID);
 		ArrayList<String> sline = new ArrayList<String>();	//short line
 		sline.add(String.valueOf(sskID));						//[0] sk_num
 		String dbNameCode = "ERR";								//[1] db_used
@@ -511,27 +515,13 @@ public class ANN {
 		lline = new ArrayList<String>(sline);
 		lline.set(0, String.valueOf(lskID));
 		lline.set(1, "1");
-
-		System.out.println("\n========== Algo Perf ==========");
-		System.out.println(" --> Long PAPAPT  (even) : "+lline.get(11)+"\n"+
-						   " --> Long TAPAPT  (even) : "+lline.get(13)+"\n"+
-						   " --> Long Pos %   (even) : "+lline.get(15)+"\n"+
-						   " --> Short PAPAPT (even) : "+sline.get(11)+"\n"+
-						   " --> Short TAPAPT (even) : "+sline.get(13)+"\n"+
-						   " --> Short Pos %  (even) : "+sline.get(15)+"\n"+
-						   " --> Long PAPAPT  (odd)  : "+lline.get(12)+"\n"+
-						   " --> Long TAPAPT  (odd)  : "+lline.get(14)+"\n"+
-						   " --> Long Pos %   (odd)  : "+lline.get(16)+"\n"+
-						   " --> Short PAPAPT (odd)  : "+sline.get(12)+"\n"+
-						   " --> Short TAPAPT (odd)  : "+sline.get(14)+"\n"+
-						   " --> Short Pos %  (odd)  : "+sline.get(16)+"\n"+
-						   "===============================\n");
 		kpFile.add(sline);
 		kpFile.add(lline);
 		AhrIO.writeToFile("./../out/sk/log/ann/keys_perf.txt", kpFile, ",");
 
 		//Done
 		System.out.println("Output Files WRITTEN");		
+		System.out.println("================================");
 	}
 
 	//do just the init part of SK
@@ -749,10 +739,164 @@ public class ANN {
 		AhrIO.writeToFile("./../out/sk/log/ann/keys_perf.txt", kpFile, ",");
 	}
 	
-	//creates the cust DB for ANN (each file will have secSize*2 length)
-	public void createCustDB(int secSize){
-		System.out.print("--> Creating Custom DB ... ");
 
+	//============= Create Custom ML Database Functions =================
+
+
+
+	//controller funct for creating ML DB from either Web or Local data
+	public void createCustDB(int secSize){
+		if(Globals.uses_mysql_source){
+			createCustDBFromWeb(secSize);
+		}else{
+			createCustDBFromLocal(secSize);
+		}
+	}
+
+	//creates the custom DB for ANN from web MySQL
+	public void createCustDBFromWeb(int secSize){
+		System.out.print("--> Creating Custom DB (from aws) ... ");
+		ArrayList<String> dates = AhrDate.getDatesBetween(sdate, edate);
+		FCI fciMS = new FCI(false, "./../in/mstates.txt");
+		FCI fciBD = new FCI(false, Globals.bydate_path);
+		ArrayList<String> bdCols = AhrAL.toAL(Globals.mysql_bydate_cols);
+		ArrayList<ArrayList<String>> mstates = AhrIO.scanFile("./../in/mstates.txt", ",");
+		ArrayList<String> evenDates = new ArrayList<String>();
+		ArrayList<String> oddDates = new ArrayList<String>();
+		int evenLines = 0;
+		int oddLines = 0;
+		int evenSections = 0;
+		int oddSections = 0;
+		//put all MS Dates in AL for easier idx finding
+		ArrayList<String> msDates = new ArrayList<String>();
+		for(int i = 0; i < mstates.size(); i++){
+			msDates.add(mstates.get(i).get(fciMS.getIdx("date")));
+		}
+		//itr thru all dates in train/test range and split dates into even and odd
+		for(int i = 0; i < dates.size(); i++){
+			int msIdx = msDates.indexOf(dates.get(i)); 
+			String itrMask = mstates.get(msIdx).get(fciMS.getIdx("ms_mask"));
+			//check date, see if it matches the MS
+			if(AhrGen.compareMasks(msMask, itrMask)){
+				if(Integer.parseInt(dates.get(i).split("-")[2]) % 2 == 0){	//is even date
+					evenDates.add(dates.get(i));
+				}else{														//is odd date
+					oddDates.add(dates.get(i));
+				}			
+			}
+		}
+		//create the train sections and write them to file
+		String tfTrainPath = "./../data/ml/ann/cust/train/sec"+String.valueOf(evenSections)+".txt";
+		ArrayList<ArrayList<String>> trainSection = new ArrayList<ArrayList<String>>();
+		ArrayList<ArrayList<String>> groupedTrainDates = new ArrayList<ArrayList<String>>();
+		int groupSize = 50;
+		ArrayList<String> agroup = new ArrayList<String>();
+		for(int i = 0; i < evenDates.size(); i++){
+			agroup.add(evenDates.get(i));
+			if(agroup.size() >= groupSize || i == (evenDates.size()-1)){
+				groupedTrainDates.add(agroup);
+				agroup = new ArrayList<String>();
+			}
+		}
+		//get data from a group of train dates
+		SQLCode sqlc = new SQLCode("aws");
+		sqlc.setDB("bydate");
+		sqlc.setUsesAllCols(true);
+		for(int i = 0; i < groupedTrainDates.size(); i++){
+			ArrayList<ArrayList<String>> data = sqlc.selectUnion(groupedTrainDates.get(i), bdCols);
+			for(int j = 0; j < data.size(); j++){
+				String itrTick = data.get(j).get(bdCols.indexOf("ticker"));
+				String itrNar = data.get(j).get(bdCols.indexOf("nar_mask"));
+				if(AhrGen.compareMasks(narMask, itrNar)){
+					trainSection.add(toLineML(data.get(j), bdCols));
+					evenLines++;
+					//if # of lines reaches threshold, write to file and reset vals
+					if(trainSection.size() >= secSize){
+						AhrIO.writeToFile(tfTrainPath, trainSection, "~");
+						trainSection = new ArrayList<ArrayList<String>>();
+						evenSections++;
+						tfTrainPath = "./../data/ml/ann/cust/train/sec"+String.valueOf(evenSections)+".txt";
+					}
+
+				}
+				//if last line evaled, just write remnants to file
+				if((i == evenDates.size()-1) && (j == data.size()-1) && trainSection.size() > 0){
+					AhrIO.writeToFile(tfTrainPath, trainSection, "~");
+					evenSections++;
+				}
+			}
+		}
+		//create the test sections and write them to file
+		String tfTestPath = "./../data/ml/ann/cust/test/sec"+String.valueOf(oddSections)+".txt";
+		ArrayList<ArrayList<String>> testSection = new ArrayList<ArrayList<String>>();
+		ArrayList<ArrayList<String>> groupedTestDates = new ArrayList<ArrayList<String>>();
+		agroup = new ArrayList<String>();
+		for(int i = 0; i < oddDates.size(); i++){
+			agroup.add(oddDates.get(i));
+			if(agroup.size() >= groupSize || i == (oddDates.size()-1)){
+				groupedTestDates.add(agroup);
+				agroup = new ArrayList<String>();
+			}
+		}
+		//get data from a group of test dates
+		sqlc = new SQLCode("aws");
+		sqlc.setDB("bydate");
+		sqlc.setUsesAllCols(true);
+		for(int i = 0; i < groupedTestDates.size(); i++){
+			ArrayList<ArrayList<String>> data = sqlc.selectUnion(groupedTestDates.get(i), bdCols);
+			for(int j = 0; j < data.size(); j++){
+				String itrTick = data.get(j).get(bdCols.indexOf("ticker"));
+				String itrNar = data.get(j).get(bdCols.indexOf("nar_mask"));
+				if(AhrGen.compareMasks(narMask, itrNar)){
+					testSection.add(toLineML(data.get(j), bdCols));
+					oddLines++;
+					//if # of lines reaches threshold, write to file and reset vals
+					if(testSection.size() >= secSize){
+						AhrIO.writeToFile(tfTestPath, testSection, "~");
+						testSection = new ArrayList<ArrayList<String>>();
+						oddSections++;
+						tfTestPath = "./../data/ml/ann/cust/test/sec"+String.valueOf(oddSections)+".txt";
+					}
+
+				}
+				//if last line evaled, just write remnants to file
+				if((i == oddDates.size()-1) && (j == data.size()-1) && testSection.size() > 0){
+					AhrIO.writeToFile(tfTestPath, testSection, "~");
+					oddSections++;
+				}
+			}
+		}
+		//write info to file
+		ArrayList<ArrayList<String>> toFile = new ArrayList<ArrayList<String>>();
+		ArrayList<String> line1 = new ArrayList<String>();
+		line1.add(msMask);										//[0, 0] MS Mask
+		line1.add(indMask);										//[0, 1] Ind Mask
+		line1.add(String.valueOf(tvi));							//[0, 2] Target Var Idx
+		if(is_cr_method){										//[0, 3] 1 = continuous target
+			line1.add("1");										//       0 = binomial target
+		}else{
+			line1.add("0");
+		}
+		ArrayList<String> line2 = new ArrayList<String>();
+		line2.add(sdate);										//[1, 1] Start Date
+		line2.add(edate);										//[1, 2] End Date
+		ArrayList<String> line3 = new ArrayList<String>();
+		line3.add(String.valueOf(evenLines));					//[2, 1] # of Train Lines
+		line3.add(String.valueOf(oddLines));					//[2, 2] # of Test Lines
+		ArrayList<String> line4 = new ArrayList<String>();
+		line4.add(String.valueOf(evenSections));				//[3, 1] # of Train Sections
+		line4.add(String.valueOf(oddSections));					//[3, 2] # of Test Sections
+		toFile.add(line1);
+		toFile.add(line2);
+		toFile.add(line3);
+		toFile.add(line4);
+		AhrIO.writeToFile("./../data/ml/ann/cust/db_sizes.txt", toFile, ",");
+		System.out.println("DONE");
+	}
+
+	//creates the cust DB for ANN from local disk
+	public void createCustDBFromLocal(int secSize){
+		System.out.print("--> Creating Custom DB ... ");
 		ArrayList<String> dates = AhrDate.getDatesBetween(sdate, edate);
 		FCI fciMS = new FCI(false, "./../in/mstates.txt");
 		ArrayList<ArrayList<String>> mstates = AhrIO.scanFile("./../in/mstates.txt", ",");
@@ -780,7 +924,6 @@ public class ANN {
 				}			
 			}
 		}
-
 		//create the sections and write them to file
 		ArrayList<ArrayList<String>> tf = new ArrayList<ArrayList<String>>();
 		for(int i = 0; i < evenDates.size(); i++){
@@ -802,41 +945,11 @@ public class ANN {
 			//itr thru all clean lines that pass NAR
 			for(int j = 0; j < narClean.size(); j++){
 				String tvColName = Globals.tvi_names[tvi];
-				if(!narClean.get(j).get(fciBD.getIdx(tvColName)).equals("tbd")){	
-					ArrayList<String> line = new ArrayList<String>();
-					//add predictor variables
-					for(int k = 0; k < indMask.length(); k++){
-						if(indMask.charAt(k) == '1'){
-							String indCol = "ind"+String.valueOf(k);
-							double pval = Double.parseDouble(narClean.get(j).get(fciBD.getIdx(indCol)));
-							pval = pval * (1.0/65535.0);	//normalize to range [0,1]
-							String pstr = String.format("%.8f", pval);
-							line.add(pstr);
-						}
-					}
-					//add target variable
-					if(is_cr_method){
-						double platAppr = Double.parseDouble(narClean.get(j).get(fciBD.getIdx(tvColName)));
-						if(platAppr > plateau){
-							platAppr = plateau;
-						}
-						if(platAppr < (-1.0*plateau)){
-							platAppr = (-1.0*plateau);
-						}
-						double range = plateau * 2.0;
-						double azAppr = platAppr + plateau;	//above zero
-						double tvNorm = azAppr * (1.0 / range);
-						line.add(String.format("%.6f", tvNorm));
-					}else{//is binomial distribution
-						String mode = "0";
-						if(Double.parseDouble(narClean.get(j).get(fciBD.getIdx(tvColName))) > 0){
-							mode = "1";
-						}
-						line.add(mode);
-					}		
+				if(!narClean.get(j).get(fciBD.getIdx(tvColName)).equals("tbd")){
+					ArrayList<String> mlLine = toLineML(narClean.get(j), fciBD.getTags());
 					//add line and write to file (if at limit)
 					String tfTrainPath = "./../data/ml/ann/cust/train/sec"+String.valueOf(evenSections)+".txt";
-					tf.add(line);
+					tf.add(mlLine);
 					if(tf.size() >= secSize){
 						AhrIO.writeToFile(tfTrainPath, tf, "~");
 						tf = new ArrayList<ArrayList<String>>();
@@ -872,40 +985,10 @@ public class ANN {
 			for(int j = 0; j < narClean.size(); j++){
 				String tvColName = Globals.tvi_names[tvi];
 				if(!narClean.get(j).get(fciBD.getIdx(tvColName)).equals("tbd")){
-					ArrayList<String> line = new ArrayList<String>();
-					//add predictor variables
-					for(int k = 0; k < indMask.length(); k++){
-						if(indMask.charAt(k) == '1'){
-							String indCol = "ind"+String.valueOf(k);
-							double pval = Double.parseDouble(narClean.get(j).get(fciBD.getIdx(indCol)));
-							pval = pval * (1.0/65535.0);	//normalize to range [0,1]
-							String pstr = String.format("%.8f", pval);
-							line.add(pstr);
-						}
-					}
-					//add target variable
-					if(is_cr_method){
-						double platAppr = Double.parseDouble(narClean.get(j).get(fciBD.getIdx(tvColName)));
-						if(platAppr > plateau){
-							platAppr = plateau;
-						}
-						if(platAppr < (-1.0*plateau)){
-							platAppr = (-1.0*plateau);
-						}
-						double range = plateau * 2.0;
-						double azAppr = platAppr + plateau;	//above zero
-						double tvNorm = azAppr * (1.0 / range);
-						line.add(String.format("%.8f", tvNorm));
-					}else{//is binomial distribution
-						String mode = "0";
-						if(Double.parseDouble(narClean.get(j).get(fciBD.getIdx(tvColName))) > 0){
-							mode = "1";
-						}
-						line.add(mode);
-					}			
+					ArrayList<String> mlLine = toLineML(narClean.get(j), fciBD.getTags());
 					//add line and write to file (if at limit)
 					String tfTestPath = "./../data/ml/ann/cust/test/sec"+String.valueOf(oddSections)+".txt";
-					tf.add(line);
+					tf.add(mlLine);
 					if(tf.size() >= secSize){
 						AhrIO.writeToFile(tfTestPath, tf, "~");
 						tf = new ArrayList<ArrayList<String>>();
@@ -947,8 +1030,106 @@ public class ANN {
 		toFile.add(line4);
 		AhrIO.writeToFile("./../data/ml/ann/cust/db_sizes.txt", toFile, ",");
 	}
-	//creater only the train DB
-	public void createTrainDB(int secSize){
+
+	//create only the train DB (from web DB)
+	public void createTrainDBFromWeb(int secSize){
+		System.out.println("--> Creating Custom Train DB From Web ... ");
+		ArrayList<String> dates = AhrDate.getDatesBetween(sdate, edate);
+		FCI fciMS = new FCI(false, "./../in/mstates.txt");
+		FCI fciBD = new FCI(false, Globals.bydate_path);
+		ArrayList<String> bdCols = AhrAL.toAL(Globals.mysql_bydate_cols);
+		ArrayList<ArrayList<String>> mstates = AhrIO.scanFile("./../in/mstates.txt", ",");
+		ArrayList<String> evenDates = new ArrayList<String>();
+		ArrayList<String> oddDates = new ArrayList<String>();
+		int evenLines = 0;
+		int evenSections = 0;
+		//put all MS Dates in AL for easier idx finding
+		ArrayList<String> msDates = new ArrayList<String>();
+		for(int i = 0; i < mstates.size(); i++){
+			msDates.add(mstates.get(i).get(fciMS.getIdx("date")));
+		}
+		//itr thru all dates in train/test range and split dates into even and odd
+		for(int i = 0; i < dates.size(); i++){
+			int msIdx = msDates.indexOf(dates.get(i)); 
+			String itrMask = mstates.get(msIdx).get(fciMS.getIdx("ms_mask"));
+			//check date, see if it matches the MS
+			if(AhrGen.compareMasks(msMask, itrMask)){
+				if(Integer.parseInt(dates.get(i).split("-")[2]) % 2 == 0){	//is even date
+					evenDates.add(dates.get(i));
+				}	
+			}
+		}
+		//create the train sections and write them to file
+		String tfTrainPath = "./../data/ml/ann/cust/train/sec"+String.valueOf(evenSections)+".txt";
+		ArrayList<ArrayList<String>> trainSection = new ArrayList<ArrayList<String>>();
+		ArrayList<ArrayList<String>> groupedTrainDates = new ArrayList<ArrayList<String>>();
+		int groupSize = 50;
+		ArrayList<String> agroup = new ArrayList<String>();
+		for(int i = 0; i < evenDates.size(); i++){
+			agroup.add(evenDates.get(i));
+			if(agroup.size() >= groupSize || i == (evenDates.size()-1)){
+				groupedTrainDates.add(agroup);
+				agroup = new ArrayList<String>();
+			}
+		}
+		//get data from a group of train dates
+		SQLCode sqlc = new SQLCode("aws");
+		sqlc.setDB("bydate");
+		sqlc.setUsesAllCols(true);
+		for(int i = 0; i < groupedTrainDates.size(); i++){
+			ArrayList<ArrayList<String>> data = sqlc.selectUnion(groupedTrainDates.get(i), bdCols);
+			for(int j = 0; j < data.size(); j++){
+				String itrTick = data.get(j).get(bdCols.indexOf("ticker"));
+				String itrNar = data.get(j).get(bdCols.indexOf("nar_mask"));
+				if(AhrGen.compareMasks(narMask, itrNar)){
+					trainSection.add(toLineML(data.get(j), bdCols));
+					evenLines++;
+					//if # of lines reaches threshold, write to file and reset vals
+					if(trainSection.size() >= secSize){
+						AhrIO.writeToFile(tfTrainPath, trainSection, "~");
+						trainSection = new ArrayList<ArrayList<String>>();
+						evenSections++;
+						tfTrainPath = "./../data/ml/ann/cust/train/sec"+String.valueOf(evenSections)+".txt";
+					}
+
+				}
+				//if last line evaled, just write remnants to file
+				if((i == evenDates.size()-1) && (j == data.size()-1) && trainSection.size() > 0){
+					AhrIO.writeToFile(tfTrainPath, trainSection, "~");
+					evenSections++;
+				}
+			}
+		}
+		//write info to file
+		ArrayList<ArrayList<String>> dbSizes = new ArrayList<ArrayList<String>>();
+		ArrayList<String> line1 = new ArrayList<String>();
+		line1.add(msMask);										//[0, 0] MS Mask
+		line1.add(indMask);										//[0, 1] Ind Mask
+		line1.add(String.valueOf(tvi));							//[0, 2] Target Var Idx
+		if(is_cr_method){										//[0, 3] 1 = continuous target
+			line1.add("1");										//       0 = binomial target
+		}else{
+			line1.add("0");
+		}
+		ArrayList<String> line2 = new ArrayList<String>();
+		line2.add(sdate);										//[1, 1] Start Date
+		line2.add(edate);										//[1, 2] End Date
+		ArrayList<String> line3 = new ArrayList<String>();
+		line3.add(String.valueOf(evenLines));					//[2, 1] # of Train Lines
+		line3.add("ph");										//[2, 2] # of Test Lines
+		ArrayList<String> line4 = new ArrayList<String>();
+		line4.add(String.valueOf(evenSections));				//[3, 1] # of Train Sections
+		line4.add("ph");										//[3, 2] # of Test Sections
+		dbSizes.add(line1);
+		dbSizes.add(line2);
+		dbSizes.add(line3);
+		dbSizes.add(line4);
+		AhrIO.writeToFile("./../data/ml/ann/cust/db_sizes.txt", dbSizes, ",");
+		System.out.println("DONE");
+	}
+
+	//create only the train DB (from local disk)
+	public void createTrainDBFromLocal(int secSize){
 		System.out.print("--> Creating Custom Train DB ... ");
 		//read in mstates info
 		String msPath = "./../in/mstates.txt";
@@ -992,51 +1173,10 @@ public class ANN {
 			for(int j = 0; j < narClean.size(); j++){
 				String tvColName = Globals.tvi_names[tvi];
 				if(!narClean.get(j).get(fciBD.getIdx(tvColName)).equals("tbd")){	
-					ArrayList<String> line = new ArrayList<String>();
-					//add predictor variables
-					for(int k = 0; k < this.indMask.length(); k++){
-						if(this.indMask.charAt(k) == '1'){
-							String indCol = "ind"+String.valueOf(k);
-							double pval = Double.parseDouble(narClean.get(j).get(fciBD.getIdx(indCol)));
-							pval = pval * (1.0/65535.0);	//normalize to range [0,1]
-							String pstr = String.format("%.8f", pval);
-							line.add(pstr);
-						}
-					}
-					//add target variable
-					if(is_cr_method){
-						double platAppr = 0.0;
-						try{
-							platAppr = Double.parseDouble(narClean.get(j).get(fciBD.getIdx(tvColName)));
-						}catch(NumberFormatException e){
-							System.out.println("ERR: " + e.getMessage());
-						}
-						if(platAppr > plateau){
-							platAppr = plateau;
-						}
-						if(platAppr < (-1.0*plateau)){
-							platAppr = (-1.0*plateau);
-						}
-						double range = plateau * 2.0;
-						double azAppr = platAppr + plateau;	//above zero
-						double tvNorm = azAppr * (1.0 / range);
-						line.add(String.format("%.6f", tvNorm));
-					}else{//is binomial distribution
-						String mode = "0";
-						double appr = 0.0;
-						try{
-							appr = Double.parseDouble(narClean.get(j).get(fciBD.getIdx(tvColName)));
-						}catch(NumberFormatException e){
-							System.out.println("ERR: " + e.getMessage());
-						}
-						if(appr > 0){
-							mode = "1";
-						}
-						line.add(mode);
-					}
+					ArrayList<String> mlLine = toLineML(narClean.get(j), fciBD.getTags());
 					//add line and write to file (if at limit)
 					String tfTrainPath = "./../data/ml/ann/cust/train/sec"+String.valueOf(evenSections)+".txt";
-					tf.add(line);
+					tf.add(mlLine);
 					if(tf.size() >= secSize){
 						AhrIO.writeToFile(tfTrainPath, tf, "~");
 						tf = new ArrayList<ArrayList<String>>();
@@ -1078,8 +1218,86 @@ public class ANN {
 		AhrIO.writeToFile("./../data/ml/ann/cust/db_sizes.txt", dbSizes, ",");
 		System.out.println("DONE");
 	}
-	//create only the test DB
-	public void createTestDB(int secSize){
+
+	//create only the test DB (from web DB)
+	public void createTestDBFromWeb(int secSize){
+		System.out.println("--> Creating Custom Test DB From Web ... ");
+		//basic vars
+		int groupSize = 50;
+		int oddLines = 0;
+		int oddSections = 0;
+		FCI fciMS = new FCI(false, "./../in/mstates.txt");
+		FCI fciBD = new FCI(false, Globals.bydate_path);
+		ArrayList<String> bdCols = AhrAL.toAL(Globals.mysql_bydate_cols);
+		//idx MS dates, then put only odd dates into AL
+		ArrayList<String> oddDates = new ArrayList<String>();
+		ArrayList<String> dates = AhrDate.getDatesBetween(sdate, edate);
+		ArrayList<ArrayList<String>> mstates = AhrIO.scanFile("./../in/mstates.txt", ",");
+		ArrayList<String> msDates = new ArrayList<String>();
+		for(int i = 0; i < mstates.size(); i++){
+			msDates.add(mstates.get(i).get(fciMS.getIdx("date")));
+		}
+		for(int i = 0; i < dates.size(); i++){
+			int msIdx = msDates.indexOf(dates.get(i)); 
+			String itrMask = mstates.get(msIdx).get(fciMS.getIdx("ms_mask"));
+			//check date, see if it matches the MS
+			if(AhrGen.compareMasks(msMask, itrMask)){
+				if(Integer.parseInt(dates.get(i).split("-")[2]) % 2 != 0){	//is odd date
+					oddDates.add(dates.get(i));
+				}		
+			}
+		}
+		//create the test sections and write them to file
+		String tfTestPath = "./../data/ml/ann/cust/test/sec"+String.valueOf(oddSections)+".txt";
+		ArrayList<ArrayList<String>> testSection = new ArrayList<ArrayList<String>>();
+		ArrayList<ArrayList<String>> groupedTestDates = new ArrayList<ArrayList<String>>();
+		ArrayList<String> agroup = new ArrayList<String>();
+		for(int i = 0; i < oddDates.size(); i++){
+			agroup.add(oddDates.get(i));
+			if(agroup.size() >= groupSize || i == (oddDates.size()-1)){
+				groupedTestDates.add(agroup);
+				agroup = new ArrayList<String>();
+			}
+		}
+		//get data from a group of test dates
+		SQLCode sqlc = new SQLCode("aws");
+		sqlc.setDB("bydate");
+		sqlc.setUsesAllCols(true);
+		for(int i = 0; i < groupedTestDates.size(); i++){
+			ArrayList<ArrayList<String>> data = sqlc.selectUnion(groupedTestDates.get(i), bdCols);
+			for(int j = 0; j < data.size(); j++){
+				String itrTick = data.get(j).get(bdCols.indexOf("ticker"));
+				String itrNar = data.get(j).get(bdCols.indexOf("nar_mask"));
+				if(AhrGen.compareMasks(narMask, itrNar)){
+					testSection.add(toLineML(data.get(j), bdCols));
+					oddLines++;
+					//if # of lines reaches threshold, write to file and reset vals
+					if(testSection.size() >= secSize){
+						AhrIO.writeToFile(tfTestPath, testSection, "~");
+						testSection = new ArrayList<ArrayList<String>>();
+						oddSections++;
+						tfTestPath = "./../data/ml/ann/cust/test/sec"+String.valueOf(oddSections)+".txt";
+					}
+
+				}
+				//if last line evaled, just write remnants to file
+				if((i == oddDates.size()-1) && (j == data.size()-1) && testSection.size() > 0){
+					AhrIO.writeToFile(tfTestPath, testSection, "~");
+					oddSections++;
+				}
+			}
+		}
+		//add test info to db_sizes.txt file
+		String dbsPath = "./../data/ml/ann/cust/db_sizes.txt";
+		ArrayList<ArrayList<String>> dbSizes = AhrIO.scanFile(dbsPath, ",");
+		dbSizes.get(2).set(1, String.valueOf(oddLines));
+		dbSizes.get(3).set(1, String.valueOf(oddSections));
+		AhrIO.writeToFile(dbsPath, dbSizes, ",");
+		System.out.println("DONE");
+	}
+
+	//create only the test DB (from local disk)
+	public void createTestDBFromLocal(int secSize){
 		System.out.print("--> Creating Custom Test DB ... ");
 		//read in mstates info
 		String msPath = "./../in/mstates.txt";
@@ -1123,51 +1341,10 @@ public class ANN {
 			for(int j = 0; j < narClean.size(); j++){
 				String tvColName = Globals.tvi_names[tvi];
 				if(!narClean.get(j).get(fciBD.getIdx(tvColName)).equals("tbd")){
-					ArrayList<String> line = new ArrayList<String>();
-					//add predictor variables
-					for(int k = 0; k < this.indMask.length(); k++){
-						if(this.indMask.charAt(k) == '1'){
-							String indCol = "ind"+String.valueOf(k);
-							double pval = Double.parseDouble(narClean.get(j).get(fciBD.getIdx(indCol)));
-							pval = pval * (1.0/65535.0);	//normalize to range [0,1]
-							String pstr = String.format("%.8f", pval);
-							line.add(pstr);
-						}
-					}
-					//add target variable
-					if(is_cr_method){
-						double platAppr = 0.0;
-						try{
-							platAppr = Double.parseDouble(narClean.get(j).get(fciBD.getIdx(tvColName)));
-						}catch(NumberFormatException e){
-							System.out.println("ERR: " + e.getMessage());
-						}
-						if(platAppr > plateau){
-							platAppr = plateau;
-						}
-						if(platAppr < (-1.0*plateau)){
-							platAppr = (-1.0*plateau);
-						}
-						double range = plateau * 2.0;
-						double azAppr = platAppr + plateau;	//above zero
-						double tvNorm = azAppr * (1.0 / range);
-						line.add(String.format("%.8f", tvNorm));
-					}else{//is binomial distribution
-						String mode = "0";
-						double appr = 0.0;
-						try{
-							appr = Double.parseDouble(narClean.get(j).get(fciBD.getIdx(tvColName)));
-						}catch(NumberFormatException e){
-							System.out.println("ERR: " + e.getMessage());
-						}
-						if(appr > 0){
-							mode = "1";
-						}
-						line.add(mode);
-					}			
+					ArrayList<String> mlLine = toLineML(narClean.get(j), fciBD.getTags());
 					//add line and write to file (if at limit)
 					String tfTestPath = "./../data/ml/ann/cust/test/sec"+String.valueOf(oddSections)+".txt";
-					tf.add(line);
+					tf.add(mlLine);
 					if(tf.size() >= secSize){
 						AhrIO.writeToFile(tfTestPath, tf, "~");
 						tf = new ArrayList<ArrayList<String>>();
@@ -1190,6 +1367,48 @@ public class ANN {
 		AhrIO.writeToFile(dbsPath, dbSizes, ",");
 		System.out.println("DONE");
 	}
+
+	//create ML line (predictor and target vars) from full ByDate line
+	public ArrayList<String> toLineML(ArrayList<String> bdLine, ArrayList<String> colNames){
+		ArrayList<String> mlLine = new ArrayList<String>();
+		//add predictor variables
+		for(int i = 0; i < indMask.length(); i++){
+			if(indMask.charAt(i) == '1'){
+				String indCol = "ind"+String.valueOf(i);
+				double pval = Double.parseDouble(bdLine.get(colNames.indexOf(indCol)));
+				pval = pval * (1.0/65535.0);	//normalize to range [0,1]
+				String pstr = String.format("%.8f", pval);
+				mlLine.add(pstr);
+			}
+		}
+		//add target variable
+		String tvColName = Globals.tvi_names[tvi];
+		int tvIdx = colNames.indexOf(tvColName);
+		if(is_cr_method){
+			double platAppr = 0.0;
+			if(bdLine.size() > tvIdx){
+				platAppr = Double.parseDouble(bdLine.get(tvIdx));			
+			}
+			if(platAppr > plateau){
+				platAppr = plateau;
+			}
+			if(platAppr < (-1.0*plateau)){
+				platAppr = (-1.0*plateau);
+			}
+			double range = plateau * 2.0;
+			double azAppr = platAppr + plateau;	//above zero
+			double tvNorm = azAppr * (1.0 / range);
+			mlLine.add(String.format("%.6f", tvNorm));
+		}else{//is binomial distribution
+			String mode = "0";
+			if(Double.parseDouble(bdLine.get(tvIdx)) > 0){
+				mode = "1";
+			}
+			mlLine.add(mode);
+		}
+		return mlLine;
+	}
+
 	//delete all files in custom made DB
 	public void deleteCustDB(){
 		String path = "./../data/ml/ann/cust/train/";

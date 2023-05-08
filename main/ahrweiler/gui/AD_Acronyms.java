@@ -10,7 +10,7 @@ import javax.swing.table.TableCellRenderer;
 import javax.swing.table.DefaultTableCellRenderer;
 
 
-public class AD_Acronyms extends JFrame {
+public class AD_Acronyms {
 
 	private String[][] tableData;
 
@@ -39,9 +39,10 @@ public class AD_Acronyms extends JFrame {
 		int[] rowHeights = new int[]{140, 140, 140, 140, 140, 140, 260, 140, 110, 110, 110, 110};
 
 		//layout components
-		this.setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
-		this.setTitle("Acronym Reference Sheet");
-		this.setSize(550, 600);	
+		JFrame frame = new JFrame();
+		frame.setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
+		frame.setTitle("Acronym Reference Sheet");
+		frame.setSize(550, 600);	
 
 		//column renderers
 		DefaultTableCellRenderer topRenderer = new DefaultTableCellRenderer();
@@ -76,8 +77,8 @@ public class AD_Acronyms extends JFrame {
 
 
 		//add everything
-		this.add(spRefSheet);
-		this.setVisible(true);
+		frame.add(spRefSheet);
+		frame.setVisible(true);
 	}
 
 }

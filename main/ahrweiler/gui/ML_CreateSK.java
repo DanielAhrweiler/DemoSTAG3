@@ -11,7 +11,7 @@ import java.awt.*;
 import java.awt.event.*;
 import java.util.ArrayList;
 
-public class ML_CreateSK extends JFrame {
+public class ML_CreateSK {
 
 	final Font plainFont = new Font(Font.SANS_SERIF, Font.PLAIN, 12);
 
@@ -36,10 +36,11 @@ public class ML_CreateSK extends JFrame {
 		}
 
 		//layout components
-		setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
-		setTitle("Basis Generating Methods: Single Key");
-		setSize(550, 500);
-		setLayout(null);
+		JFrame frame = new JFrame();
+		frame.setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
+		frame.setTitle("Basis Generating Methods: Single Key");
+		frame.setSize(550, 500);
+		frame.setLayout(null);
 		JPanel pANN = new JPanel();
 		pANN.setLayout(null);
 		JPanel pGenetic = new JPanel();
@@ -141,11 +142,11 @@ public class ML_CreateSK extends JFrame {
 		});
 		bCalcSK1.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				System.out.println("--> Calulate SK for ANN");
+				System.out.println("--> Calculate SK for ANN");
 				//set up algo info
 				String ksPath = "./../out/sk/log/ann/keys_struct.txt";
 				FCI fciKS = new FCI(true, ksPath);
-				ArrayList<ArrayList<String>> keys = AhrIO.scanFile(ksPath,"");
+				ArrayList<ArrayList<String>> keys = AhrIO.scanFile(ksPath,",");
 				int maxID = -1;
 				if(keys.size() > 1){
 					for(int i = 1; i < keys.size(); i++){
@@ -156,16 +157,22 @@ public class ML_CreateSK extends JFrame {
 					}
 				}
 				int id = maxID + 1;
-				ANN algo = new ANN(id);
-				algo.setMethod(rbContRange1.isSelected());
-				algo.setSDate(tfSDate1.getText());
-				algo.setEDate(tfEDate1.getText());
-				algo.setSPD(Integer.parseInt(tfSPD1.getText()));
-				algo.setTVI(cbTargetVars1.getSelectedIndex());
-				algo.setPlateau(Double.parseDouble(tfPlat1.getText()));
-				algo.setLearnRate(Double.parseDouble(tfLearnRate1.getText()));
-				algo.setMsMask(tfMsMask1.getText());
-				algo.setNarMask(tfNarMask1.getText());
+				AttributesSK kattrs = new AttributesSK();
+				if(rbContRange1.isSelected()){
+					kattrs.setAnnMethod("CR");
+				}else{
+					kattrs.setAnnMethod("BN");
+				}
+				kattrs.setSDate(tfSDate1.getText());
+				kattrs.setEDate(tfEDate1.getText());
+				kattrs.setSPD(Integer.parseInt(tfSPD1.getText()));
+				kattrs.setTVI(cbTargetVars1.getSelectedIndex());
+				kattrs.setPlateau(Double.parseDouble(tfPlat1.getText()));
+				kattrs.setLearnRate(Double.parseDouble(tfLearnRate1.getText()));
+				kattrs.setMsMask(tfMsMask1.getText());
+				kattrs.setNarMask(tfNarMask1.getText());
+				ANN algo = new ANN(kattrs);
+				algo.setID(id);
 				String[] actInds = taIndMask1.getText().split(",");
 				ArrayList<Integer> actIndInts = new ArrayList<Integer>();
 				for(int i = 0 ; i < actInds.length; i++){
@@ -181,20 +188,34 @@ public class ML_CreateSK extends JFrame {
 				}
 				algo.setIndMask(indMask);
 				//run the ANN
+				System.out.println("--> In ML_CreateSK, calc SK"+id+" and SK"+(id+1));
+				long time1 = System.currentTimeMillis();
 				algo.calcSK();
+				long time2 = System.currentTimeMillis();
 				BGM_Manager skShort = new BGM_Manager("ANN", id);
 				skShort.genBasisSK(id);
+				long time3 = System.currentTimeMillis();
 				String shortBasisPath = "./../out/sk/baseis/ann/ANN_"+String.valueOf(id)+".txt";
 				ArrayList<String> shortPerf = skShort.perfFromBasisFile(shortBasisPath);
 				skShort.perfToFileSK(shortPerf);			//save short basic SK perf to keys_perf
 				skShort.bsoPerfToFileSK(true, false);		//save short BSO perf to keys_perf
+				long time4 = System.currentTimeMillis();
 				BGM_Manager skLong = new BGM_Manager("ANN", id+1);
 				skLong.genBasisSK(id+1);
+				long time5 = System.currentTimeMillis();
 				String longBasisPath = "./../out/sk/baseis/ann/ANN_"+String.valueOf(id+1)+".txt";
 				ArrayList<String> longPerf = skLong.perfFromBasisFile(longBasisPath);
 				skLong.perfToFileSK(longPerf);				//save long basic SK perf to keys_perf
 				skLong.bsoPerfToFileSK(true, false);		//save long BSO perf to keys_perf
+				long time6 = System.currentTimeMillis();
 
+
+				System.out.println("******* Time Marks *****\n"+
+									"--> calcSK() : "+(time2-time1)+" ms\n"+
+									"--> Gen Short Basis : "+(time3-time2)+" ms\n"+
+									"--> Calc Short Perf : "+(time4-time3)+" ms\n"+
+									"--> Gen Long Basis  : "+(time5-time4)+" ms\n"+
+									"--> Calc Long Perf  : "+(time6-time5)+" ms\n");
 				System.out.println("==> SK calculated and info printed to files.");
 			}
 		});
@@ -349,8 +370,8 @@ public class ML_CreateSK extends JFrame {
 		pGenetic.add(bCalcSK2);
 		tpBGM.add("ANN", pANN);
 		tpBGM.add("Genetic", pGenetic);
-		this.add(tpBGM);
-		this.setVisible(true);
+		frame.add(tpBGM);
+		frame.setVisible(true);
 		
 	}
 	//GUI related, sets style to a JButton

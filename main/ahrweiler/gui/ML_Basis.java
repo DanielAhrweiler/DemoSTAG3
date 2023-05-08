@@ -8,7 +8,7 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
 
-public class ML_Basis extends JFrame {
+public class ML_Basis {
 
 	public ML_Basis(){
 		drawGUI();
@@ -16,9 +16,10 @@ public class ML_Basis extends JFrame {
 
 	public void drawGUI(){
 		//layout components
-		this.setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
-		this.setTitle("SK, AK, Basis Info");
-		this.setSize(800, 700);
+		JFrame frame = new JFrame();
+		frame.setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
+		frame.setTitle("SK, AK, Basis Info");
+		frame.setSize(800, 700);
 		JTabbedPane tpInfo = new JTabbedPane();
 		JPanel pHostSK = new JPanel();
 		pHostSK.setLayout(new BoxLayout(pHostSK, BoxLayout.Y_AXIS));
@@ -180,8 +181,8 @@ public class ML_Basis extends JFrame {
 		tpInfo.add("Single Keys", pHostSK);
 		tpInfo.add("Aggregate Keys", pHostAK);
 		tpInfo.add("Basis Files", pHostBasis);
-		this.add(tpInfo);
-		this.setVisible(true);	
+		frame.add(tpInfo);
+		frame.setVisible(true);	
 
 	}
 	//GUI related, sets style to a JButton

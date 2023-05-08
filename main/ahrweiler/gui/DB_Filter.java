@@ -12,7 +12,7 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
 
-public class DB_Filter extends JFrame {
+public class DB_Filter {
 
 	private StockFilter sf;
 
@@ -35,10 +35,11 @@ public class DB_Filter extends JFrame {
 		ArrayList<ArrayList<String>> fdAL = new ArrayList<ArrayList<String>>();
 
 		//layout components
-		this.setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
-		this.setTitle("STAG 3");
-		this.setSize(1030, 600);
-		this.setLayout(null);	
+		JFrame frame = new JFrame();
+		frame.setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
+		frame.setTitle("STAG 3");
+		frame.setSize(1030, 600);
+		frame.setLayout(null);	
 		JPanel pInputs = new JPanel();
 		pInputs.setLayout(null);
 		pInputs.setBorder(BorderFactory.createTitledBorder("Inputs"));
@@ -156,7 +157,8 @@ public class DB_Filter extends JFrame {
 		});
 		bSectorAll.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e){
-				//TODO add dialog box in case button is pressed while tf is already at full len
+				String oldStr = tfSector.getText();
+				String newStr = "";
 				String scPath = "./../in/sector_codes.txt";
 				FCI fciSC = new FCI(false, scPath);
 				ArrayList<String> scSectors = AhrIO.scanCol(scPath, "~", fciSC.getIdx("sector"));
@@ -164,15 +166,18 @@ public class DB_Filter extends JFrame {
 				for(int i = 0; i < scSectors.size(); i++){
 					uniqSec.add(scSectors.get(i));
 				}
-				String secStr = "";
 				for(int i = 0; i < uniqSec.size(); i++){
 					if(i == uniqSec.size()-1){
-						secStr += String.format("%02d", (i+1));
+						newStr += String.format("%02d", (i+1));
 					}else{
-						secStr += String.format("%02d", (i+1)) + ",";
+						newStr += String.format("%02d", (i+1)) + ",";
 					}
 				}
-				tfSector.setText(secStr);
+				if(newStr.equals(oldStr)){
+					JOptionPane.showMessageDialog(frame, "All sectors already selected.");
+				}else{
+					tfSector.setText(newStr);
+				}
 			}
 		});
 		bIndustryList.addActionListener(new ActionListener() {
@@ -211,7 +216,8 @@ public class DB_Filter extends JFrame {
 						System.out.println("   "+(i+1)+") "+uniqInds.get(i));
 					}
 				}else{
-					System.out.println("ERR: only 1 industry must be selected for this filter to work.");
+					JOptionPane.showMessageDialog(frame, "Only one sector must be selected for this filter"+
+												" to work.", "Error", JOptionPane.ERROR_MESSAGE);
 				}
 			}	
 		});
@@ -241,16 +247,23 @@ public class DB_Filter extends JFrame {
 						}
 					}
 					//set taSector to subcodes
+					String oldStr = taIndustry.getText();
+					String newStr = "";
 					String strSubcodes = "";
 					for(int i = 0; i < subcodes.size(); i++){
-						strSubcodes += subcodes.get(i);
+						newStr += subcodes.get(i);
 						if(i != (subcodes.size()-1)){
-							strSubcodes += ",";
+							newStr += ",";
 						}
 					}
-					taIndustry.setText(strSubcodes);
+					if(newStr.equals(oldStr)){
+						JOptionPane.showMessageDialog(frame, "All idustries already selected.");
+					}else{
+						taIndustry.setText(newStr);
+					}
 				}else{
-					System.out.println("ERR: only 1 industry must be selected for this filter to work.");
+					JOptionPane.showMessageDialog(frame, "Only one sector must be selected for this filter"+
+												" to work.", "Error", JOptionPane.ERROR_MESSAGE);
 				}
 			}
 		});
@@ -265,7 +278,8 @@ public class DB_Filter extends JFrame {
 					sf.addIndicatorFilter(AhrAL.toAL(new String[]{indNum, rngStart, rngEnd}));
 					taFilterDetails.setText(sf.getText());
 				}else{
-					System.out.println("ERR: indicator values can only be numbers.");
+					JOptionPane.showMessageDialog(frame, "Indicator values can only be integers in range [0-65535]",
+												"Error", JOptionPane.ERROR_MESSAGE);
 				}
 			}
 		});
@@ -276,20 +290,20 @@ public class DB_Filter extends JFrame {
 				String mcEnd = tfEndMC.getText();
 				String rawSecStr = tfSector.getText();
 				String rawIndStr = taIndustry.getText();
-				boolean good_vals = true;
+				ArrayList<String> errors = new ArrayList<String>();
 				if(!AhrGen.isInt(mcStart) || !AhrGen.isInt(mcEnd)){
-					System.out.println("ERR: market cap values must be integers.");
-					good_vals = false;
+					errors.add("Market cap values must be integers.");
 				}
 				if(!rawSecStr.replace(",","").matches("[0-9]+")){
-					System.out.println("ERR: industry values must be comma seperated integers");
-					good_vals = false;
+					errors.add("Industry values must be comma seperated integers.");
 				} 
 				if(!rawIndStr.replace(",","").matches("[0-9]+") && !rawIndStr.equals("")){
-					System.out.println("ERR: sector values must be comma seperated integers.");
-					good_vals = false;
+					errors.add("Sector values must be comma seperated integers.");
 				}
-				if(good_vals){
+				if(!rawIndStr.equals("") && rawSecStr.split(",").length > 1){
+					errors.add("If more than one sector is selected, industry text must be blank.");
+				}
+				if(errors.size() == 0){
 					//apply filter from StockFilter
 					sf.clearSectorCodes();
 					sf.clearResults();
@@ -297,7 +311,7 @@ public class DB_Filter extends JFrame {
 					sf.setSectors(rawSecStr);
 					sf.setIndustries(rawIndStr);
 					taFilterDetails.setText(sf.getText());
-					setVisible(true);
+					frame.setVisible(true);
 					String mrDate = AhrDate.mostRecentDate(AhrIO.getNamesInPath("./../../DB_Intrinio/Clean/ByDate/"));
 					sf.applyFilter(mrDate);
 					ArrayList<ArrayList<String>> res = sf.getResults();
@@ -313,8 +327,18 @@ public class DB_Filter extends JFrame {
 					}
 					String[][] data = AhrAL.toArr2D(res);
 					pTableSort.updateModel(data, header);
+				}else{
+					String errStr = "";
+					if(errors.size() == 1){
+						errStr = errors.get(0);
+					}else if(errors.size() > 1){
+						errStr = "1) "+errors.get(0);
+						for(int i = 0; i < errors.size(); i++){
+							errStr += "\n"+(i+1)+") "+errors.get(i);
+						}
+					}
+					JOptionPane.showMessageDialog(frame, errStr, "Error", JOptionPane.ERROR_MESSAGE);
 				}
-				
 			}
 		});
 		bReset.addActionListener(new ActionListener() {
@@ -382,37 +406,20 @@ public class DB_Filter extends JFrame {
 		*/
 		pOutputs.add(pTableSort);
 		pOutputs.add(bToFile);
-		this.add(pInputs);
-		this.add(pOutputs);
-		this.setVisible(true);
+		frame.add(pInputs);
+		frame.add(pOutputs);
+		frame.setVisible(true);
 	}
 
 	//set starting vals of a StockFilter and show in taFilterDetails
 	public String setBasicFilter(String startMC, String endMC, String sectors, String industries){
-		boolean good_vals = true;
-		if(!AhrGen.isInt(startMC) || !AhrGen.isInt(endMC)){
-			System.out.println("ERR: market cap values must be integers.");
-			good_vals = false;
-		}
-		if(!sectors.replace(",","").matches("[0-9]+")){
-			System.out.println("ERR: industry values must be comma seperated integers");
-			good_vals = false;
-		} 
-		if(!industries.replace(",","").matches("[0-9]+") && !industries.equals("")){
-			System.out.println("ERR: sector values must be comma seperated integers.");
-			good_vals = false;
-		}
-		if(good_vals){
-			//apply filter from StockFilter
-			sf.clearSectorCodes();
-			sf.clearResults();
-			sf.setMarketCap(Integer.parseInt(startMC), Integer.parseInt(endMC));
-			sf.setSectors(sectors);
-			sf.setIndustries(industries);
-			return sf.getText();
-		}else{
-			return "";
-		}
+		//apply filter from StockFilter
+		sf.clearSectorCodes();
+		sf.clearResults();
+		sf.setMarketCap(Integer.parseInt(startMC), Integer.parseInt(endMC));
+		sf.setSectors(sectors);
+		sf.setIndustries(industries);
+		return sf.getText();
 	}
 
 	//GUI related, sets style to a JButton

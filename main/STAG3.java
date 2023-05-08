@@ -6,6 +6,7 @@ import ahrweiler.util.AhrGen;
 import ahrweiler.Globals;
 import ahrweiler.support.FCI;
 import ahrweiler.support.RCode;
+import ahrweiler.support.SQLCode;
 import ahrweiler.support.OrderSim;
 import ahrweiler.support.StockFilter;
 import ahrweiler.bgm.ANN;
@@ -32,6 +33,7 @@ import java.awt.event.*;
 import java.nio.channels.*;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.sql.*;
 
 public class STAG3 {
 
@@ -197,6 +199,7 @@ public class STAG3 {
 		System.out.print("==> Pick Option: \n  1) Temp Code"+
 										  "\n  2) Update score_percentiles.txt"+
 										  "\n  3) Count All Market States"+
+										  "\n  4) Update ./in/nar_by_date.txt"+
 						"\nEnter: ");
 		int pick = Integer.parseInt(scanner.nextLine());
 		if(pick == 1){
@@ -205,6 +208,8 @@ public class STAG3 {
 			updateScorePercentiles();
 		}else if(pick == 3){
 			countMarketStates();
+		}else if(pick == 4){
+			updateNarByDate();
 		}else{
 			System.out.println("Invalid Option, Try Again.");
 			other();
@@ -212,100 +217,11 @@ public class STAG3 {
 	}
 
 	public void tempCode(){
-		for(int i = 0; i < 5; i++){ 
-			AttributesSK kattr = new AttributesSK("./../data/tmp/sk_attrs.txt");
-			kattr.setBGM("rnd");
-			//create rnd basis (using saved key params)
-			BGM_Manager bgmm = new BGM_Manager(kattr);
-			bgmm.genBasisRnd(0.75);
-			OrderSim osim = new OrderSim("rnd", i);
-			osim.calcBSO();
-			osim.printData();
-		}
-
-
-		//test OrderSim->clacGrowth functions
-		/*
-		OrderSim osim = new OrderSim(10);
-		osim.calcOrderList();
-		ArrayList<ArrayList<String>> growth1 = osim.calcGrowth(1000000.0);
-		growth1.add(0, AhrAL.toAL(new String[]{"date", "tot_value"}));
-		AhrIO.writeToFile("./../data/tmp/os_growth1.csv", growth1, ",");
-		ArrayList<ArrayList<String>> growth2 = osim.calcGrowth2(1000000.0);
-		growth2.add(0, AhrAL.toAL(new String[]{"date", "cash_on_hand", "tot_value", "price_per_trade"}));
-		AhrIO.writeToFile("./../data/tmp/os_growth2.csv", growth2, ",");
-		*/
-
-
-		/*
-		//test diff in basis files (cl before pred) and orderlist (open after pred)
-		int skNum = 4;
-		String bsPath = "./../out/sk/baseis/ann/ANN_"+String.valueOf(skNum)+".txt";
-		String olPath = "./../data/tmp/os_orderlist.txt";
-		FCI fciBS = new FCI(false, bsPath);
-		FCI fciOL = new FCI(false, olPath);
-		String ttvMask = "100";
-		String colName = "appr3";
-		ArrayList<ArrayList<String>> basis = AhrIO.scanFile(bsPath, ",");
-		//have to run orderlist 1st to create file
-		OrderSim osim = new OrderSim("ANN", skNum);
-		osim.setDateRange("2016-01-01", "2020-12-31");
-		osim.setBIM(0.01);
-		osim.setSOM(50.0);
-		osim.setTtvMask(ttvMask);
-		osim.setMaxOrderPrice(10000.0);
-		osim.calcOrderList();
-		try{
-			Thread.sleep(500);
-		}catch(InterruptedException e){
-			System.out.println("ERR: thread interrupted.");
-		}
-		ArrayList<ArrayList<String>> orderlist = AhrIO.scanFile("./../data/tmp/os_orderlist_byappr.txt", ",");
-		//get appr % col from basis and orderlist
-		ArrayList<ArrayList<String>> capprs = new ArrayList<ArrayList<String>>();
-		for(int i = 0; i < orderlist.size(); i++){
-			String olDate = orderlist.get(i).get(fciOL.getIdx("date"));
-			String olTick = orderlist.get(i).get(fciOL.getIdx("ticker"));
-			for(int j = 0; j < basis.size(); j++){
-				String bsDate = basis.get(j).get(fciBS.getIdx("date"));
-				String bsTick = basis.get(j).get(fciBS.getIdx("ticker"));
-				if(olDate.equals(bsDate) && olTick.equals(bsTick)){
-					String bsAppr = basis.get(j).get(fciBS.getIdx(colName)); 
-					orderlist.get(i).add(bsAppr);
-					break;
-				}
-			}
-		}
-		AhrIO.writeToFile("./../data/tmp/tmp_capprs.csv", orderlist, ",");
-		*/
-		
+		//fix null vals in MySQL bydate DB
+		SQLCode sqlc = new SQLCode("aws");
+		sqlc.fixNullInByDate();
 
 		System.out.println("--> tempCode() DONE");
-	}
-
-	//calc clean lines that have tbd
-	public void updateCleanFiles(){
-		BGM_Manager bgmm = new BGM_Manager(new AttributesSK());
-		ArrayList<ArrayList<String>> tf = new ArrayList<ArrayList<String>>();
-		ArrayList<String> bdFiles = AhrIO.getNamesInPath("./../../DB_Intrinio/Clean/ByDate/");
-		for(int i = 0; i < bdFiles.size(); i++){
-			ArrayList<ArrayList<String>> fc = AhrIO.scanFile("./../../DB_Intrinio/Clean/ByDate/"+bdFiles.get(i)+".txt", "~");
-			for(int j = 0; j < fc.size(); j++){
-				if(fc.get(j).contains("tbd")){
-					//add old line from Clean/ByDate
-					ArrayList<String> oldLine = fc.get(j);
-					oldLine.add(0, bdFiles.get(i));
-					tf.add(oldLine);
-					//add new line from BGM_Manager
-					String ticker = oldLine.get(1);
-					String date = bdFiles.get(i);
-					ArrayList<String> newLine = bgmm.calcCleanLine(ticker, date, false, false);
-					newLine.add(0, bdFiles.get(i));
-					tf.add(newLine);
-				}
-			}
-		}
-		AhrIO.writeToFile("./../out/clean_tbd.txt", tf, "~");
 	}
 
 	//create line in ./../out/SAP/score_percentiles.txt for all SKs in all epoch AKs
@@ -462,5 +378,37 @@ public class STAG3 {
 		//write allStates to file
 		AhrIO.writeToFile("./../out/ms_count.txt", allStates, ",");
 		System.out.println("DONE");
+	}
+
+	//updates ./../in/nar_by_date.txt which show which tickers have 1111 NAR mask by date
+	public void updateNarByDate(){
+		String nar = "1111";
+		FCI fciSN = new FCI(false, Globals.snorm_path);
+		SQLCode sqlc = new SQLCode();
+		sqlc.setDB("snorm");
+		ArrayList<String> snTables = sqlc.getTables();
+		ArrayList<String> dates = AhrIO.scanCol("./../in/open_dates.txt", ",", 0);
+		ArrayList<ArrayList<String>> narByDate = new ArrayList<ArrayList<String>>();
+		for(int i = 0; i < dates.size(); i++){
+			String itrDate = dates.get(i);
+			ArrayList<String> tickList = new ArrayList<String>();
+			for(int j = 0; j < snTables.size(); j++){
+				ArrayList<String> line = sqlc.selectRow(snTables.get(j), AhrAL.toAL(new String[]{"*"}), dates.get(i), true);
+				boolean pass_nar = false;
+				if(line.size() == fciSN.getTags().size()){
+					String itrNar = line.get(fciSN.getIdx("nar_mask"));
+					if(AhrGen.compareMasks(nar, itrNar)){
+						pass_nar = true;
+					}
+				}
+				if(pass_nar){
+					tickList.add(snTables.get(j));
+				}
+			}
+			ArrayList<String> nbdLine = tickList;
+			nbdLine.add(0, dates.get(i));
+			narByDate.add(nbdLine);
+		}
+		AhrIO.writeToFile("./../in/nar_by_date.txt", narByDate, ",");
 	}
 }

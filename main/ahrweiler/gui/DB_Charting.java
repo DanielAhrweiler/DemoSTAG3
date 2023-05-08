@@ -1,14 +1,16 @@
 package ahrweiler.gui;
+import ahrweiler.Globals;
 import ahrweiler.util.*;
 import ahrweiler.support.FCI;
 import ahrweiler.support.RCode;
+import ahrweiler.support.SQLCode;
 import java.io.*;
 import java.util.*;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
 
-public class DB_Charting extends JFrame {
+public class DB_Charting {
 
 	Font plainFont = new Font(Font.SANS_SERIF, Font.PLAIN, 12);
 	RCode rcode = new RCode();
@@ -41,10 +43,11 @@ public class DB_Charting extends JFrame {
 
 
 		//layout components
-		this.setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
-		this.setTitle("Stock Charting");
-		this.setSize(1400, 800);
-		this.setLayout(null);
+		JFrame frame = new JFrame();
+		frame.setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
+		frame.setTitle("Stock Charting");
+		frame.setSize(1400, 800);
+		frame.setLayout(null);
 		JPanel pMainGraph = new JPanel();
 		pMainGraph.setBounds(400, 10, 990, 700);
 		pMainGraph.setBorder(BorderFactory.createTitledBorder("Graph"));
@@ -68,7 +71,7 @@ public class DB_Charting extends JFrame {
 		JLabel lbSDate = new JLabel("Start Date:");				//General Params Panel
 		JTextField tfSDate = new JTextField("2020-01-01");
 		JLabel lbEDate = new JLabel("End Date:");
-		JTextField tfEDate = new JTextField(AhrDate.getTodaysDate());
+		JTextField tfEDate = new JTextField("2022-05-30");
 		JLabel lbSMA = new JLabel("SMA Value:");
 		JTextField tfSMA = new JTextField("1");
 		ButtonGroup bgAddComp = new ButtonGroup();				//Add Comp Panel
@@ -275,6 +278,7 @@ public class DB_Charting extends JFrame {
 				String sdate = tfSDate.getText();
 				String edate = tfEDate.getText();				
 				//setup empty vars needed to calc for chart
+				boolean redraw_chart = true;
 				boolean quantmod_used = false;
 				String csvColName = "";
 				ArrayList<ArrayList<String>> newData = new ArrayList<ArrayList<String>>();				
@@ -282,89 +286,126 @@ public class DB_Charting extends JFrame {
 				if(rbStock.isSelected()){
 					//set column names
 					String ticker = tfStockTicker.getText().toUpperCase();
+					String dbPath = "./../../DB_Intrinio/Main/Intrinio/"+ticker+".txt";
 					int indIdx = cbStockInds.getSelectedIndex();
 					String dbColName = "adj_close";
 					csvColName = ticker;
-					String dbPath = "./../../DB_Intrinio/Main/Intrinio/"+ticker+".txt";
-					if(indIdx > 2){
-						dbPath = "./../../DB_Intrinio/Main/S_Norm/"+ticker+".txt";
-					}
-					if(indIdx == 1){
-						dbColName = "adj_vol";
-						csvColName += ".vol";
-					}else if(indIdx == 2){
-						dbColName = "adj_ratio";
-						csvColName += ".adjr";
-					}else if(indIdx > 1){
-						dbColName = "ind" + String.valueOf(indIdx-2);
-						csvColName += "." + indList[indIdx-2];
-					}
-					if(rbQuantYes.isSelected()){
-						quantmod_used = true;
-						dbPath = "./../../DB_Intrinio/Main/Intrinio/"+ticker+".txt";
-						RCode rcodeQM = new RCode();
-						rcodeQM.addPackage("quantmod");
-						rcodeQM.addCode("df <- read.delim.zoo(\""+dbPath+"\", "+
-									"format=\"%Y-%m-%d\", sep=\"~\", header=FALSE)");
-						rcodeQM.addCode("df <- df[,c(1,2,3,4,5,9)]");
-						rcodeQM.addCode("colnames(df) <- c(\""+ticker+".Open\",\""+ticker+".High\",\""+ticker+
-									".Low\",\""+ticker+".Close\",\""+ticker+".Volume\",\""+ticker+".Adjusted\")");
-						rcodeQM.startPlot(plotPath, xdim, ydim);
-						rcodeQM.addCode("chartSeries(df, type=\"bar\", subset=\'"+sdate+"::"+edate+
-									"\', theme=chartTheme(\'black\'))");
-						rcodeQM.endPlot();
-						//rcodeQM.printCode();
-						rcodeQM.writeCode(scriptPath);
-						rcodeQM.runScript(scriptPath);
-						//show R plot
-						ImageIcon ii = new ImageIcon(plotPath);
-						lbPlot.setIcon(ii);
-						setVisible(true);
-						ii.getImage().flush();					
+					File tickFile = new File(dbPath);
+					if(tickFile.exists()){
+						if(indIdx > 2){
+							dbPath = "./../../DB_Intrinio/Main/S_Norm/"+ticker+".txt";
+						}
+						if(indIdx == 1){
+							dbColName = "adj_vol";
+							csvColName += ".vol";
+						}else if(indIdx == 2){
+							dbColName = "adj_ratio";
+							csvColName += ".adjr";
+						}else if(indIdx > 1){
+							dbColName = "ind" + String.valueOf(indIdx-2);
+							csvColName += "." + indList[indIdx-2];
+						}
+						if(rbQuantYes.isSelected()){
+							quantmod_used = true;
+							dbPath = "./../../DB_Intrinio/Main/Intrinio/"+ticker+".txt";
+							RCode rcodeQM = new RCode();
+							rcodeQM.addPackage("quantmod");
+							rcodeQM.addCode("df <- read.delim.zoo(\""+dbPath+"\", "+
+										"format=\"%Y-%m-%d\", sep=\"~\", header=FALSE)");
+							rcodeQM.addCode("df <- df[,c(1,2,3,4,5,9)]");
+							rcodeQM.addCode("colnames(df) <- c(\""+ticker+".Open\",\""+ticker+".High\",\""+ticker+
+										".Low\",\""+ticker+".Close\",\""+ticker+".Volume\",\""+ticker+".Adjusted\")");
+							rcodeQM.startPlot(plotPath, xdim, ydim);
+							rcodeQM.addCode("chartSeries(df, type=\"bar\", subset=\'"+sdate+"::"+edate+
+											"\', theme=chartTheme(\'black\'), name=\""+ticker+" Stock Price (daily)\")");
+							rcodeQM.endPlot();
+							//rcodeQM.printCode();
+							rcodeQM.writeCode(scriptPath);
+							rcodeQM.runScript(scriptPath);
+							//show R plot
+							ImageIcon ii = new ImageIcon(plotPath);
+							lbPlot.setIcon(ii);
+							frame.setVisible(true);
+							ii.getImage().flush();	
+						}else{
+							FCI fciDB = new FCI(false, dbPath);
+							int colIdx = fciDB.getIdx(dbColName);
+							if(Globals.uses_mysql_source){
+								ArrayList<String> colNames = AhrAL.toAL(new String[]{"date", "close"});
+								newData = getWebSBaseDataForPlot(ticker, colNames, sdate, edate, sma);
+							}else{
+								newData = getLocalDataForPlot(dbPath, sdate, edate, colIdx, sma);
+							}
+							if(newData.size() < 1){
+								redraw_chart = false;
+								JOptionPane.showMessageDialog(frame, "Stock ticker not found in given date range.",
+														"Error", JOptionPane.ERROR_MESSAGE);
+							}
+						}
 					}else{
-						FCI fciDB = new FCI(false, dbPath);
-						int colIdx = fciDB.getIdx(dbColName);
-						newData = retrieveNewDataForPlot(dbPath, sdate, edate, colIdx, sma);
+						redraw_chart = false;
+						JOptionPane.showMessageDialog(frame, "Stock ticker not found.", "Error", JOptionPane.ERROR_MESSAGE);
 					}
 				}else if(rbSecInd.isSelected()){
 						int secIdx = cbSector.getSelectedIndex();
 						int indIdx = cbIndustry.getSelectedIndex();
-						String fname = String.valueOf(secIdx+2);
+						String siCode = String.valueOf(secIdx+2);
+						String tname = "sector"+siCode;
+						String cname = "dmc_close_";
 						if(indIdx > 0){//is certain 1 industry
 							String indPart = String.valueOf(indIdx);
 							if(indPart.length() == 1){
 								indPart = "0" + indPart;
 							}
-							fname += indPart;
+							siCode += indPart;
+							cname += indPart;
 						}else{//all industries in this sector
-							fname += "xx";
+							siCode += "xx";
+							cname += "xx";
 						}
-						csvColName = fname;
-						fname += ".txt";
+						csvColName = siCode;
 						String dbPath = "./../../DB_Intrinio/Main/I_Base/";
 						FCI fciIB = new FCI(false, dbPath);
 						int colIdx = fciIB.getIdx("close");
-						newData = retrieveNewDataForPlot(dbPath+fname, sdate, edate, colIdx, sma);				
+						if(Globals.uses_mysql_source){
+							ArrayList<String> colNames = AhrAL.toAL(new String[]{"date", cname});
+							newData = getWebIBaseDataForPlot(tname, colNames, sdate, edate, sma);
+						}else{
+							String fname = siCode + ".txt";
+							newData = getLocalDataForPlot(dbPath+fname, sdate, edate, colIdx, sma);				
+						}
 				}else if(rbExchange.isSelected()){
-						String fname = cbExchange.getSelectedItem().toString();
-						csvColName = fname;
-						fname += ".txt";
+						String exchange = cbExchange.getSelectedItem().toString();
+						String tname = "exchanges";
+						String cname = "dmc_close_"+exchange.toLowerCase();
+						csvColName = exchange.toUpperCase();
 						String dbPath = "./../../DB_Intrinio/Main/M_Base/";
 						FCI fciMB = new FCI(false, dbPath);
 						int colIdx = fciMB.getIdx("close");
-						newData = retrieveNewDataForPlot(dbPath+fname, sdate, edate, colIdx, sma);				
+						if(Globals.uses_mysql_source){
+							ArrayList<String> colNames = AhrAL.toAL(new String[]{"date", cname});
+							newData = getWebMBaseDataForPlot("exchanges", colNames, sdate, edate, sma);
+						}else{
+							String fname = exchange+".txt";
+							newData = getLocalDataForPlot(dbPath+fname, sdate, edate, colIdx, sma);				
+						}
 				}else if(rbIndex.isSelected()){
-						String fname = cbIndex.getSelectedItem().toString();
-						fname = fname.replaceAll("\\s+", "").split("-")[0];
-						csvColName = fname;
-						fname += ".txt";
+						String ticker = cbIndex.getSelectedItem().toString();
+						ticker = ticker.replaceAll("\\s+", "").split("-")[0];
+						csvColName = ticker;
 						//String dbPath = "./../../DB_Intrinio/Main/S_Base/";
 						String dbPath = "./../../DB_Intrinio/Main/Intrinio/";
 						//FCI fciSB = new FCI(false, dbPath);
 						FCI fciIT = new FCI(false, dbPath);
 						//int colIdx = fciSB.getIdx("close");
 						int colIdx = fciIT.getIdx("adj_close");
-						newData = retrieveNewDataForPlot(dbPath+fname, sdate, edate, colIdx, sma);					
+						if(Globals.uses_mysql_source){
+							ArrayList<String> colNames = AhrAL.toAL(new String[]{"date", "close"});
+							newData = getWebSBaseDataForPlot(ticker, colNames, sdate, edate, sma);
+						}else{
+							String fname = ticker + ".txt";
+							newData = getLocalDataForPlot(dbPath+fname, sdate, edate, colIdx, sma);					
+						}
 				}else{
 					System.out.println("ERR: no comp chosen.");
 				}
@@ -388,7 +429,7 @@ public class DB_Charting extends JFrame {
 					}
 					//gen R code
 					rcode.resetCode();
-					rcode.setTitle("Stock Market Charting");
+					rcode.setTitle("Stock Market Charting (daily)");
 					rcode.setXLabel("Date");
 					rcode.setYLabel("Value");
 					rcode.createTimeSeries(dataPath, plotPath, xdim, ydim);
@@ -399,7 +440,7 @@ public class DB_Charting extends JFrame {
 					cbListSeries.addItem(csvColName);
 					ImageIcon ii = new ImageIcon(plotPath);
 					lbPlot.setIcon(ii);
-					setVisible(true);
+					frame.setVisible(true);
 					ii.getImage().flush();				
 				}			
 			}
@@ -583,7 +624,7 @@ public class DB_Charting extends JFrame {
 				}
 				cbListSeries.removeAllItems();
 				lbPlot.setIcon(new ImageIcon(""));
-				setVisible(true); 
+				frame.setVisible(true); 
 			}
 		});
 		bRemoveSeries.addActionListener(new ActionListener() {
@@ -612,7 +653,7 @@ public class DB_Charting extends JFrame {
 				ImageIcon ii = new ImageIcon(plotPath);
 				lbPlot.setIcon(ii);
 				cbListSeries.removeItem(selectedLine);
-				setVisible(true);
+				frame.setVisible(true);
 				ii.getImage().flush();
 			}
 		});
@@ -656,16 +697,16 @@ public class DB_Charting extends JFrame {
 		pPopout.add(lbSpecial);
 		pPopout.add(cbSpecial);
 		pPopout.add(bSpecial);
-		this.add(pMainGraph);
-		this.add(pGenFields);
-		this.add(pAddComp);
-		this.add(pPopout);
-		this.add(bClear);
-		this.add(lbSeries);
-		this.add(cbListSeries);
-		this.add(bRemoveSeries);
-		//this.add(bDistnSeries);
-		this.setVisible(true);
+		frame.add(pMainGraph);
+		frame.add(pGenFields);
+		frame.add(pAddComp);
+		frame.add(pPopout);
+		frame.add(bClear);
+		frame.add(lbSeries);
+		frame.add(cbListSeries);
+		frame.add(bRemoveSeries);
+		//frame.add(bDistnSeries);
+		frame.setVisible(true);
 	}
 	//GUI related, sets specific style to a JButton
 	public void setButtonStyle(JButton btn){
@@ -674,8 +715,8 @@ public class DB_Charting extends JFrame {
 		btn.setBorder(BorderFactory.createLineBorder(Color.GRAY));
 	}
 
-	//Database -> Stock Charting: retrieves data from DB according to GUI params
-	public ArrayList<ArrayList<String>> retrieveNewDataForPlot(String dbPath, String sdate, String edate, int colIdx, int sma){
+	//getdata from local disk to chart
+	public ArrayList<ArrayList<String>> getLocalDataForPlot(String dbPath, String sdate, String edate, int colIdx, int sma){
 		FCI fciDB = new FCI(false, dbPath);
 		ArrayList<ArrayList<String>> data = new ArrayList<ArrayList<String>>();
 		data = AhrIO.scanColWithIndex(dbPath, "~", colIdx);
@@ -715,6 +756,93 @@ public class DB_Charting extends JFrame {
 		}
 		return data;
 	}
+	//gets data from MySQL (SBase db) web server to chart
+	public ArrayList<ArrayList<String>> getWebSBaseDataForPlot(String tname, ArrayList<String> colNames,
+																String sdate, String edate, int sma){
+		SQLCode sqlc = new SQLCode("aws");
+		sqlc.setDB("sbase");
+		sqlc.setDateRange(sdate, edate);
+		ArrayList<ArrayList<String>> data = sqlc.selectCols(tname, colNames);
+		Collections.reverse(data);
+		AhrAL.print(data);
+		if(sma > 1 && colNames.size() == 2 && data.size() >= sma){
+			ArrayList<ArrayList<String>> smaData = calcSMA(data, sma);
+			return smaData;
+		}else{
+			return data;
+		}
+	}
+	//gets data from MySQL (SNorm db) web server to chart
+	public ArrayList<ArrayList<String>> getWebSNormDataForPlot(String tname, ArrayList<String> colNames,
+														String sdate, String edate, String narMask, int sma){
+		SQLCode sqlc = new SQLCode("aws");
+		sqlc.setDB("snorm");
+		sqlc.setDateRange(sdate, edate);
+		ArrayList<ArrayList<String>> data = sqlc.selectCols(tname, colNames);
+		Collections.reverse(data);
+		AhrAL.print(data);
+		if(sma > 1 && colNames.size() == 2 && data.size() >= sma){
+			ArrayList<ArrayList<String>> smaData = calcSMA(data, sma);
+			return smaData;
+		}else{
+			return data;
+		}
+	}
+	//gets data from MySQL (IMBase) web server to chart
+	public ArrayList<ArrayList<String>> getWebIBaseDataForPlot(String tname, ArrayList<String> colNames, String sdate,
+																String edate, int sma){
+		SQLCode sqlc = new SQLCode("aws");
+		sqlc.setDB("ibase");
+		sqlc.setDateRange(sdate, edate);
+		ArrayList<ArrayList<String>> data = sqlc.selectCols(tname, colNames);
+		Collections.reverse(data);
+		AhrAL.print(data);
+		if(sma > 1 && colNames.size() == 2 && data.size() >= sma){
+			ArrayList<ArrayList<String>> smaData = calcSMA(data, sma);
+			return smaData;
+		}else{
+			return data;
+		}
+	}
+	//gets data from MySQL (IMBase) web server to chart
+	public ArrayList<ArrayList<String>> getWebMBaseDataForPlot(String tname, ArrayList<String> colNames, String sdate,
+																						String edate, int sma){
+		SQLCode sqlc = new SQLCode("aws");
+		sqlc.setDB("mbase");
+		sqlc.setDateRange(sdate, edate);
+		ArrayList<ArrayList<String>> data = sqlc.selectCols(tname, colNames);
+		Collections.reverse(data);
+		AhrAL.print(data);
+		if(sma > 1 && colNames.size() == 2 && data.size() >= sma){
+			ArrayList<ArrayList<String>> smaData = calcSMA(data, sma);
+			return smaData;
+		}else{
+			return data;
+		}
+	}
+	//calc SMA of a value col (assuming just a date col & value col), used in above 4 functs
+	public ArrayList<ArrayList<String>> calcSMA(ArrayList<ArrayList<String>> data, int sma){
+		ArrayList<ArrayList<String>> smaData = new ArrayList<ArrayList<String>>();
+		int llIdx = data.size()-1;
+		double sum = 0.0;
+		for(int i = 0; i < sma; i++){
+			sum += Double.parseDouble(data.get(llIdx-i).get(1));
+		}
+		ArrayList<String> firstLine = new ArrayList<String>();
+		firstLine.add(data.get(llIdx-(sma-1)).get(0));
+		firstLine.add(String.format("%.3f", sum/(double)sma));
+		smaData.add(firstLine);
+		for(int i = (llIdx-sma); i >= 0; i--){
+			sum -= Double.parseDouble(data.get(i+sma).get(1));
+			sum += Double.parseDouble(data.get(i).get(1));
+			ArrayList<String> line = new ArrayList<String>();
+			line.add(data.get(i).get(0));
+			line.add(String.format("%.3f", sum/(double)sma));
+			smaData.add(line);
+		}
+		return smaData;
+	}
+
 
 	//get list of industries given index from cbSector
 	public String[] getIndustryList(int idx){

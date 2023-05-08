@@ -16,9 +16,10 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 
-public class ML_CreateAK extends JFrame {
+public class ML_CreateAK {
 
 	final Font plainFont = new Font(Font.SANS_SERIF, Font.PLAIN, 12);
+	boolean coverage_is_100 = false;
 
 	public ML_CreateAK(){
 		drawGUI();
@@ -27,23 +28,24 @@ public class ML_CreateAK extends JFrame {
 	public void drawGUI(){
 		//lists and over-arching structs
 		int fxDim = 500;
-		int fyDim = 620;
+		int fyDim = 650;
 		String[] bgmList = {"ANN"};
 		String[] methodList = {"Binomial", "Continuous"};
 		DefaultTableCellRenderer centerRenderer = new DefaultTableCellRenderer();
 		centerRenderer.setHorizontalAlignment(JLabel.CENTER);
 
 		//layout components
-		setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
-		setTitle("Basis Generating Methods: Aggregate Keys");
-		setSize(fxDim, fyDim+37);
-		setLayout(null);
+		JFrame frame = new JFrame();
+		frame.setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
+		frame.setTitle("Basis Generating Methods: Aggregate Keys");
+		frame.setSize(fxDim, fyDim+37);
+		frame.setLayout(null);
 		JPanel pInputs = new JPanel();
-		pInputs.setBounds(10, 10, fxDim-20, 240);
+		pInputs.setBounds(10, 10, fxDim-20, 270);
 		pInputs.setBorder(BorderFactory.createTitledBorder("Input Parameters"));
 		pInputs.setLayout(null);
 		JPanel pKeys = new JPanel();
-		pKeys.setBounds(10, 290, fxDim-20, 280);
+		pKeys.setBounds(10, 320, fxDim-20, 280);
 		pKeys.setBorder(BorderFactory.createTitledBorder("Single Keys"));
 		pKeys.setLayout(null);	
 
@@ -70,6 +72,8 @@ public class ML_CreateAK extends JFrame {
 		JTextField tfNarMask = new JTextField("1111");
 		JLabel lbIndMask = new JLabel("Ind Mask:");
 		JTextField tfIndMask = new JTextField("111111111111111111111111");
+		JButton bLastKeyAF = new JButton("Autofill Params From Last SK");
+
 		JButton bGetKeys = new JButton("Get Matching SKs");
 
 		DefaultTableModel dtmSK = new DefaultTableModel();
@@ -106,19 +110,21 @@ public class ML_CreateAK extends JFrame {
 		tfNarMask.setBounds(110, 170, 80, 25);
 		lbIndMask.setBounds(10, 200, 70, 25);
 		tfIndMask.setBounds(110, 200, 210, 25);
-		bGetKeys.setBounds(10, 255, 180, 30);
+		bLastKeyAF.setBounds(10, 230, 200, 25);
+		bGetKeys.setBounds(10, 285, 180, 30);
 		tSK.setBounds(10, 20, 370, 180);
 		spSK.setBounds(10, 20, 370, 180);
 		lbBestKeys.setBounds(10, 205, 90, 25);
 		taBestKeys.setBounds(100, 205, 230, 30);
 		lbCov.setBounds(10, 240, 170, 25);
 		bCheckCov.setBounds(210, 240, 120, 30);
-		bSaveAK.setBounds(10, 575, 180, 30);
+		bSaveAK.setBounds(10, 605, 180, 30);
 
 		//basic functionality
 		rbLong.setFont(plainFont);
 		rbShort.setFont(plainFont);
 		rbLong.setSelected(true);
+		setButtonStyle(bLastKeyAF);
 		setButtonStyle(bGetKeys);
 		setButtonStyle(bCheckCov);
 		setButtonStyle(bSaveAK);
@@ -154,6 +160,39 @@ public class ML_CreateAK extends JFrame {
 				}
 			}
 		});
+		bLastKeyAF.addActionListener(new ActionListener(){
+			public void actionPerformed(ActionEvent e){
+				String bgm = cbBGM.getSelectedItem().toString();
+				bgm = bgm.toLowerCase();
+				String ksPath = "./../out/sk/log/"+bgm+"/keys_struct.txt";
+				FCI fciKS = new FCI(true, ksPath);
+				ArrayList<ArrayList<String>> ksFile = AhrIO.scanFile(ksPath, ",");
+				if(ksFile.size() <= 1){
+					JOptionPane.showMessageDialog(frame, "No single keys (SK) have been created.", "Error",
+												JOptionPane.ERROR_MESSAGE);
+				}else{
+					ArrayList<String> ksRow = ksFile.get(ksFile.size()-1);
+					String call = ksRow.get(fciKS.getIdx("call"));
+					String tvi = ksRow.get(fciKS.getIdx("tvi"));
+					String sdate = ksRow.get(fciKS.getIdx("start_date"));
+					String edate = ksRow.get(fciKS.getIdx("end_date"));
+					String narMask = ksRow.get(fciKS.getIdx("nar_mask"));
+					String spd = ksRow.get(fciKS.getIdx("spd"));
+					String indMask = ksRow.get(fciKS.getIdx("ind_mask"));
+					if(call.equals("1")){
+						rbLong.setSelected(true);
+					}else{
+						rbShort.setSelected(true);
+					}
+					cbTargetVar.setSelectedIndex(Integer.parseInt(tvi));
+					tfSDate.setText(sdate);
+					tfEDate.setText(edate);
+					tfNarMask.setText(narMask);
+					tfSPD.setText(spd);
+					tfIndMask.setText(indMask);
+				}	
+			}
+		});
 		bGetKeys.addActionListener(new ActionListener(){
 			public void actionPerformed(ActionEvent e){
 				//get input params
@@ -177,45 +216,49 @@ public class ML_CreateAK extends JFrame {
 				//get matching SKs from keys_struct and best key that give 100% coverage
 				ArrayList<ArrayList<String>> mlines = getMatchingKeys(bgm, isLong, method, sdate, edate,
 																 spd, tvi, narMask, indMask);
-				ArrayList<String> mkeys = AhrAL.getCol(mlines, 0);
-				ArrayList<ArrayList<String>> rcKeys = calcCovKeys(bgm, isLong, mkeys);
-				ArrayList<ArrayList<String>> cov = AhrAL.getSelectRows(rcKeys, "0", 1);
-				ArrayList<String> bestKeys = AhrAL.getCol(cov, 0);
-				//clear table
-				DefaultTableModel dtm = (DefaultTableModel)tSK.getModel();
-				while(dtm.getRowCount() > 0){
-					dtm.removeRow(0);
-				}
-				//update table
-				for(int i = 0; i < rcKeys.size(); i++){
-					String[] row = new String[4];
-					String itrKey = rcKeys.get(i).get(0);
-					row[0] = itrKey;
-					if(bestKeys.contains(itrKey)){
-						row[1] = "Yes";
-					}else{
-						row[1] = "No";
+				if(mlines.size() == 0){
+					JOptionPane.showMessageDialog(frame, "No key matches given parameters.", "Error", JOptionPane.ERROR_MESSAGE);
+				}else{
+					ArrayList<String> mkeys = AhrAL.getCol(mlines, 0);
+					ArrayList<ArrayList<String>> rcKeys = calcCovKeys(bgm, isLong, mkeys);
+					ArrayList<ArrayList<String>> cov = AhrAL.getSelectRows(rcKeys, "0", 1);
+					ArrayList<String> bestKeys = AhrAL.getCol(cov, 0);
+					//clear table
+					DefaultTableModel dtm = (DefaultTableModel)tSK.getModel();
+					while(dtm.getRowCount() > 0){
+						dtm.removeRow(0);
 					}
-					row[2] = rcKeys.get(i).get(2);
-					row[3] = rcKeys.get(i).get(3);
-					dtm.addRow(row);
-				}
-				//update taBestKeys and lbCov
-				double covNum = calcJustCov(AhrAL.getCol(cov, 2));
-				String bkeyStr = "";
-				for(int i = 0; i < cov.size(); i++){
-					bkeyStr += cov.get(i).get(0);
-					if(i != cov.size()-1){
-						bkeyStr += ", ";
+					//update table
+					for(int i = 0; i < rcKeys.size(); i++){
+						String[] row = new String[4];
+						String itrKey = rcKeys.get(i).get(0);
+						row[0] = itrKey;
+						if(bestKeys.contains(itrKey)){
+							row[1] = "Yes";
+						}else{
+							row[1] = "No";
+						}
+						row[2] = rcKeys.get(i).get(2);
+						row[3] = rcKeys.get(i).get(3);
+						dtm.addRow(row);
 					}
+					//update taBestKeys and lbCov
+					double covNum = calcJustCov(AhrAL.getCol(cov, 2));
+					String bkeyStr = "";
+					for(int i = 0; i < cov.size(); i++){
+						bkeyStr += cov.get(i).get(0);
+						if(i != cov.size()-1){
+							bkeyStr += ", ";
+						}
+					}
+					taBestKeys.setText(bkeyStr);
+					lbCov.setText("Coverage :     "+String.format("%.2f", covNum)+" %");
+					bCheckCov.setEnabled(false);
+					//update GUI
+					frame.revalidate();
+					frame.repaint();
+					frame.setVisible(true);
 				}
-				taBestKeys.setText(bkeyStr);
-				lbCov.setText("Coverage :     "+String.format("%.2f", covNum)+" %");
-				bCheckCov.setEnabled(false);
-				//update GUI
-				revalidate();
-				repaint();
-				setVisible(true);
 				System.out.println("==> bGetKeys DONE ");
 			}
 		});
@@ -254,87 +297,92 @@ public class ML_CreateAK extends JFrame {
 		});
 		bSaveAK.addActionListener(new ActionListener(){
 			public void actionPerformed(ActionEvent e){
-				String bgm = cbBGM.getSelectedItem().toString();
-				String[] skeys = taBestKeys.getText().replaceAll("\\s+","").split(",");
-				String kpPath = "./../out/sk/log/"+bgm.toLowerCase()+"/keys_perf.txt";
-				String laPath = "./../out/ak/log/ak_log.txt";
-				FCI fciKP = new FCI(true, kpPath);
-				FCI fciLA = new FCI(true, laPath);
-				String bestKeys = "";
-				String skBimSom = "";
-				for(int i = 0; i < skeys.length; i++){
-					System.out.println("--> SK"+skeys[i]);
-					ArrayList<String> kpRow = AhrIO.scanRow(kpPath, ",", skeys[i]);
-					String bim = kpRow.get(fciKP.getIdx("bim"));
-					String som = kpRow.get(fciKP.getIdx("som"));
-					if(i == skeys.length-1){
-						bestKeys += skeys[i];
-						skBimSom += bim+"|"+som;
-					}else{
-						bestKeys += skeys[i]+"~";
-						skBimSom += bim+"|"+som+"~";
-					}
-				}
-				//get new ak_num
-				ArrayList<ArrayList<String>> aggLog = AhrIO.scanFile(laPath, ",");
-				int maxID = -1;
-				for(int i = 1; i < aggLog.size(); i++){
-					int itrID = Integer.parseInt(aggLog.get(i).get(fciLA.getIdx("ak_num")));
-					if(itrID > maxID){
-						maxID = itrID;
-					}
-				}
-				int newID = maxID + 1;
-				//write new AK to log_agg
-				ArrayList<String> akLine = new ArrayList<String>();
-				akLine.add(String.valueOf(newID));							//[0]  ak_num
-				akLine.add(bgm);											//[1]  bgm
-				akLine.add("IT");											//[2]  db_used
-				akLine.add(AhrDate.getTodaysDate());						//[3]  date_ran
-				akLine.add(tfSDate.getText());								//[4]  start_date
-				akLine.add(tfEDate.getText());								//[5]  end_date
-				if(rbLong.isSelected()){									//[6]  call
-					akLine.add("1");
+				//1st assert cov is 100%
+				if(!coverage_is_100){
+					JOptionPane.showMessageDialog(frame, "An AK requires coverage of 100% to be created.", "Error",
+													JOptionPane.ERROR_MESSAGE);
 				}else{
-					akLine.add("0");
+					String bgm = cbBGM.getSelectedItem().toString();
+					String[] skeys = taBestKeys.getText().replaceAll("\\s+","").split(",");
+					String kpPath = "./../out/sk/log/"+bgm.toLowerCase()+"/keys_perf.txt";
+					String laPath = "./../out/ak/log/ak_log.txt";
+					FCI fciKP = new FCI(true, kpPath);
+					FCI fciLA = new FCI(true, laPath);
+					String bestKeys = "";
+					String skBimSom = "";
+					for(int i = 0; i < skeys.length; i++){
+						System.out.println("--> SK"+skeys[i]);
+						ArrayList<String> kpRow = AhrIO.scanRow(kpPath, ",", skeys[i]);
+						String bim = kpRow.get(fciKP.getIdx("bim"));
+						String som = kpRow.get(fciKP.getIdx("som"));
+						if(i == skeys.length-1){
+							bestKeys += skeys[i];
+							skBimSom += bim+"|"+som;
+						}else{
+							bestKeys += skeys[i]+"~";
+							skBimSom += bim+"|"+som+"~";
+						}
+					}
+					//get new ak_num
+					ArrayList<ArrayList<String>> aggLog = AhrIO.scanFile(laPath, ",");
+					int maxID = -1;
+					for(int i = 1; i < aggLog.size(); i++){
+						int itrID = Integer.parseInt(aggLog.get(i).get(fciLA.getIdx("ak_num")));
+						if(itrID > maxID){
+							maxID = itrID;
+						}
+					}
+					int newID = maxID + 1;
+					//write new AK to log_agg
+					ArrayList<String> akLine = new ArrayList<String>();
+					akLine.add(String.valueOf(newID));							//[0]  ak_num
+					akLine.add(bgm);											//[1]  bgm
+					akLine.add("IT");											//[2]  db_used
+					akLine.add(AhrDate.getTodaysDate());						//[3]  date_ran
+					akLine.add(tfSDate.getText());								//[4]  start_date
+					akLine.add(tfEDate.getText());								//[5]  end_date
+					if(rbLong.isSelected()){									//[6]  call
+						akLine.add("1");
+					}else{
+						akLine.add("0");
+					}
+					akLine.add(tfSPD.getText());								//[7]  spd
+					akLine.add(String.valueOf(cbTargetVar.getSelectedIndex()));	//[8]  tvi
+					akLine.add(tfIndMask.getText());							//[9]  ind_mask
+					akLine.add(tfNarMask.getText());							//[10] nar_mask
+					akLine.add(bestKeys);										//[11] best_keys
+					akLine.add(skBimSom);										//[12] sk_bso
+					akLine.add("ph");											//[13] ak_bso
+					akLine.add("ph");											//[14] bso_train_apapt
+					akLine.add("ph");											//[15] bso_test_apapt
+					akLine.add("ph");											//[16] bso_train_posp
+					akLine.add("ph");											//[17] bso_test_posp
+					akLine.add("ph");											//[18] true_train_apapt
+					akLine.add("ph");											//[19] true_test_apapt
+					akLine.add("ph");											//[20] true_train_posp
+					akLine.add("ph");											//[21] true_test_posp
+					aggLog.add(akLine);
+					AhrIO.writeToFile(laPath, aggLog, ",");
+					//write basis file
+					BGM_Manager akey = new BGM_Manager(newID);
+					System.out.print("--> Generating Basis File ... ");
+					akey.genBasisAK();
+					System.out.println("DONE");
+					//calc basic perf data
+					System.out.print("--> Calculating Basic AK Performance ... ");
+					String basisPath = "./../out/ak/baseis/ann/ANN_"+String.valueOf(newID)+".txt";
+					ArrayList<String> perf = akey.perfFromBasisFile(basisPath);
+					akey.perfToFileAK(perf);
+					System.out.println("DONE");
+					//calc ak_bso and replace in ak_log
+					System.out.print("--> Calculating BSO AK Performance ... ");
+					akey.bsoPerfToFileAK(true, false);
+					System.out.println("DONE");				
+					//add all SKs in AK to score_percentiles
+					System.out.print("--> Calculating Score Percentiles ... ");
+					akey.calcScorePercentiles();
+					System.out.println("***** AK Creation DONE *****");
 				}
-				akLine.add(tfSPD.getText());								//[7]  spd
-				akLine.add(String.valueOf(cbTargetVar.getSelectedIndex()));	//[8]  tvi
-				akLine.add(tfIndMask.getText());							//[9]  ind_mask
-				akLine.add(tfNarMask.getText());							//[10] nar_mask
-				akLine.add(bestKeys);										//[11] best_keys
-				akLine.add(skBimSom);										//[12] sk_bso
-				akLine.add("ph");											//[13] ak_bso
-				akLine.add("ph");											//[14] bso_train_apapt
-				akLine.add("ph");											//[15] bso_test_apapt
-				akLine.add("ph");											//[16] bso_train_posp
-				akLine.add("ph");											//[17] bso_test_posp
-				akLine.add("ph");											//[18] true_train_apapt
-				akLine.add("ph");											//[19] true_test_apapt
-				akLine.add("ph");											//[20] true_train_posp
-				akLine.add("ph");											//[21] true_test_posp
-				aggLog.add(akLine);
-				AhrIO.writeToFile(laPath, aggLog, ",");
-				//write basis file
-				BGM_Manager akey = new BGM_Manager(newID);
-				System.out.print("--> Generating Basis File ... ");
-				akey.genBasisAK();
-				System.out.println("DONE");
-				//calc basic perf data
-				System.out.print("--> Calculating Basic AK Performance ... ");
-				String basisPath = "./../out/ak/baseis/ann/ANN_"+String.valueOf(newID)+".txt";
-				ArrayList<String> perf = akey.perfFromBasisFile(basisPath);
-				akey.perfToFileAK(perf);
-				System.out.println("DONE");
-				//calc ak_bso and replace in ak_log
-				System.out.print("--> Calculating BSO AK Performance ... ");
-				akey.bsoPerfToFileAK(true, false);
-				System.out.println("DONE");				
-				//add all SKs in AK to score_percentiles
-				System.out.print("--> Calculating Score Percentiles ... ");
-				akey.calcScorePercentiles();
-				System.out.println("DONE");
-				System.out.println("***** AK Creation DONE *****");
 			}
 		});
 
@@ -358,16 +406,17 @@ public class ML_CreateAK extends JFrame {
 		pInputs.add(tfNarMask);
 		pInputs.add(lbIndMask);
 		pInputs.add(tfIndMask);
+		pInputs.add(bLastKeyAF);
 		pKeys.add(spSK);
 		pKeys.add(lbBestKeys);
 		pKeys.add(taBestKeys);
 		pKeys.add(lbCov);
 		pKeys.add(bCheckCov);
-		this.add(pInputs);
-		this.add(bGetKeys);
-		this.add(pKeys);
-		this.add(bSaveAK);
-		this.setVisible(true);
+		frame.add(pInputs);
+		frame.add(bGetKeys);
+		frame.add(pKeys);
+		frame.add(bSaveAK);
+		frame.setVisible(true);
 	}
 	//GUI related, sets style to a JButton
 	public void setButtonStyle(JButton btn){
@@ -519,6 +568,11 @@ public class ML_CreateAK extends JFrame {
 			covPercent = (covPercent / (double)combos) * 100.0;
 		}else{
 			System.out.println("ERR: No masks given in calcJustCov()");
+		}
+		if(covPercent > 99.99){
+			coverage_is_100 = true;
+		}else{
+			coverage_is_100 = false;
 		}
 		return covPercent;
 	}

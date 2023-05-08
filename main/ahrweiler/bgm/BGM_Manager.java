@@ -246,6 +246,7 @@ public class BGM_Manager {
 	public void setFocusSK(int skID){
 		String ksPath = "./../out/sk/log/"+this.bgm+"/keys_struct.txt";
 		this.kattr = new AttributesSK(this.bgm, ksPath, String.valueOf(skID));
+		this.focusSK = skID;
 		//if(this.bgm.equals("ANN")){
 		//	this.ann = new ANN(skID);
 		//	this.focusSK = skID;
@@ -1346,7 +1347,7 @@ public class BGM_Manager {
 		//redacted
 	}
 	public void genBasisSK_ANN(int skID){
-		if(getFocusSK() != skID){
+		if(getFocusSK() != skID || true){
 			System.out.print("--> Changed focus from "+getFocusSK());
 			setFocusSK(skID);
 			System.out.println(" to " + getFocusSK());
@@ -1725,32 +1726,6 @@ public class BGM_Manager {
 		return new ArrayList<ArrayList<String>>();
 	}
 	
-	//return single Clean DB line from ticker, date, and some bools
-	public ArrayList<String> calcCleanLine(String ticker, String date, boolean is_bs, boolean allow_tbd){
-		FCI fciSN = new FCI(false, "./../../DB_Intrinio/Main/S_Norm/");
-		FCI fciSR = new FCI(false, "./../../DB_Intrinio/Main/S_Raw/");
-		ArrayList<String> nline = AhrIO.scanRow("./../../DB_Intrinio/Main/S_Norm/"+ticker+".txt", "~", date);
-		String narMask = AhrIO.scanCell("./../../DB_Intrinio/Main/S_Raw/"+ticker+".txt", "~", date, fciSR.getIdx("nar_mask"));
-		//System.out.println("Ticker = "+ticker+"  |  Date = "+date);
-		//System.out.println("==> Scanned Row: " + nline);
-		//System.out.println("==> Scanned Cell: " + narMask);
-		if(nline.size() < 1){
-			return nline;
-		}
-		for(int i = 0; i < Globals.target_var_num; i++){
-			int tvColIdx = fciSN.getIdx(Globals.tvi_names[i]);
-			if(!nline.get(tvColIdx).equals("tbd")){
-				nline.set(tvColIdx, String.format("%.5f", Double.parseDouble(nline.get(tvColIdx))));
-			}else{
-				if(!allow_tbd){
-					nline.set(tvColIdx, "0.000");
-				}
-			}
-		}
-		nline.add(fciSN.getIdx(Globals.tvi_names[0]), narMask);
-		return nline;
-	}	
-
 	//print out BuyIn info for a given agg key (AK)
 	public void printInfo(){
 		System.out.println("============ Single Keys ================");

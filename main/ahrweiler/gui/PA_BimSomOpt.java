@@ -11,7 +11,7 @@ import java.awt.event.*;
 import java.util.ArrayList;
 import javax.swing.table.DefaultTableCellRenderer;
 
-public class PA_BimSomOpt extends JFrame {
+public class PA_BimSomOpt {
 
 	final Font plainFont = new Font(Font.SANS_SERIF, Font.PLAIN, 12);
 
@@ -39,10 +39,11 @@ public class PA_BimSomOpt extends JFrame {
 		centerRenderer.setHorizontalAlignment(JLabel.CENTER);
 
 		//layout components
-		setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
-		setTitle("BIM / SOM Optimization");
-		setSize(fxDim, fyDim);
-		setLayout(null);
+		JFrame frame = new JFrame();
+		frame.setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
+		frame.setTitle("BIM / SOM Optimization");
+		frame.setSize(fxDim, fyDim);
+		frame.setLayout(null);
 		JTabbedPane tpBSO = new JTabbedPane();
 		tpBSO.setBounds(0, 0, fxDim, fyDim-37);
 		JPanel pSingle = new JPanel();
@@ -317,10 +318,7 @@ public class PA_BimSomOpt extends JFrame {
 		});
 		bCompute1.addActionListener(new ActionListener(){
 			public void actionPerformed(ActionEvent e){
-				//suspend GUI while working
-				bCompute1.setEnabled(false);
-				setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
-				//setup vars from GUI
+				//get params from GUI
 				boolean is_sk = rbSK1.isSelected();
 				String bgm = cbBgm1.getSelectedItem().toString();
 				int knum = Integer.parseInt(cbKeyNum1.getSelectedItem().toString());
@@ -329,47 +327,60 @@ public class PA_BimSomOpt extends JFrame {
 				double bim = Double.parseDouble(tfBim.getText());
 				double som = Double.parseDouble(tfSom.getText());
 				String ttvMask = "";
+				boolean has_no_datasets = true;
 				if(cbTrain1.isSelected()){
 					ttvMask += "1";
+					has_no_datasets = false;
 				}else{
 					ttvMask += "0";
 				}
 				if(cbTest1.isSelected()){
 					ttvMask += "1";
+					has_no_datasets = false;
 				}else{
 					ttvMask += "0";
 				}
 				if(cbVerify1.isSelected()){
 					ttvMask += "1";
+					has_no_datasets = false;
 				}else{
 					ttvMask += "0";
 				}
 				boolean is_min_trig = rbMinYes1.isSelected();
 				boolean use_sk_bso = rbUseSKsYes1.isSelected();
-				//calc BIM/SOM Opt data from BGM_Manager
-				ArrayList<ArrayList<String>> data = new ArrayList<ArrayList<String>>();
-				if(is_sk){
-					BGM_Manager skey = new BGM_Manager(bgm, knum);
-					data = skey.bsoSingle(sdate, edate, bim, som, ttvMask, is_min_trig, use_sk_bso);
+				//if > 1 datasets is selected, calc BSO
+				if(has_no_datasets){
+					JOptionPane.showMessageDialog(frame, "At least one dataset must be selected.", "Error", 
+												JOptionPane.ERROR_MESSAGE);
 				}else{
-					BGM_Manager akey = new BGM_Manager(knum);
-					data = akey.bsoSingle(sdate, edate, bim, som, ttvMask, is_min_trig, use_sk_bso);
+					//suspend GUI while working
+					bCompute1.setEnabled(false);
+					frame.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
+					//calc BIM/SOM Opt data from BGM_Manager
+					ArrayList<ArrayList<String>> data = new ArrayList<ArrayList<String>>();
+					if(is_sk){
+						BGM_Manager skey = new BGM_Manager(bgm, knum);
+						data = skey.bsoSingle(sdate, edate, bim, som, ttvMask, is_min_trig, use_sk_bso);
+					}else{
+						BGM_Manager akey = new BGM_Manager(knum);
+						data = akey.bsoSingle(sdate, edate, bim, som, ttvMask, is_min_trig, use_sk_bso);
+					}
+					//output results
+					double posPercent = Double.parseDouble(data.get(0).get(5)) * 100.0;
+					lbPosPer.setText(baseOut1[0] + String.format("%.2f", posPercent) + " %");
+					lbThruRate.setText(baseOut1[3] + data.get(0).get(2) + " days");
+					lbTrigBIM.setText(baseOut1[1] + data.get(0).get(0) + " %");
+					lbTrigSOM.setText(baseOut1[2] + data.get(0).get(1) + " %");
+					lbYoyAppr.setText(baseOut1[4] + data.get(0).get(4) + " %");
+					for(int i = 0; i < 4; i++){
+						for(int j = 0; j < 4; j++){
+							tApprs.setValueAt(data.get(i+1).get(j), i, j+1);
+						} 
+					}
+					//resume GUI
+					frame.setCursor(null);
+					bCompute1.setEnabled(true);
 				}
-				//output results
-				double posPercent = Double.parseDouble(data.get(0).get(5)) * 100.0;
-				lbPosPer.setText(baseOut1[0] + String.format("%.2f", posPercent) + " %");
-				lbThruRate.setText(baseOut1[3] + data.get(0).get(2) + " days");
-				lbTrigBIM.setText(baseOut1[1] + data.get(0).get(0) + " %");
-				lbTrigSOM.setText(baseOut1[2] + data.get(0).get(1) + " %");
-				lbYoyAppr.setText(baseOut1[4] + data.get(0).get(4) + " %");
-				for(int i = 0; i < 4; i++){
-					for(int j = 0; j < 4; j++){
-						tApprs.setValueAt(data.get(i+1).get(j), i, j+1);
-					} 
-				}
-				//resume GUI
-				setCursor(null);
-				bCompute1.setEnabled(true);
 			}
 		});
 
@@ -595,10 +606,7 @@ public class PA_BimSomOpt extends JFrame {
 		});
 		bCompute2.addActionListener(new ActionListener(){
 			public void actionPerformed(ActionEvent e){
-				//suspend GUI while working
-				bCompute2.setEnabled(false);
-				setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
-				//compute
+				//get params from GUI
 				boolean is_sk = rbSK2.isSelected();
 				String bgmUC = cbBgm2.getSelectedItem().toString();
 				String bgmLC = bgmUC.toLowerCase();
@@ -606,57 +614,71 @@ public class PA_BimSomOpt extends JFrame {
 				String sdate = tfSDate2.getText();
 				String edate = tfEDate2.getText();
 				String ttvMask = "";
+				boolean has_no_datasets = true;
 				if(cbTrain2.isSelected()){
 					ttvMask += "1";
+					has_no_datasets = false;
 				}else{
 					ttvMask += "0";
 				}
 				if(cbTest2.isSelected()){
 					ttvMask += "1";
+					has_no_datasets = false;
 				}else{
 					ttvMask += "0";
 				}
 				if(cbVerify2.isSelected()){
 					ttvMask += "1";
+					has_no_datasets = false;
 				}else{
 					ttvMask += "0";
 				}
 				boolean is_min_trig = rbMinYes2.isSelected();
 				boolean use_sk_bso = rbUseSKsYes2.isSelected();
-				ArrayList<String> data = new ArrayList<String>();
-				if(is_sk){
-					BGM_Manager skey = new BGM_Manager(bgmUC, knum);
-					data = skey.bsoMultiple(sdate, edate, ttvMask, is_min_trig, use_sk_bso);
+				//if > 1 datasets is selected, calc BSO
+				if(has_no_datasets){
+					JOptionPane.showMessageDialog(frame, "At least one dataset must be selected.", "Error", 
+												JOptionPane.ERROR_MESSAGE);
 				}else{
-					BGM_Manager akey = new BGM_Manager(knum);
-					data = akey.bsoMultiple(sdate, edate, ttvMask, is_min_trig, use_sk_bso);
-				}
-				//get full data from /data/bso
-				ArrayList<ArrayList<String>> fc = AhrIO.scanFile("./../data/tmp/bso_multiple.txt", ",");
-				int worstIdx = -1;
-				double worstYoy = Double.MAX_VALUE;
-				double avgYoy = 0.0;
-				double medYoy = 0.0;
-				for(int i = 0; i < fc.size(); i++){
-					double itrYoy = Double.parseDouble(fc.get(i).get(3));
-					avgYoy += itrYoy;
-					if(itrYoy < worstYoy){
-						worstYoy = itrYoy;
-						worstIdx = i;
+					//suspend GUI while working
+					bCompute2.setEnabled(false);
+					frame.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
+					//calc BSO
+					ArrayList<String> data = new ArrayList<String>();
+					if(is_sk){
+						BGM_Manager skey = new BGM_Manager(bgmUC, knum);
+						data = skey.bsoMultiple(sdate, edate, ttvMask, is_min_trig, use_sk_bso);
+					}else{
+						BGM_Manager akey = new BGM_Manager(knum);
+						data = akey.bsoMultiple(sdate, edate, ttvMask, is_min_trig, use_sk_bso);
 					}
+					//get full data from /data/bso
+					ArrayList<ArrayList<String>> fc = AhrIO.scanFile("./../data/tmp/bso_multiple.txt", ",");
+					int worstIdx = -1;
+					double worstYoy = Double.MAX_VALUE;
+					double avgYoy = 0.0;
+					double medYoy = 0.0;
+					for(int i = 0; i < fc.size(); i++){
+						double itrYoy = Double.parseDouble(fc.get(i).get(3));
+						avgYoy += itrYoy;
+						if(itrYoy < worstYoy){
+							worstYoy = itrYoy;
+							worstIdx = i;
+						}
+					}
+					avgYoy = avgYoy / (double)fc.size();
+					//write to output panel
+					lbBestBim.setText(baseOut2[0] + data.get(0));
+					lbBestSom.setText(baseOut2[1] + data.get(1));
+					lbBestYoy.setText(baseOut2[2] + data.get(3));
+					lbWorstBim.setText(baseOut2[3] + fc.get(worstIdx).get(0));
+					lbWorstSom.setText(baseOut2[4] + fc.get(worstIdx).get(1));
+					lbWorstYoy.setText(baseOut2[5] + fc.get(worstIdx).get(3));
+					lbAvgYoy.setText(baseOut2[6] + String.format("%.3f", avgYoy));
+					//resume GUI
+					frame.setCursor(null);
+					bCompute2.setEnabled(true);
 				}
-				avgYoy = avgYoy / (double)fc.size();
-				//write to output panel
-				lbBestBim.setText(baseOut2[0] + data.get(0));
-				lbBestSom.setText(baseOut2[1] + data.get(1));
-				lbBestYoy.setText(baseOut2[2] + data.get(3));
-				lbWorstBim.setText(baseOut2[3] + fc.get(worstIdx).get(0));
-				lbWorstSom.setText(baseOut2[4] + fc.get(worstIdx).get(1));
-				lbWorstYoy.setText(baseOut2[5] + fc.get(worstIdx).get(3));
-				lbAvgYoy.setText(baseOut2[6] + String.format("%.3f", avgYoy));
-				//resume GUI
-				setCursor(null);
-				bCompute2.setEnabled(true);
 			}
 		});
 		bShowPlot.addActionListener(new ActionListener(){
@@ -758,8 +780,8 @@ public class PA_BimSomOpt extends JFrame {
 		//add to tabbed panels and show visible
 		tpBSO.add("Single", pSingle);
 		tpBSO.add("Multiple", pMult);
-		this.add(tpBSO);
-		this.setVisible(true);
+		frame.add(tpBSO);
+		frame.setVisible(true);
 	}
 	//GUI related, sets style to a JButton
 	public void setButtonStyle(JButton btn){

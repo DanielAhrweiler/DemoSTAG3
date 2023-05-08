@@ -1,6 +1,9 @@
 package ahrweiler.util;
+import ahrweiler.Globals;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Random;
+import java.util.Collections;
 import java.io.File;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -8,6 +11,7 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.FileNotFoundException;
+import java.sql.*;
 
 public class AhrIO {
 
@@ -236,6 +240,263 @@ public class AhrIO {
 		}	
 		return contents;
 	}
+
+	/*-----------------------------------------------------------------------
+		MySQL web server functions
+	------------------------------------------------------------------------*/
+/*
+	//get entire table from MySQL
+	public static ArrayList<ArrayList<String>> scanWebAll(String url, String username, String password, String tname){
+		ArrayList<ArrayList<String>> al = new ArrayList<ArrayList<String>>();
+		try{
+			Connection conn = DriverManager.getConnection(url, username, password);
+			Statement stmt = conn.createStatement();
+			ResultSet rs = stmt.executeQuery("SELECT * FROM "+tname);
+			int colNum = rs.getMetaData().getColumnCount();
+			while(rs.next()){
+				ArrayList<String> line = new ArrayList<String>();
+				for(int i = 0; i < colNum; i++){
+					line.add(rs.getObject(i).toString());
+				}
+				al.add(line);
+			}
+			//close the connection
+			rs.close();
+			stmt.close();
+			conn.close();
+		}catch(SQLException e){
+			e.printStackTrace();
+		}
+		return al;
+	}
+
+	//get data from MYSQL SBase web table
+	public static ArrayList<ArrayList<String>> scanWebSBase(String[] colNames, String tname, String sdate,
+															String edate, boolean reverse_data){
+		ArrayList<ArrayList<String>> al = new ArrayList<ArrayList<String>>();
+		String colStr = "";
+		for(int i = 0; i < colNames.length; i++){
+			if(i == (colNames.length-1)){
+				colStr += colNames[i];
+			}else{
+				colStr += colNames[i]+", ";
+			}
+		}
+		//server connection basics
+		String url = Globals.mysql_sbase_path;
+		String username = Globals.mysql_username;
+		String password = Globals.mysql_password;
+		//connect to db and fetch data
+		try{
+			Connection conn = DriverManager.getConnection(url, username, password);
+			Statement stmt = conn.createStatement();
+			String sqlSelect = "SELECT "+colStr+" FROM "+tname+" WHERE date BETWEEN '"+sdate+"' AND '"+edate+"'";
+			System.out.println(sqlSelect);
+			ResultSet rs = stmt.executeQuery(sqlSelect);
+			int colCount = rs.getMetaData().getColumnCount();
+			int rowCount = 0; 
+			System.out.println("--> colCount = " + colCount);
+			while(rs.next()){
+				ArrayList<String> line = new ArrayList<String>();
+				for(int i = 0; i < colCount; i++){
+					//System.out.println(rs.getString(colNames[i]));
+					line.add(rs.getString(colNames[i]));
+				}
+				al.add(line);
+				rowCount++;
+			}
+			System.out.println("--> rowCount = "+rowCount);
+			//close the connection
+			rs.close();
+			stmt.close();
+			conn.close();
+		}catch(SQLException e){
+			e.printStackTrace();
+		}
+		if(reverse_data){
+			Collections.reverse(al);
+		}
+		return al;
+	}
+
+	//get data from MYSQL SNorm web table
+	public static ArrayList<ArrayList<String>> scanWebSNorm(String[] cols, String tname, String sdate,
+														String edate, String narMask, boolean reverse_data){
+		ArrayList<ArrayList<String>> al = new ArrayList<ArrayList<String>>();
+		HashMap<String, Integer> cnIdxs = new HashMap<String, Integer>();
+		//add NAR to col names if not there, create col part of command
+		ArrayList<String> colNames = AhrAL.toAL(cols);
+		boolean cols_has_nar = false;
+		for(int i = 0; i < colNames.size(); i++){
+			if(colNames.equals("nar_mask")){
+				cols_has_nar = true;
+			}
+			cnIdxs.put(colNames.get(i), i);
+		}
+		if(!cols_has_nar){
+			colNames.add("nar_mask");
+			cnIdxs.put("nar_mask", colNames.size());
+		}
+		String colStr = "";
+		for(int i = 0; i < colNames.size(); i++){
+			if(i == (colNames.size()-1)){
+				colStr += colNames.get(i);
+			}else{
+				colStr += colNames.get(i)+",";
+			}
+		}		
+		//server data
+		String url = Globals.mysql_snorm_path;
+		String username = Globals.mysql_username;
+		String password = Globals.mysql_password;
+		//setup connection and get data
+		try{
+			Connection conn = DriverManager.getConnection(url, username, password);
+			Statement stmt = conn.createStatement();
+			ResultSet rs = stmt.executeQuery("SELECT "+colStr+" FROM "+tname+" WHERE date BETWEEN '"+
+											sdate+"' AND '"+edate+"'");
+			int colNum = rs.getMetaData().getColumnCount();
+			while(rs.next()){
+				ArrayList<String> line = new ArrayList<String>();
+				for(int i = 0; i < colNum; i++){
+					line.add(rs.getObject(i).toString());
+				}
+				al.add(line);
+			}
+			//close the connection
+			rs.close();
+			stmt.close();
+			conn.close();
+		}catch(SQLException e){
+			e.printStackTrace();
+		}
+		//filter out rows that dont have good NAR
+		boolean is_dont_care_nar = true;
+		for(int i = 0; i < narMask.length(); i++){
+			if(narMask.charAt(i) != 'x' && narMask.charAt(i) != 'X'){
+				is_dont_care_nar = false;
+				break;
+			}
+		}
+		if(reverse_data){
+			Collections.reverse(al);
+		}
+		if(is_dont_care_nar){
+			return al;
+		}else{
+			ArrayList<ArrayList<String>> passesNAR = new ArrayList<ArrayList<String>>();
+			for(int i = 0; i < al.size(); i++){
+				String itrNar = al.get(i).get(cnIdxs.get("nar_mask"));
+				if(AhrGen.compareMasks(narMask, itrNar)){
+					passesNAR.add(al.get(i));
+				}
+			}
+			return passesNAR;
+		}
+	}
+
+	//get data from MYSQL SBase web table
+	public static ArrayList<ArrayList<String>> scanWebIBase(String[] colNames, String tname, String sdate,
+															String edate, boolean reverse_data){
+		ArrayList<ArrayList<String>> al = new ArrayList<ArrayList<String>>();
+		String colStr = "";
+		for(int i = 0; i < colNames.length; i++){
+			if(i == (colNames.length-1)){
+				colStr += colNames[i];
+			}else{
+				colStr += colNames[i]+", ";
+			}
+		}
+		//server connection basics
+		String url = Globals.mysql_ibase_path;
+		String username = Globals.mysql_username;
+		String password = Globals.mysql_password;
+		//connect to db and fetch data
+		try{
+			Connection conn = DriverManager.getConnection(url, username, password);
+			Statement stmt = conn.createStatement();
+			String sqlSelect = "SELECT "+colStr+" FROM "+tname+" WHERE date BETWEEN '"+sdate+"' AND '"+edate+"'";
+			System.out.println(sqlSelect);
+			ResultSet rs = stmt.executeQuery(sqlSelect);
+			int colCount = rs.getMetaData().getColumnCount();
+			int rowCount = 0; 
+			System.out.println("--> colCount = " + colCount);
+			while(rs.next()){
+				ArrayList<String> line = new ArrayList<String>();
+				for(int i = 0; i < colCount; i++){
+					//System.out.println(rs.getString(colNames[i]));
+					line.add(rs.getString(colNames[i]));
+				}
+				al.add(line);
+				rowCount++;
+			}
+			System.out.println("--> rowCount = "+rowCount);
+			//close the connection
+			rs.close();
+			stmt.close();
+			conn.close();
+		}catch(SQLException e){
+			e.printStackTrace();
+		}
+		if(reverse_data){
+			Collections.reverse(al);
+		}
+		return al;
+	}
+
+	//get data from MYSQL SBase web table
+	public static ArrayList<ArrayList<String>> scanWebMBase(String[] colNames, String tname, String sdate,
+															String edate, boolean reverse_data){
+		ArrayList<ArrayList<String>> al = new ArrayList<ArrayList<String>>();
+		String colStr = "";
+		for(int i = 0; i < colNames.length; i++){
+			if(i == (colNames.length-1)){
+				colStr += colNames[i];
+			}else{
+				colStr += colNames[i]+", ";
+			}
+		}
+		//server connection basics
+		String url = Globals.mysql_mbase_path;
+		String username = Globals.mysql_username;
+		String password = Globals.mysql_password;
+		//connect to db and fetch data
+		try{
+			Connection conn = DriverManager.getConnection(url, username, password);
+			Statement stmt = conn.createStatement();
+			String sqlSelect = "SELECT "+colStr+" FROM "+tname+" WHERE date BETWEEN '"+sdate+"' AND '"+edate+"'";
+			System.out.println(sqlSelect);
+			ResultSet rs = stmt.executeQuery(sqlSelect);
+			int colCount = rs.getMetaData().getColumnCount();
+			int rowCount = 0; 
+			System.out.println("--> colCount = " + colCount);
+			while(rs.next()){
+				ArrayList<String> line = new ArrayList<String>();
+				for(int i = 0; i < colCount; i++){
+					//System.out.println(rs.getString(colNames[i]));
+					line.add(rs.getString(colNames[i]));
+				}
+				al.add(line);
+				rowCount++;
+			}
+			System.out.println("--> rowCount = "+rowCount);
+			//close the connection
+			rs.close();
+			stmt.close();
+			conn.close();
+		}catch(SQLException e){
+			e.printStackTrace();
+		}
+		if(reverse_data){
+			Collections.reverse(al);
+		}
+		return al;
+	}
+*/
+
+	/*------------------------------------------------------------------------
+		Path functions
+	-------------------------------------------------------------------------*/
 
 	//get list of tickers from a certain file path
 	//TODO get names by reading before period not by static 4 chars
