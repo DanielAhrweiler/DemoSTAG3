@@ -78,5 +78,7 @@ public class Globals {
 									"3-Day Intra %", "3-Day Inter %", "5-Day Intra %", "5-Day Inter %", "10-Day Intra %",
 									"10-Day Inter %"};
 
+	public static final String[] r_color_scheme = {"blue3", "red2", "forestgreen", "goldenrod", "darkcyan", "magenta2",
+													"tan4", "darkorange2"};
 
 }

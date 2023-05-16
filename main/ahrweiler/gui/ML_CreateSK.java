@@ -130,14 +130,20 @@ public class ML_CreateSK {
 		//button functionality
 		bListInds1.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e){
+				String message = "";
 				for(int i = 0; i < Globals.ind_names.length; i++){
 					String printInd = String.valueOf(i);
 					if(printInd.length() == 1){
 						printInd = "0" + printInd;
 					}
 					printInd += " - " + Globals.ind_names[i];
-					System.out.println(printInd);
+					message += printInd;
+					if(i != (Globals.ind_names.length-1)){
+						message += "\n";
+					}
+					//System.out.println(printInd);
 				}
+				JOptionPane.showMessageDialog(frame, message, "All Indicators", JOptionPane.PLAIN_MESSAGE);
 			}
 		});
 		bCalcSK1.addActionListener(new ActionListener() {

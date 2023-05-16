@@ -279,7 +279,7 @@ class AggKeyWorker extends SwingWorker<Void, String>{
 		}
 		String skeysShortStr = skeysShort[0]+"~"+skeysShort[1];
 		String skeysLongStr = skeysLong[0]+"~"+skeysLong[1];
-		//write AK info to ak_log.txt
+		//write long and short AK info to ak_log.txt
 		ArrayList<String> akShortLine = new ArrayList<String>();
 		akShortLine.add(sakStr);										//[0] ak_num
 		akShortLine.add("ANN");											//[1] bgm
@@ -407,6 +407,9 @@ class BimSomOptWorker extends SwingWorker<Void, String>{
 		osimShort.setTtvMask("010");
 		osimShort.calcBSO();
 		ArrayList<ArrayList<String>> orderlist = AhrIO.scanFile("./../data/tmp/os_orderlist.txt", ",");
+		ArrayList<String> firstLine = new ArrayList<String>();
+		firstLine.add(String.format("%.2f", osimShort.getYoyAppr()));
+		orderlist.add(0, firstLine);
 		AhrIO.writeToFile("./../data/tmp/ad_ol_short_bso.txt", orderlist, ",");
 		akShort.bsoPerfToFileAK(osimShort);
 		progress += progressSteps[1];
@@ -435,6 +438,9 @@ class BimSomOptWorker extends SwingWorker<Void, String>{
 		osimLong.setTtvMask("010");
 		osimLong.calcBSO();
 		orderlist = AhrIO.scanFile("./../data/tmp/os_orderlist.txt", ",");
+		firstLine = new ArrayList<String>();
+		firstLine.add(String.format("%.2f", osimLong.getYoyAppr()));
+		orderlist.add(0, firstLine);
 		AhrIO.writeToFile("./../data/tmp/ad_ol_long_bso.txt", orderlist, ",");
 		akLong.bsoPerfToFileAK(osimLong);
 		progress += progressSteps[2];
@@ -501,7 +507,13 @@ class BimSomOptWorker extends SwingWorker<Void, String>{
 		osimRnd.setTtvMask("010");
 		osimRnd.calcBSO();
 		orderlist = AhrIO.scanFile("./../data/tmp/os_orderlist.txt", ",");
+		firstLine = new ArrayList<String>();
+		firstLine.add(String.format("%.3f", osimRnd.getBIM()));
+		firstLine.add(String.format("%.3f", osimRnd.getSOM()));
+		firstLine.add(String.format("%.4f", osimRnd.getTrigAppr()));
+		firstLine.add(String.format("%.2f", osimRnd.getYoyAppr()));
 		AhrDate.sortDates2D(orderlist, true, 0);
+		orderlist.add(0, firstLine);
 		AhrIO.writeToFile("./../data/tmp/ad_ol_rnd_bso.txt", orderlist, ",");
 		progress += progressSteps[3];
 		setProgress(progress);	
@@ -687,10 +699,11 @@ public class AutoDemo {
 		JScrollPane spAK1 = new JScrollPane(tAK1, JScrollPane.VERTICAL_SCROLLBAR_NEVER, 
 										JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
 		//create BSO AK table and scrollpane
-		String[][] bsoData = new String[2][5];
-		String[] bsoHeader = new String[]{"AK ID", "Call", "BIM", "SOM", "APAPT"};
-		bsoData[0] = new String[]{"", "Short", "", "", ""};
-		bsoData[1] = new String[]{"", "Long", "", "", ""};
+		String[][] bsoData = new String[3][6];
+		String[] bsoHeader = new String[]{"AK ID", "Call", "BIM", "SOM", "APAPT", "APY"};
+		bsoData[0] = new String[]{"", "Short", "", "", "", ""};
+		bsoData[1] = new String[]{"", "Long", "", "", "", ""};
+		bsoData[2] = new String[]{"RND", "Long", "", "", "", ""};
 		DefaultTableModel dtmBSO = new DefaultTableModel(bsoData, bsoHeader);
 		JTable tBSO = new JTable(dtmBSO);
 		centerCols(tBSO);
@@ -708,7 +721,7 @@ public class AutoDemo {
 		int tSK1Height = ((4*tableRowHeight)+22);
 		int tSK2Height = ((4*tableRowHeight)+22);
 		int tAK1Height = ((4*tableRowHeight)+22);
-		int tBSOHeight = ((2*tableRowHeight)+22);
+		int tBSOHeight = ((3*tableRowHeight)+22);
 		lbPlotType.setBounds(10, 5, 100, 25);
 		cbPlotType.setBounds(100, 5, 200, 25);
 		bPlot.setBounds(310, 5, 60, 25);
@@ -894,6 +907,7 @@ public class AutoDemo {
 						spSK1.setVisible(true);
 						fillTableSK(tSK1);
 						lbProgressSK2.setVisible(true);
+						pbProgressSK2.setValue(0);
 						pbProgressSK2.setVisible(true);
 						SingleKeyWorker skWork2 = new SingleKeyWorker(lbProgressSK2, pbProgressSK2, "xxxxxx1x", 2);
 						skWork2.addPropertyChangeListener(sk2PCL);
@@ -910,8 +924,8 @@ public class AutoDemo {
 					//System.out.println("state: " + e.getNewValue().toString());
 					if("DONE".equals(e.getNewValue().toString())){
 						lbProgressSK1.setVisible(true);
+						pbProgressSK1.setValue(0);
 						pbProgressSK1.setVisible(true);
-						//test new way to execute next threads
 						SingleKeyWorker skWork1 = new SingleKeyWorker(lbProgressSK1, pbProgressSK1, "xxxxxx0x", 1);
 						skWork1.addPropertyChangeListener(sk1PCL);
 						skWork1.execute();
@@ -954,10 +968,13 @@ public class AutoDemo {
 					tAK1.setValueAt("", i, 4);
 				}
 				for(int i = 0; i < tBSO.getRowCount(); i++){
-					tBSO.setValueAt("", i, 0);
+					if(i != 2){
+						tBSO.setValueAt("", i, 0);
+					}
 					tBSO.setValueAt("", i, 2);
 					tBSO.setValueAt("", i, 3);
 					tBSO.setValueAt("", i, 4);
+					tBSO.setValueAt("", i, 5);
 				}
 				//reset whats visible
 				spSK1.setVisible(false);
@@ -1299,6 +1316,25 @@ public class AutoDemo {
 		String laPath = "./../out/ak/log/ak_log.txt";
 		FCI fciLA = new FCI(true, laPath);
 		ArrayList<ArrayList<String>> laFile = AhrIO.scanFile(laPath, ",");
+		//get APY vals from tmp files then update to remove it from file
+		String solPath = "./../data/tmp/ad_ol_short_bso.txt";
+		String lolPath = "./../data/tmp/ad_ol_long_bso.txt";
+		String rolPath = "./../data/tmp/ad_ol_rnd_bso.txt";
+		ArrayList<ArrayList<String>> solFile = AhrIO.scanFile(solPath, ",");
+		ArrayList<ArrayList<String>> lolFile = AhrIO.scanFile(lolPath, ",");
+		ArrayList<ArrayList<String>> rolFile = AhrIO.scanFile(rolPath, ",");
+		String shortAPY = solFile.get(0).get(0);
+		String longAPY = lolFile.get(0).get(0);
+		String rndBIM = rolFile.get(0).get(0);
+		String rndSOM = rolFile.get(0).get(1);
+		String rndAPAPT = rolFile.get(0).get(2);
+		String rndAPY = rolFile.get(0).get(3);
+		solFile.remove(0);
+		lolFile.remove(0);
+		rolFile.remove(0);
+		AhrIO.writeToFile(solPath, solFile, ",");
+		AhrIO.writeToFile(lolPath, lolFile, ",");
+		AhrIO.writeToFile(rolPath, rolFile, ",");
 		if(laFile.size() > 2){
 			int lastShortRowIdx = laFile.size()-2;
 			int lastLongRowIdx = laFile.size()-1;
@@ -1318,10 +1354,16 @@ public class AutoDemo {
 			table.setValueAt(shortBim, 0, 2);
 			table.setValueAt(shortSom, 0, 3);
 			table.setValueAt(shortAPAPT, 0, 4);
+			table.setValueAt(shortAPY, 0, 5);
 			table.setValueAt(longID, 1, 0);
 			table.setValueAt(longBim, 1, 2);
 			table.setValueAt(longSom, 1, 3);
 			table.setValueAt(longAPAPT, 1, 4);
+			table.setValueAt(longAPY, 1, 5);
+			table.setValueAt(rndBIM, 2, 2);
+			table.setValueAt(rndSOM, 2, 3);
+			table.setValueAt(rndAPAPT, 2, 4);
+			table.setValueAt(rndAPY, 2, 5);
 		}else{
 			System.out.println("ERR: not enough AKs in ak_log.txt");
 		}

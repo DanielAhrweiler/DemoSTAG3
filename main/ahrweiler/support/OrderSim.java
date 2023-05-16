@@ -44,7 +44,6 @@ public class OrderSim {	//simulates ordering in reality
 		this.tvi = 1;	
 	}
 	public OrderSim(String basisPath){//empty init
-		System.out.println("--> In OrderSim() (CUST)");
 		this.bfPath = basisPath;
 		this.fciBF = new FCI(false, basisPath);
 		this.techBuf = new ArrayList<ArrayList<ArrayList<String>>>();
@@ -54,7 +53,6 @@ public class OrderSim {	//simulates ordering in reality
 		this.tvi = 1;	
 	}
 	public OrderSim(int keyID){//for agg key (dont need bgm)
-		System.out.println("--> In OrderSim() (AK)");
 		this.keyNum = keyID;
 		//read in this keys row in ak_log
 		String laPath = "./../out/ak/log/ak_log.txt";
@@ -85,7 +83,6 @@ public class OrderSim {	//simulates ordering in reality
 		this.orders = new ArrayList<ArrayList<String>>();
 	}
 	public OrderSim(String bgm, int keyID){//for single key
-		System.out.println("--> In OrderSim() (SK)");
 		//get info from keys_struct
 		String bgmLC = bgm.toLowerCase();
 		String bgmUC = bgm.toUpperCase();

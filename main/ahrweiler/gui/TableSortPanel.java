@@ -135,8 +135,13 @@ public class TableSortPanel extends JPanel {
 	}
 	//set column widths according to data
 	public void setColWidths(){
-		int totWidth = 0;
-		for(int i = 0; i < table.getColumnCount(); i++){
+		System.out.println("TSP Width = " + this.getWidth());
+		ArrayList<Integer> minWidths = new ArrayList<Integer>();
+		ArrayList<Integer> prefWidths = new ArrayList<Integer>();
+		int totMinWidth = 0;
+		int numOfCols = table.getColumnCount();
+		for(int i = 0; i < numOfCols; i++){
+			int headerNameLen = table.getColumnName(i).length();
 			int colLen = 0;
 			int minLen = 3;
 			for(int j = 0; j < table.getRowCount(); j++){
@@ -145,17 +150,33 @@ public class TableSortPanel extends JPanel {
 					colLen = itrVal.length();
 				}
 			}
+			if(headerNameLen < minLen){
+				headerNameLen = minLen;
+			}
 			if(colLen < minLen){
 				colLen = minLen;
 			}
-			int itrWidth = colLen * 10;
-			table.getColumnModel().getColumn(i).setMinWidth(itrWidth);
-			table.getColumnModel().getColumn(i).setPreferredWidth(itrWidth);
-			totWidth += itrWidth;
+			int itrWidth = Math.max((colLen * 10), (headerNameLen * 10));;
+			minWidths.add(itrWidth);
+			//table.getColumnModel().getColumn(i).setMinWidth(itrWidth);
+			//table.getColumnModel().getColumn(i).setPreferredWidth(itrWidth);
+			totMinWidth += itrWidth;
 		}
-		this.tableWidth = totWidth;
-		System.out.println("--> In setColWidths() : totWidth = " + totWidth);
-		table.setPreferredScrollableViewportSize(new Dimension(totWidth, 700));
+		int remainingWidth = this.getWidth() - totMinWidth;
+		int totPrefWidth = 0;
+		for(int i = 0; i < minWidths.size(); i++){
+			int itrWidth = minWidths.get(i) + (int)(remainingWidth * (minWidths.get(i) / totMinWidth));
+			prefWidths.add(itrWidth);
+			totPrefWidth += itrWidth;
+		}
+		this.tableWidth = totPrefWidth;
+		for(int i = 0; i < minWidths.size(); i++){
+			table.getColumnModel().getColumn(i).setMinWidth(minWidths.get(i));
+			table.getColumnModel().getColumn(i).setPreferredWidth(prefWidths.get(i));
+		}
+
+		//System.out.println("--> In setColWidths() : totWidth = " + totWidth);
+		table.setPreferredScrollableViewportSize(new Dimension(totPrefWidth, 700));
 		table.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
 	}
 

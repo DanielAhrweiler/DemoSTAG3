@@ -1,4 +1,5 @@
 package ahrweiler.support;
+import ahrweiler.Globals;
 import ahrweiler.util.AhrIO;
 import java.util.ArrayList;
 import java.io.*;
@@ -45,8 +46,7 @@ public class RCode {
 	String[] line_colors;
 	public RCode() {
 		this.code = new ArrayList<String>();
-		this.line_colors = new String[]{"blue3", "red2", "forestgreen", "goldenrod", "darkcyan",
-										 "magenta2", "tan4", "darkorange2"};
+		this.line_colors = Globals.r_color_scheme;
 
 	}
 
@@ -144,6 +144,13 @@ public class RCode {
 			newColors[this.line_colors.length-1] = this.line_colors[idx];
 			this.line_colors = newColors;
 		}
+		System.out.println("Colors after removal : \n");
+		for(int i = 0; i < newColors.length; i++){
+			System.out.println("  "+i+") "+newColors[i]);
+		}
+	}
+	public void resetColors(){
+		this.line_colors = Globals.r_color_scheme;
 	}
 
 
@@ -289,35 +296,6 @@ public class RCode {
 		addCode(ggLine);
 		endPlot();
 	}
-
-	//CDF plot (normal R)
-	/* delete?
-	public void createCDF_R(ArrayList<Double> al, String outPath, int xdim, int ydim){
-		xDataType = "double";
-		yDataType = "double";
-		addPackage("ggplot2");
-		String dfStr = "df <- data.frame(data = c(";
-		for(int i = 0; i < al.size(); i++){
-			if(i == al.size()-1){
-				dfStr += String.format("%.3f", al.get(i)) + "))";
-			}else{
-				dfStr += String.format("%.3f", al.get(i)) + ",";
-			}
-		}
-		addCode(dfStr);
-		startPlot(outPath, xdim, ydim);	
-		addCode("cdfPlot = ecdf(df$data)");
-		String pline = "plot(cdfPlot";
-		if(limit_x_coords){
-			pline += ", xlim=c("+String.valueOf(xLoLim)+","+String.valueOf(xHiLim)+")";
-		}
-		if(limit_y_coords){
-			pline += ", ylim=c("+String.valueOf(yLoLim)+","+String.valueOf(xHiLim)+")";
-		}
-		addCode(pline+")");
-		endPlot();
-	}
-	*/
 
 	//CDF plot (ggplot)
 	public void createCDF(ArrayList<Double> al, String outPath, int xdim, int ydim){

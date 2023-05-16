@@ -259,7 +259,6 @@ public class ML_CreateAK {
 					frame.repaint();
 					frame.setVisible(true);
 				}
-				System.out.println("==> bGetKeys DONE ");
 			}
 		});
 		taBestKeys.getDocument().addDocumentListener(new DocumentListener(){
@@ -305,9 +304,9 @@ public class ML_CreateAK {
 					String bgm = cbBGM.getSelectedItem().toString();
 					String[] skeys = taBestKeys.getText().replaceAll("\\s+","").split(",");
 					String kpPath = "./../out/sk/log/"+bgm.toLowerCase()+"/keys_perf.txt";
-					String laPath = "./../out/ak/log/ak_log.txt";
+					String alPath = "./../out/ak/log/ak_log.txt";
 					FCI fciKP = new FCI(true, kpPath);
-					FCI fciLA = new FCI(true, laPath);
+					FCI fciAL = new FCI(true, alPath);
 					String bestKeys = "";
 					String skBimSom = "";
 					for(int i = 0; i < skeys.length; i++){
@@ -323,11 +322,14 @@ public class ML_CreateAK {
 							skBimSom += bim+"|"+som+"~";
 						}
 					}
+					if(skBimSom.contains("ph")){
+						skBimSom = "ph";
+					}
 					//get new ak_num
-					ArrayList<ArrayList<String>> aggLog = AhrIO.scanFile(laPath, ",");
+					ArrayList<ArrayList<String>> alFile = AhrIO.scanFile(alPath, ",");
 					int maxID = -1;
-					for(int i = 1; i < aggLog.size(); i++){
-						int itrID = Integer.parseInt(aggLog.get(i).get(fciLA.getIdx("ak_num")));
+					for(int i = 1; i < alFile.size(); i++){
+						int itrID = Integer.parseInt(alFile.get(i).get(fciAL.getIdx("ak_num")));
 						if(itrID > maxID){
 							maxID = itrID;
 						}
@@ -361,8 +363,8 @@ public class ML_CreateAK {
 					akLine.add("ph");											//[19] true_test_apapt
 					akLine.add("ph");											//[20] true_train_posp
 					akLine.add("ph");											//[21] true_test_posp
-					aggLog.add(akLine);
-					AhrIO.writeToFile(laPath, aggLog, ",");
+					alFile.add(akLine);
+					AhrIO.writeToFile(alPath, alFile, ",");
 					//write basis file
 					BGM_Manager akey = new BGM_Manager(newID);
 					System.out.print("--> Generating Basis File ... ");
@@ -381,7 +383,8 @@ public class ML_CreateAK {
 					//add all SKs in AK to score_percentiles
 					System.out.print("--> Calculating Score Percentiles ... ");
 					akey.calcScorePercentiles();
-					System.out.println("***** AK Creation DONE *****");
+					System.out.println("DONE");
+					System.out.println("--> AK Creation ... DONE");
 				}
 			}
 		});
@@ -555,15 +558,15 @@ public class ML_CreateAK {
 				for(int j = 0; j < keys.size(); j++){
 					if(AhrGen.compareMasks(keys.get(j), itrState)){
 						this_state_met = true;
-						System.out.println("Mask = "+keys.get(j)+"  |  State = "+itrState+"  |  YES");
+						//System.out.println("Mask = "+keys.get(j)+"  |  State = "+itrState+"  |  YES");
 					}else{
-						System.out.println("Mask = "+keys.get(j)+"  |  State = "+itrState+"  |  NO");
+						//System.out.println("Mask = "+keys.get(j)+"  |  State = "+itrState+"  |  NO");
 					}
 				}
 				if(this_state_met){
 					covPercent += 1.0;
 				}
-				System.out.println("  --> State Met : "+this_state_met);
+				//System.out.println("  --> State Met : "+this_state_met);
 			}
 			covPercent = (covPercent / (double)combos) * 100.0;
 		}else{

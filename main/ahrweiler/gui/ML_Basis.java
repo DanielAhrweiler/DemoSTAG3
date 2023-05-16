@@ -91,8 +91,6 @@ public class ML_Basis {
 		//init components
 		TableSortPanel tspSK = new TableSortPanel(AhrAL.toArr2D(skData), AhrAL.toArr(skHeader));
 		TableSortPanel tspAK = new TableSortPanel(AhrAL.toArr2D(akData), AhrAL.toArr(akHeader));
-		//tspSK.setAlignmentX(Component.CENTER_ALIGNMENT);
-		//tspAK.setAlignmentX(Component.CENTER_ALIGNMENT);
 
 		JLabel lbKeyType = new JLabel("Key Type:");
 		JRadioButton rbSK = new JRadioButton("SK");
@@ -111,7 +109,6 @@ public class ML_Basis {
 		lbKeyNum.setPreferredSize(new Dimension(100, 25));
 		cbKeyNum.setPreferredSize(new Dimension(75, 25));
 		bLoad.setPreferredSize(new Dimension(50, 25));
-
 						
 		//basic functionality
 		rbSK.setSelected(true);

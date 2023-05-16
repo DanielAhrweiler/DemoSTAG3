@@ -425,7 +425,7 @@ public class PA_BimSomOpt {
 		/*---------------------------------------------------
 			Multiple BIM/SOM Panel
 		----------------------------------------------------*/
-		String[] multPlotList = {"Heatmap", "B&W / CDF Distn"};
+		String[] multPlotList = {"Heatmap"};
 
 		//layout
 		JPanel pMultInput = new JPanel();
@@ -719,7 +719,7 @@ public class PA_BimSomOpt {
 					rcHeat.setYLabel("Sell-Out Multiple");
 					rcHeat.setTitle("Heatmap of "+kmonik+" YoY %s For Each BIM/SOM Combination");
 					rcHeat.createHeatmap("./../data/r/rdata/pa_bso_heat.csv", "./../resources/pa_bso_heat.png", xdim, ydim);
-					rcHeat.printCode();
+					//rcHeat.printCode();
 					rcHeat.writeCode("./../data/r/rscripts/pa_bso_heat.R");
 					rcHeat.runScript("./../data/r/rscripts/pa_bso_heat.R");
 					//show plot on new popout frame

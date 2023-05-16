@@ -743,55 +743,58 @@ public class BGM_Manager {
 		String bgmLC = kattr.getBGM();
 		String bgmUC = bgmLC.toUpperCase();
 		String spPath = "./../out/score_percentiles.txt";
-		String laPath = "./../out/ak/log/ak_log.txt";
-		FCI fciLA = new FCI(true, laPath);
+		String alPath = "./../out/ak/log/ak_log.txt";
+		FCI fciAL = new FCI(true, alPath);
 		ArrayList<ArrayList<String>> spFile = AhrIO.scanFile(spPath, ",");
-		ArrayList<String> laRow = AhrIO.scanRow(laPath, ",", String.valueOf(this.id));
-		String call = laRow.get(fciLA.getIdx("call"));
-		String sdate = laRow.get(fciLA.getIdx("start_date"));
-		String edate = laRow.get(fciLA.getIdx("end_date"));
+		ArrayList<String> alRow = AhrIO.scanRow(alPath, ",", String.valueOf(this.id));
+		String call = alRow.get(fciAL.getIdx("call"));
+		String sdate = alRow.get(fciAL.getIdx("start_date"));
+		String edate = alRow.get(fciAL.getIdx("end_date"));
 		FCI fciSK = new FCI(false, "./../out/sk/baseis/");
 		for(int i = 0; i < this.bestSK.length; i++){
 			String skNum = String.valueOf(this.bestSK[i]);
 			String skPath = "./../out/sk/baseis/"+bgmLC+"/"+bgmUC+"_"+skNum+".txt";
+			ArrayList<Double> scores = new ArrayList<Double>();
+			ArrayList<ArrayList<String>> skBasis = AhrIO.scanFile(skPath, ",");
+			for(int j = 0; j < skBasis.size(); j++){
+				String itrDate = skBasis.get(j).get(fciSK.getIdx("date"));
+				if(AhrDate.isDateInPeriod(itrDate, sdate, edate)){
+					scores.add(Double.parseDouble(skBasis.get(j).get(fciSK.getIdx("score"))));
+				}
+			}
+			//sort scores and calc percentiles (GAB3 and long ANNs are higher = better)
+			ArrayList<Double> ptiles = new ArrayList<Double>();
+			Collections.sort(scores);
+			if(bgmUC.equals("GAB3") || (bgmUC.equals("ANN") && call.equals("1"))){
+				Collections.reverse(scores);
+			}
+			int stepSize = scores.size() / 100;
+			for(int j = 0; j < scores.size(); j++){
+				if(j%stepSize == 0){
+					ptiles.add(scores.get(j));
+				}
+			}
+			//update the file
+			ArrayList<String> line = new ArrayList<String>();
+			line.add(bgmUC);
+			line.add(skNum);
+			for(int j = 0; j < ptiles.size(); j++){
+				line.add(String.valueOf(ptiles.get(j)));
+			}
+			//insert new line or update line depending
 			int skIdx = -1;
 			for(int j = 0; j < spFile.size(); j++){
 				String bgmItr = spFile.get(j).get(0);
 				String skItr = spFile.get(j).get(1);
-				if(bgmItr.equals(bgmUC) && skItr.equals("skNum")){
+				if(bgmItr.equals(bgmUC) && skItr.equals(skNum)){
 					skIdx = j;
 					break;
 				}
 			}
 			if(skIdx == -1){
-				ArrayList<Double> scores = new ArrayList<Double>();
-				ArrayList<ArrayList<String>> skBasis = AhrIO.scanFile(skPath, ",");
-				for(int j = 0; j < skBasis.size(); j++){
-					String itrDate = skBasis.get(j).get(fciSK.getIdx("date"));
-					if(AhrDate.isDateInPeriod(itrDate, sdate, edate)){
-						scores.add(Double.parseDouble(skBasis.get(j).get(fciSK.getIdx("score"))));
-					}
-				}
-				//sort scores and calc percentiles (GAB3 and long ANNs are higher = better)
-				ArrayList<Double> ptiles = new ArrayList<Double>();
-				Collections.sort(scores);
-				if(bgmUC.equals("GAB3") || (bgmUC.equals("ANN") && call.equals("1"))){
-					Collections.reverse(scores);
-				}
-				int stepSize = scores.size() / 100;
-				for(int j = 0; j < scores.size(); j++){
-					if(j%stepSize == 0){
-						ptiles.add(scores.get(j));
-					}
-				}
-				//update the file
-				ArrayList<String> line = new ArrayList<String>();
-				line.add(bgmUC);
-				line.add(skNum);
-				for(int j = 0; j < ptiles.size(); j++){
-					line.add(String.valueOf(ptiles.get(j)));
-				}
 				spFile.add(line);
+			}else{
+				spFile.set(skIdx, line);
 			}
 		}
 		AhrIO.writeToFile("./../out/score_percentiles.txt", spFile, ",");
@@ -970,7 +973,6 @@ public class BGM_Manager {
 
 	//set perf data (from either basis file or makePred) to AK ak_log.txt file
 	public void perfToFileAK(ArrayList<String> perf){
-		System.out.println("--> perfToFileAK() perf AL : " + perf);
 		String laPath = "./../out/ak/log/ak_log.txt";
 		FCI fciLA = new FCI(true, laPath);
 		ArrayList<ArrayList<String>> laFile = AhrIO.scanFile(laPath, ",");

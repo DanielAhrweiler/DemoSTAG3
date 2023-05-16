@@ -27,9 +27,7 @@ public class DB_Charting {
 							"Industrials [5xx]", "Cons Cyc [6xx]", "Energy [7xx]", "Real Estate [8xx]",
 							"Communication [9xx]", "Basic Mats [10xx]", "Cons Def [11xx]", "Utilities [12xx]"}; 
 		String[] cblIndustries;
-		String[] cblStockInds = {"Price", "Volume", "Adj Ratio", "S/M 20", "S/M 10", "S/M 5", "S/M 2", "S/I 20",
-							 "S/I 10", "S/I 5", "S/I 2", "S 20", "S 10", "S 5", "S 2", "RSI", "MACD", "MACDH",
-							 "CMF", "Bolliger BW", "%B", "ROC", "MFI", "CCI", "Mass Index", "TSI", "Ult Osc"};
+		String[] cblStockInds = {"Price", "Volume"};
 		String[] cblIndexes = {"QQQ - Top NASDAQ", "SPY - Top S&P500", "DIA - Top Dow Jones"};
 		String[] cblSpecial = {"Inflows by Sector", "Gold To Dow Ratio", "PM vs Intra"};
 		File fr_data = new File("./../data/r/rdata/db_chart.csv");
@@ -157,6 +155,7 @@ public class DB_Charting {
 		cbIndustry.setEnabled(false);
 		cbExchange.setEnabled(false);
 		cbIndex.setEnabled(false);
+		bSpecial.setEnabled(false);
 		rbQuantNo.setSelected(true);
 		setButtonStyle(bAddComp);
 		setButtonStyle(bNormGraph);
@@ -331,7 +330,11 @@ public class DB_Charting {
 							FCI fciDB = new FCI(false, dbPath);
 							int colIdx = fciDB.getIdx(dbColName);
 							if(Globals.uses_mysql_source){
-								ArrayList<String> colNames = AhrAL.toAL(new String[]{"date", "close"});
+								String mysqlCol = "close";
+								if(indIdx == 1){
+									mysqlCol = "vol";
+								}
+								ArrayList<String> colNames = AhrAL.toAL(new String[]{"date", mysqlCol});
 								newData = getWebSBaseDataForPlot(ticker, colNames, sdate, edate, sma);
 							}else{
 								newData = getLocalDataForPlot(dbPath, sdate, edate, colIdx, sma);
@@ -616,6 +619,7 @@ public class DB_Charting {
 		});
 		bClear.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e){
+				rcode.resetColors();
 				if(fr_data.exists()){
 					fr_data.delete();
 				}

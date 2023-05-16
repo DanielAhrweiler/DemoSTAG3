@@ -434,7 +434,7 @@ public class PA_KeyPerf {
 					rcBaw.hardLimY(loBound, hiBound);
 					rcBaw.flipCoords();
 					rcBaw.createBAW(trimAppr, plotPathBaw, xdim, ydim);
-					rcBaw.printCode();
+					//rcBaw.printCode();
 					rcBaw.writeCode("./../data/r/rscripts/pa_distn_baw.R");
 					rcBaw.runScript("./../data/r/rscripts/pa_distn_baw.R");
 					//calc CDF plot
@@ -444,7 +444,7 @@ public class PA_KeyPerf {
 					rcCDF.setYLabel("Cumulative Probability");
 					rcCDF.hardLimX(loBound, hiBound);
 					rcCDF.createCDF(trimAppr, plotPathCdf, xdim, ydim);
-					rcCDF.printCode();
+					//rcCDF.printCode();
 					rcCDF.writeCode("./../data/r/rscripts/pa_distn_cdf.R");
 					rcCDF.runScript("./../data/r/rscripts/pa_distn_cdf.R");
 					//show both plots on popout frame
@@ -479,7 +479,7 @@ public class PA_KeyPerf {
 					rcPie.setXLabel("");
 					rcPie.setYLabel("");
 					rcPie.createPie(pieAL, plotPath, xdim, ydim);
-					rcPie.printCode();
+					//rcPie.printCode();
 					rcPie.writeCode("./../data/r/rscripts/pa_trigger_codes.R");
 					rcPie.runScript("./../data/r/rscripts/pa_trigger_codes.R");
 					//show plot on new popout frame
@@ -708,8 +708,7 @@ public class PA_KeyPerf {
 		});
 		bCreateNewFilter.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e){
-				String filterName = createNewFilter();
-				cbFilter.addItem(filterName);
+				createNewFilter(cbFilter);
 			}
 		});
 		bBgmRunRnd.addActionListener(new ActionListener() {
@@ -867,7 +866,7 @@ public class PA_KeyPerf {
 					rcBaw.hardLimY(loBound, hiBound);
 					rcBaw.flipCoords();
 					rcBaw.createBAW(trimAppr, plotPathBaw, xdim, ydim);
-					rcBaw.printCode();
+					//rcBaw.printCode();
 					rcBaw.writeCode("./../data/r/rscripts/pa_distn_baw.R");
 					rcBaw.runScript("./../data/r/rscripts/pa_distn_baw.R");
 					//calc CDF plot
@@ -877,7 +876,7 @@ public class PA_KeyPerf {
 					rcCDF.setYLabel("Cumulative Probability");
 					rcCDF.hardLimX(loBound, hiBound);
 					rcCDF.createCDF(trimAppr, plotPathCdf, xdim, ydim);
-					rcCDF.printCode();
+					//rcCDF.printCode();
 					rcCDF.writeCode("./../data/r/rscripts/pa_distn_cdf.R");
 					rcCDF.runScript("./../data/r/rscripts/pa_distn_cdf.R");
 					//show both plots on popout frame
@@ -912,7 +911,7 @@ public class PA_KeyPerf {
 					rcPie.setXLabel("");
 					rcPie.setYLabel("");
 					rcPie.createPie(pieAL, plotPath, xdim, ydim);
-					rcPie.printCode();
+					//rcPie.printCode();
 					rcPie.writeCode("./../data/r/rscripts/pa_trigger_codes.R");
 					rcPie.runScript("./../data/r/rscripts/pa_trigger_codes.R");
 					//show plot on new popout frame
@@ -943,7 +942,7 @@ public class PA_KeyPerf {
 					rcode.setYLabel("Porfolio Value ($)");
 					rcode.setTitle(plotTitle);
 					rcode.createTimeSeries(dataPath, plotPath, xdim, ydim);
-					rcode.printCode();
+					//rcode.printCode();
 					rcode.writeCode(scriptPath);
 					rcode.runScript(scriptPath);
 					//show plot on new popout frame
@@ -1047,12 +1046,11 @@ public class PA_KeyPerf {
 	}
 
 	//creates GUI to create new filter to be used in RND panel
-	public String createNewFilter(){
+	public void createNewFilter(JComboBox cbFilters){
 		//lists and overarching structs
 		String[] indicatorList = {"S/M 20", "S/M 10", "S/M 5", "S/M 2", "S/I 20", "S/I 10", "S/I 5", "S/I 2", "SMA 20",
 								"SMA 10", "SMA 5", "SMA 2", "RSI", "MACD", "MACD Histogram", "CMF", "Bollinger Bandwidth",
 								"%B", "ROC", "MFI", "CCI", "Mass Index", "TSI", "Ult Osc"};
-		String filterName = "";
 		ArrayList<String> filterFiles = AhrIO.getNamesInPath("./../data/filters/");
 		int maxFileNum = 0;
 		for(int i = 0; i < filterFiles.size(); i++){
@@ -1065,81 +1063,91 @@ public class PA_KeyPerf {
 		StockFilter sf = new StockFilter();
 		
 		//layout
-		//JFrame frame = new JFrame();
-		//frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		//frame.setTitle("Create Custom Filter");
-		//frame.setSize(560, 620);
-		//frame.setLayout(null);
 		JDialog dialog = new JDialog();
 		dialog.setModalityType(Dialog.ModalityType.APPLICATION_MODAL);
 		dialog.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 		dialog.setTitle("Create Custom Filter");
-		dialog.setSize(560, 620);
+		dialog.setSize(560, 580);
 		dialog.setLayout(null);
 		JPanel pBasics = new JPanel();
 		pBasics.setLayout(null);
 		pBasics.setBorder(BorderFactory.createTitledBorder("Basic Filter Params"));
+		JPanel pNormInds = new JPanel();
+		pNormInds.setLayout(null);
+		pNormInds.setBorder(BorderFactory.createTitledBorder("Normalized Indicators"));
 		
 		//components
 		JLabel lbMC = new JLabel("Market Cap:");
-		JTextField tfStartMC = new JTextField("300");
+		JTextField tfStartMC = new JTextField("100");
 		JLabel lbMil1 = new JLabel("mil  to");
-		JTextField tfEndMC = new JTextField("50000");
+		JTextField tfEndMC = new JTextField("10000000");
 		JLabel lbMil2 = new JLabel("mil"); 
-		JLabel lbIndustry = new JLabel("Industry:");
-		JTextField tfIndustry= new JTextField("01,02,03,04,05,06,07,08,09,10,11,12");
-		Button bIndustryList = new Button("List");
 		JLabel lbSector = new JLabel("Sector:");
-		JTextArea taSector = new JTextArea(2, 30);
-		Button bSectorAll = new Button("All");
-		Button bSectorList = new Button("List");
-		Button bApply = new Button("Apply Inputs");		
+		JTextField tfSector = new JTextField("01,02,03,04,05,06,07,08,09,10,11,12");
+		JButton bSectorList = new JButton("List");
+		JButton bSectorAll = new JButton("All");
+		JLabel lbIndustry = new JLabel("Industry:");
+		JTextArea taIndustry = new JTextArea(2, 30);
+		JButton bIndustryAll = new JButton("All");
+		JButton bIndustryList = new JButton("List");
+		JButton bUpdateBasics = new JButton("Update Basic Params");		
 		JLabel lbIndicator = new JLabel("Indicator:");
 		JComboBox cbIndicator = new JComboBox();
 		JLabel lbIndRangeStart = new JLabel("Start:");
 		JTextField tfIndRangeStart = new JTextField();
 		JLabel lbIndRangeEnd = new JLabel("End:");
 		JTextField tfIndRangeEnd = new JTextField();
-		Button bIndAdd = new Button("Add");
+		JButton bIndAdd = new JButton("Add");
 		JLabel lbFilterDetails = new JLabel("Filter Details:");
 		JTextArea taFilterDetails = new JTextArea();
 		JScrollPane spFilterDetails = new JScrollPane(taFilterDetails, JScrollPane.VERTICAL_SCROLLBAR_ALWAYS,
 											JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
-		Button bReset = new Button("Reset Inputs");
-		Button bToFile = new Button("Save And Close");
+		JButton bReset = new JButton("Reset Inputs");
+		JButton bToFile = new JButton("Save And Close");
 
 		
 		//component bounds
-		pBasics.setBounds(10, 10, 540, 175);
+		pBasics.setBounds(10, 10, 515, 165);				//basic params
 		lbMC.setBounds(10, 20, 110, 25);
 		tfStartMC.setBounds(110, 20, 100, 25);
 		lbMil1.setBounds(220, 20, 60, 25);
 		tfEndMC.setBounds(280, 20, 100, 25);
 		lbMil2.setBounds(390, 20, 40, 25);
-		lbIndustry.setBounds(10, 55, 110, 25);
-		tfIndustry.setBounds(110, 55, 270, 25);
-		bIndustryList.setBounds(390, 55, 50, 30);
-		lbSector.setBounds(10, 90, 110, 25);
-		taSector.setBounds(110, 90, 270, 30);
-		bSectorList.setBounds(390, 90, 50, 30);
-		bSectorAll.setBounds(450, 90, 50, 30);
-		bApply.setBounds(205, 125, 150, 40);
-		lbIndicator.setBounds(20, 200, 110, 25);
-		cbIndicator.setBounds(120, 200, 270, 25);
-		lbIndRangeStart.setBounds(60, 235, 55, 25);
-		tfIndRangeStart.setBounds(120, 235, 90, 25);
-		lbIndRangeEnd.setBounds(250, 235, 55, 25);
-		tfIndRangeEnd.setBounds(300, 235, 90, 25);
-		bIndAdd.setBounds(400, 235, 50, 30);
-		lbFilterDetails.setBounds(20, 270, 120, 25);
-		taFilterDetails.setBounds(60, 305, 450, 200);
-		spFilterDetails.setBounds(60, 305, 450, 200);
-		bReset.setBounds(70, 515, 175, 40);
-		bToFile.setBounds(315, 515, 175, 40);
+		lbSector.setBounds(10, 55, 110, 25);
+		tfSector.setBounds(110, 55, 270, 25);
+		bSectorList.setBounds(390, 55, 50, 25);
+		bSectorAll.setBounds(450, 55, 50, 25);
+		lbIndustry.setBounds(10, 90, 110, 25);
+		taIndustry.setBounds(110, 90, 270, 30);
+		bIndustryList.setBounds(390, 90, 50, 25);
+		bIndustryAll.setBounds(450, 90, 50, 25);
+		bUpdateBasics.setBounds(10, 130, 200, 25);
+		pNormInds.setBounds(10, 185, 515, 85);				//add indicator
+		lbIndicator.setBounds(10, 20, 110, 25);
+		cbIndicator.setBounds(110, 20, 270, 25);
+		lbIndRangeStart.setBounds(50, 50, 55, 25);
+		tfIndRangeStart.setBounds(110, 50, 90, 25);
+		lbIndRangeEnd.setBounds(240, 50, 55, 25);
+		tfIndRangeEnd.setBounds(290, 50, 90, 25);
+		bIndAdd.setBounds(390, 35, 50, 25);
+		lbFilterDetails.setBounds(20, 270, 120, 25);		//filter details & buttons
+		taFilterDetails.setBounds(60, 300, 450, 170);
+		spFilterDetails.setBounds(60, 300, 450, 170);
+		bReset.setBounds(110, 490, 150, 35);
+		bToFile.setBounds(310, 490, 150, 35);
 
 		//basic functionality
-		taSector.setLineWrap(true);
-		taSector.setBorder(BorderFactory.createLineBorder(Color.GRAY));
+		setButtonStyle(bSectorList);
+		setButtonStyle(bSectorAll);
+		setButtonStyle(bIndustryList);
+		setButtonStyle(bIndustryAll);
+		setButtonStyle(bUpdateBasics);
+		setButtonStyle(bIndAdd);
+		setButtonStyle(bReset);
+		setButtonStyle(bToFile);
+		
+		taIndustry.setLineWrap(true);
+		taIndustry.setBorder(BorderFactory.createLineBorder(Color.GRAY));
 		for(int i = 0; i < indicatorList.length; i++){
 			cbIndicator.addItem(indicatorList[i]);
 		}
@@ -1148,81 +1156,131 @@ public class PA_KeyPerf {
 	
 		//init starting filter lines
 		sf.setMarketCap(Integer.parseInt(tfStartMC.getText()), Integer.parseInt(tfEndMC.getText()));
-		sf.setSectors(taSector.getText());
-		sf.setIndustries(tfIndustry.getText());
+		sf.setSectors(tfSector.getText());
+		sf.setIndustries(taIndustry.getText());
 		taFilterDetails.setText(sf.getText());
 
 		//button functionality
-		bIndustryList.addActionListener(new ActionListener() {
+		bSectorList.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e){
 				ArrayList<ArrayList<String>> secCodes = AhrIO.scanFile("./../in/sector_codes.txt", "~");
 				FCI fciSC = new FCI(false, "./../in/sector_codes.txt");
-				ArrayList<String> uniqCodes = new ArrayList<String>();
-				ArrayList<String> uniqInds = new ArrayList<String>();
+				ArrayList<String> uniqSectors = new ArrayList<String>();
 				for(int i = 0; i < secCodes.size(); i++){
-					double itrCode = Double.parseDouble(secCodes.get(i).get(fciSC.getIdx("code")));
-					if(itrCode%100 == 1){
-						if(!uniqCodes.contains(itrCode)){
-							uniqCodes.add(String.valueOf(itrCode));
-							uniqInds.add(secCodes.get(i).get(fciSC.getIdx("industry")));
-						}
+					String itrSector = secCodes.get(i).get(fciSC.getIdx("sector"));
+					if(!uniqSectors.contains(itrSector)){
+						uniqSectors.add(itrSector);
 					}
 				}
-				//print out
-				for(int i = 0; i < uniqInds.size(); i++){
-					System.out.println((i+1)+ " - " + uniqInds.get(i));
+				//std out print
+				//System.out.println("******* Sector List *******");
+				//for(int i = 0; i < uniqSectors.size(); i++){
+				//	System.out.println("  "+(i+1)+") "+uniqSectors.get(i));
+				//}
+				//JOptionPane print
+				String message = "";
+				for(int i = 0; i < uniqSectors.size(); i++){
+					message += "  "+(i+1)+") "+uniqSectors.get(i);
+					if(i != (uniqSectors.size()-1)){
+						message += "\n";
+					}
 				}
+				JOptionPane.showMessageDialog(dialog, message, "All Sectors", JOptionPane.PLAIN_MESSAGE);
 			}
-		});
-		bSectorList.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e){
-				boolean is_good_text = false;
-				String[] indCodes = {""};
-				if(!tfIndustry.getText().equals("")){
-					indCodes = tfIndustry.getText().split(",");
-					if(indCodes.length == 1){
-						is_good_text = true;
-					}
-				}
-				if(is_good_text){
-					String indStr = tfIndustry.getText();
-					int indCode = Integer.parseInt(indStr) * 100;
-					ArrayList<ArrayList<String>> secCodes = AhrIO.scanFile("./../in/sector_codes.txt", "~");
-					FCI fciSC = new FCI(false, "./../in/sector_codes.txt");
-					ArrayList<String> uniqSecs = new ArrayList<String>();
-					for(int i = 0; i < secCodes.size(); i++){
-						int itrCode = Integer.parseInt(secCodes.get(i).get(fciSC.getIdx("code")));
-						if((itrCode-indCode) > 0 && (itrCode-indCode) < 100){
-							uniqSecs.add(secCodes.get(i).get(fciSC.getIdx("sector")));
-						}
-					}
-					//print out
-					System.out.println("========== Sectors Within "+indStr+" ==========");
-					for(int i = 0; i < uniqSecs.size(); i++){
-						System.out.println((i+1) + " - " + uniqSecs.get(i));
-					}
-				}else{
-					System.out.println("ERR: only 1 industry must be selected for this filter to work.");
-				}
-			}	
 		});
 		bSectorAll.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e){
+				String oldStr = tfSector.getText();
+				String newStr = "";
+				String scPath = "./../in/sector_codes.txt";
+				FCI fciSC = new FCI(false, scPath);
+				ArrayList<String> scSectors = AhrIO.scanCol(scPath, "~", fciSC.getIdx("sector"));
+				HashSet<String> uniqSec = new HashSet<String>();
+				for(int i = 0; i < scSectors.size(); i++){
+					uniqSec.add(scSectors.get(i));
+				}
+				for(int i = 0; i < uniqSec.size(); i++){
+					if(i == uniqSec.size()-1){
+						newStr += String.format("%02d", (i+1));
+					}else{
+						newStr += String.format("%02d", (i+1)) + ",";
+					}
+				}
+				if(newStr.equals(oldStr)){
+					JOptionPane.showMessageDialog(dialog, "All sectors already selected.");
+				}else{
+					tfSector.setText(newStr);
+				}
+			}
+		});
+		bIndustryList.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e){
 				boolean is_good_text = false;
-				String[] indCodes = {""};
-				if(!tfIndustry.getText().equals("")){
-					indCodes = tfIndustry.getText().split(",");
-					if(indCodes.length == 1){
+				String[] sectorCodes = {""};
+				if(!tfSector.getText().equals("")){
+					sectorCodes = tfSector.getText().split(",");
+					if(sectorCodes.length == 1){
 						is_good_text = true;
 					}
 				}
 				if(is_good_text){
-					int nearest100th = Integer.parseInt(tfIndustry.getText()) * 100;
-					ArrayList<ArrayList<String>> secCodes = AhrIO.scanFile("./../in/sector_codes.txt", "~");
+					String secName = "";
+					String secStr = tfSector.getText().replaceAll("\\s+", "");
+					secStr = secStr.replaceAll(",", "");
+					int secInt = Integer.parseInt(secStr);
+					System.out.println("--> secInt = " + secInt);
+					ArrayList<String> uniqSectors = new ArrayList<String>();
+					ArrayList<String> uniqInds = new ArrayList<String>();
+					FCI fciSC = new FCI(false, "./../in/sector_codes.txt");
+					ArrayList<ArrayList<String>> scFC = AhrIO.scanFile("./../in/sector_codes.txt", "~");
+					for(int i = 0; i < scFC.size(); i++){
+						String itrSector = scFC.get(i).get(fciSC.getIdx("sector"));
+						if(!uniqSectors.contains(itrSector)){
+							uniqSectors.add(itrSector);
+						}
+						if(uniqSectors.size() == secInt){
+							secName = scFC.get(i).get(fciSC.getIdx("sector"));
+							String itrInd = scFC.get(i).get(fciSC.getIdx("industry"));
+							uniqInds.add(itrInd);
+						}
+					}
+					//print std out
+					//System.out.println("******* Industries within "+secName+" *******");
+					//for(int i = 0; i < uniqInds.size(); i++){
+					//	System.out.println("   "+(i+1)+") "+uniqInds.get(i));
+					//}
+					//JOptionPane print
+					String message = "";
+					for(int i = 0; i < uniqInds.size(); i++){
+						message += "  "+(i+1)+") "+uniqInds.get(i);
+						if(i != (uniqInds.size()-1)){
+							message += "\n";
+						}
+					}
+					JOptionPane.showMessageDialog(dialog, message, "All Industries within "+secName, JOptionPane.PLAIN_MESSAGE);
+				}else{
+					JOptionPane.showMessageDialog(dialog, "Only one sector must be selected for this filter"+
+												" to work.", "Error", JOptionPane.ERROR_MESSAGE);
+				}
+			}	
+		});
+		bIndustryAll.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e){
+				boolean is_good_text = false;
+				String[] sectorCodes = {""};
+				if(!tfSector.getText().equals("")){
+					sectorCodes = tfSector.getText().split(",");
+					if(sectorCodes.length == 1){
+						is_good_text = true;
+					}
+				}
+				if(is_good_text){
+					int nearest100th = Integer.parseInt(tfSector.getText()) * 100;
+					ArrayList<ArrayList<String>> scFC = AhrIO.scanFile("./../in/sector_codes.txt", "~");
 					FCI fciSC = new FCI(false, "./../in/sector_codes.txt");				
 					ArrayList<String> subcodes = new ArrayList<String>();
-					for(int i = 0; i < secCodes.size(); i++){
-						int itrCode = Integer.parseInt(secCodes.get(i).get(fciSC.getIdx("code")));
+					for(int i = 0; i < scFC.size(); i++){
+						int itrCode = Integer.parseInt(scFC.get(i).get(fciSC.getIdx("code")));
 						if((itrCode-nearest100th) > 0 && (itrCode-nearest100th) < 100){
 							String itrSubcode = String.valueOf(itrCode-nearest100th);
 							if(itrSubcode.length() == 1){
@@ -1231,18 +1289,53 @@ public class PA_KeyPerf {
 							subcodes.add(itrSubcode);
 						}
 					}
-					//set taSector to subcodes
+					//set taIndustry to subcodes
+					String oldStr = taIndustry.getText();
+					String newStr = "";
 					String strSubcodes = "";
 					for(int i = 0; i < subcodes.size(); i++){
-						strSubcodes += subcodes.get(i);
+						newStr += subcodes.get(i);
 						if(i != (subcodes.size()-1)){
-							strSubcodes += ",";
+							newStr += ",";
 						}
 					}
-					taSector.setText(strSubcodes);
-					dialog.setVisible(true);
+					if(newStr.equals(oldStr)){
+						JOptionPane.showMessageDialog(dialog, "All industries already selected.");
+					}else{
+						taIndustry.setText(newStr);
+					}
 				}else{
-					System.out.println("ERR: only 1 industry must be selected for this filter to work.");
+					JOptionPane.showMessageDialog(dialog, "Only one sector must be selected for this filter"+
+												" to work.", "Error", JOptionPane.ERROR_MESSAGE);
+				}
+			}
+		});
+		bUpdateBasics.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e){
+				//print out all non-indicator filters to taFilterDetails
+				String mcStart = tfStartMC.getText();
+				String mcEnd = tfEndMC.getText();
+				String rawSecStr = tfSector.getText();
+				String rawIndStr = taIndustry.getText();
+				boolean good_vals = true;
+				if(!mcStart.matches("[0-9]+") || !mcEnd.matches("[0-9]+")){
+					System.out.println("ERR: market cap values must be integers.");
+					good_vals = false;
+				}
+				if(!rawSecStr.replace(",","").matches("[0-9]+")){
+					System.out.println("ERR: sector values must be comma seperated integers");
+					good_vals = false;
+				} 
+				if(!rawIndStr.replace(",","").matches("[0-9]+") && !rawIndStr.equals("")){
+					System.out.println("ERR: industry values must be comma seperated integers.");
+					good_vals = false;
+				}
+				if(good_vals){
+					sf.setMarketCap(Integer.parseInt(mcStart), Integer.parseInt(mcEnd));
+					sf.setSectors(rawSecStr);
+					sf.setIndustries(rawIndStr);
+					taFilterDetails.setText(sf.getText());
+					dialog.setVisible(true);
 				}
 			}
 		});
@@ -1261,35 +1354,6 @@ public class PA_KeyPerf {
 				}
 			}
 		});
-		bApply.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e){
-				//print out all non-indicator filters to taFilterDetails
-				String mcStart = tfStartMC.getText();
-				String mcEnd = tfEndMC.getText();
-				String rawIndStr = tfIndustry.getText();
-				String rawSecStr = taSector.getText();
-				boolean good_vals = true;
-				if(!mcStart.matches("[0-9]+") || !mcEnd.matches("[0-9]+")){
-					System.out.println("ERR: market cap values must be integers.");
-					good_vals = false;
-				}
-				if(!rawIndStr.replace(",","").matches("[0-9]+")){
-					System.out.println("ERR: industry values must be comma seperated integers");
-					good_vals = false;
-				} 
-				if(!rawSecStr.replace(",","").matches("[0-9]+") && !rawSecStr.equals("")){
-					System.out.println("ERR: sector values must be comma seperated integers.");
-					good_vals = false;
-				}
-				if(good_vals){
-					sf.setMarketCap(Integer.parseInt(mcStart), Integer.parseInt(mcEnd));
-					sf.setSectors(rawSecStr);
-					sf.setIndustries(rawIndStr);
-					taFilterDetails.setText(sf.getText());
-					dialog.setVisible(true);
-				}
-			}
-		});
 		bReset.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e){
 				sf.resetFilter();
@@ -1298,7 +1362,7 @@ public class PA_KeyPerf {
 		});
 		bToFile.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e){
-				String tfPath = "./../data/filters/sfilter_";
+				//get new filter number
 				int maxFileNum = -1;
 				ArrayList<String> sfFiles = AhrIO.getNamesInPath("./../data/filters/");
 				for(int i = 0; i < sfFiles.size(); i++){
@@ -1307,44 +1371,48 @@ public class PA_KeyPerf {
 						maxFileNum = itrFileNum;
 					}
 				}
-				tfPath += String.valueOf(maxFileNum+1) + ".txt";
-				AhrIO.writeToFile(tfPath, sf.getData(), "~");
+				//update cb in KeyPerf GUI
+				String filterFileName = "sfilter_"+String.valueOf(maxFileNum+1);
+				cbFilters.addItem(filterFileName);
+				cbFilters.setSelectedIndex(cbFilters.getItemCount()-1);
+				//write to file
+				String filePath = "./../data/filters/"+filterFileName+".txt";
+				AhrIO.writeToFile(filePath, sf.getData(), "~");
 				dialog.dispose();
 			}
 		});
-
 
 		pBasics.add(lbMC);
 		pBasics.add(tfStartMC);
 		pBasics.add(lbMil1);
 		pBasics.add(tfEndMC);
 		pBasics.add(lbMil2);
-		pBasics.add(lbIndustry);
-		pBasics.add(tfIndustry);
-		pBasics.add(bIndustryList);
 		pBasics.add(lbSector);
-		pBasics.add(taSector);
+		pBasics.add(tfSector);
 		pBasics.add(bSectorList);
 		pBasics.add(bSectorAll);
-		pBasics.add(bApply);
+		pBasics.add(lbIndustry);
+		pBasics.add(taIndustry);
+		pBasics.add(bIndustryList);
+		pBasics.add(bIndustryAll);
+		pBasics.add(bUpdateBasics);
 		dialog.add(pBasics);
-		dialog.add(lbIndicator);
-		dialog.add(cbIndicator);
-		dialog.add(lbIndRangeStart);
-		dialog.add(tfIndRangeStart);
-		dialog.add(lbIndRangeEnd);
-		dialog.add(tfIndRangeEnd);
-		dialog.add(bIndAdd);
+		pNormInds.add(lbIndicator);
+		pNormInds.add(cbIndicator);
+		pNormInds.add(lbIndRangeStart);
+		pNormInds.add(tfIndRangeStart);
+		pNormInds.add(lbIndRangeEnd);
+		pNormInds.add(tfIndRangeEnd);
+		pNormInds.add(bIndAdd);
+		dialog.add(pNormInds);
 		dialog.add(lbFilterDetails);
 		dialog.add(spFilterDetails);
 		dialog.add(bReset);
 		dialog.add(bToFile);
 		dialog.setVisible(true);
-
-		return filterName;
 	}
 
-	//generate random basis fiels based on GUI input params
+	//generate random basis files based on GUI input params
 	public void createRndBasisFile(String path, int sampleSize, String sdate, String edate, String filterName){
 		ArrayList<ArrayList<String>> tf = new ArrayList<ArrayList<String>>();
 		ArrayList<String> header = new ArrayList<String>();
