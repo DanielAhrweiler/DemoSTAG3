@@ -3,6 +3,7 @@ import ahrweiler.util.AhrGen;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.sql.*;
+import javax.swing.JOptionPane;
 
 public class SQLCode {
 
@@ -24,8 +25,8 @@ public class SQLCode {
 	public SQLCode(){
 		this.webSource = "hostgator";
 		this.url = "jdbc:mysql://danielahrweiler.com:3306/daniela5_sbase";
-		this.username = "daniela5_daniel";
-		this.password = "mill138squid.";
+		this.username = "daniela5_client";
+		this.password = "gKvMZvj6wZ34";
 		this.has_date_range = false;
 		this.has_nar_prereq = false;
 		this.whereCondCount = 0;
@@ -35,14 +36,15 @@ public class SQLCode {
 		this.webSource = sourceName.toLowerCase();
 		if(this.webSource.equals("hostgator")){
 			this.url = "jdbc:mysql://danielahrweiler.com:3306/daniela5_sbase";
-			this.username = "daniela5_daniel";
-			this.password = "mill138squid.";
+			this.username = "daniela5_client";
+			this.password = "gKvMZvj6wZ34";
 		}else if(this.webSource.equals("aws")){
 			this.url = "jdbc:mysql://demo-stag.cudwbghcmyxb.us-east-2.rds.amazonaws.com:3306/sbase";
-			this.username = "admin";
-			this.password = "one.Qaster95";
+			this.username = "client";
+			this.password = "two.Lester34";
 		}else{
-			System.out.println("ERROR: do not web source "+this.webSource);
+			String message = "Web source "+this.webSource+" not recognized.";
+			JOptionPane.showMessageDialog(null, message, "Web Error", JOptionPane.ERROR_MESSAGE);
 		}
 		this.has_date_range = false;
 		this.has_nar_prereq = false;
@@ -209,7 +211,7 @@ public class SQLCode {
 			Statement stmt = conn.createStatement();
 			String sqlSelect = "SELECT * FROM `"+tname+"`";
 			ResultSet rs = stmt.executeQuery(sqlSelect);
-			System.out.println(sqlSelect);
+			//System.out.println(sqlSelect);
 			int colNum = rs.getMetaData().getColumnCount();
 			//System.out.println("--> colNum = " + colNum+"\n--> colNames size = "+colNames.size());
 			while(rs.next()){
@@ -394,9 +396,9 @@ public class SQLCode {
 				tableList.add(rs.getString(3));
 			}
 			Collections.sort(tableList);
-			System.out.println("**** Fix Null In ByDate ****");
+			//System.out.println("**** Fix Null In ByDate ****");
 			for(int i = 0; i < tableList.size(); i++){
-				System.out.println("--> bydate : "+tableList.get(i));
+				//System.out.println("--> bydate : "+tableList.get(i));
 				//if(i%100 == 0){
 				//	System.out.println("   "+i+" out of "+tableList.size());
 				//}

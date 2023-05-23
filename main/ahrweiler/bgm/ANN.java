@@ -293,6 +293,7 @@ public class ANN {
 		String trainPath = "./../data/ml/ann/cust/train/";
 		String testPath = "./../data/ml/ann/cust/test/";
 		//print out basic info
+		/*
 		System.out.println("================= In calcSK ==================");
 		System.out.println("========== Algo Info ==========");
 		if(is_cr_method){
@@ -307,6 +308,7 @@ public class ANN {
 		System.out.println(" --> MS Mask   : " + msMask);
 		System.out.println(" --> NAR Mask  : " + narMask);
 		System.out.println("===============================\n");
+		*/
 		//create the cust DB (if relv info is same keep DB)
 		ArrayList<ArrayList<String>> cdbs = AhrIO.scanFile(dbsPath, ",");
 		boolean keep_db = false;
@@ -326,13 +328,13 @@ public class ANN {
 			deleteCustDB();
 			createCustDB(secSize);
 		}else{
-			System.out.println("Using same CUST DB");
+			//System.out.println("Using same CUST DB");
 		}
 		cdbs = AhrIO.scanFile(dbsPath, ",");
-		System.out.println("--> Total DB Train Lines    : " + cdbs.get(2).get(0));
-		System.out.println("--> Total DB Train Sections : " + cdbs.get(3).get(0));
-		System.out.println("--> Total DB Test  Lines    : " + cdbs.get(2).get(1));
-		System.out.println("--> Total DB Test  Sections : " + cdbs.get(3).get(1));
+		//System.out.println("--> Total DB Train Lines    : " + cdbs.get(2).get(0));
+		//System.out.println("--> Total DB Train Sections : " + cdbs.get(3).get(0));
+		//System.out.println("--> Total DB Test  Lines    : " + cdbs.get(2).get(1));
+		//System.out.println("--> Total DB Test  Sections : " + cdbs.get(3).get(1));
 		//initialize
 		ArrayList<Integer> hiddenDims = new ArrayList<Integer>();
 		hiddenDims.add(activeIndNum+2);
@@ -343,9 +345,9 @@ public class ANN {
 		int lcount1 = 0;	//counts lines trained
 		int lcount2 = 0;	//counts lines tested
 		//itr thru all 
-		System.out.println("Itr thru all DB Sections ... ");
+		//System.out.println("Itr thru all DB Sections ... ");
 		for(int i = 0; i < trainFiles.size(); i++){
-			if(i%25==0){System.out.println("   "+i+" out of "+trainFiles.size());}
+			//if(i%25==0){System.out.println("   "+i+" out of "+trainFiles.size());}
 			String trainFullPath = trainPath+trainFiles.get(i);
 			ArrayList<ArrayList<String>> trainFC = AhrIO.scanFile(trainFullPath, "~");
 			//train section of DB
@@ -421,7 +423,7 @@ public class ANN {
 		}
 		int sskID = maxID+1;
 		int lskID = sskID+1;
-		System.out.println("--> sskID = " + sskID+"\n--> lskID = " + lskID);
+		//System.out.println("--> sskID = " + sskID+"\n--> lskID = " + lskID);
 		ArrayList<String> sline = new ArrayList<String>();	//short line
 		sline.add(String.valueOf(sskID));						//[0] sk_num
 		String dbNameCode = "ERR";								//[1] db_used
@@ -520,8 +522,8 @@ public class ANN {
 		AhrIO.writeToFile("./../out/sk/log/ann/keys_perf.txt", kpFile, ",");
 
 		//Done
-		System.out.println("Output Files WRITTEN");		
-		System.out.println("================================");
+		//System.out.println("Output Files WRITTEN");		
+		//System.out.println("================================");
 	}
 
 	//do just the init part of SK
@@ -553,7 +555,7 @@ public class ANN {
 			}
 		}
 		setID(maxID + 1);
-		printAttrs();
+		//printAttrs();
 	}
 
 	//calc 1 section of SK at a time
@@ -636,8 +638,8 @@ public class ANN {
 		}
 		int sskID = maxID+1;
 		int lskID = sskID+1;
-		System.out.println("In ANN.java -> writeToFileSK()\n  short SK ID = " + sskID +
-							"  long SK ID = " + lskID);
+		//System.out.println("In ANN.java -> writeToFileSK()\n  short SK ID = " + sskID +
+		//					"  long SK ID = " + lskID);
 		//short call line
 		ArrayList<String> sline = new ArrayList<String>();
 		sline.add(String.valueOf(sskID));						//[0] sk_num
@@ -755,7 +757,7 @@ public class ANN {
 
 	//creates the custom DB for ANN from web MySQL
 	public void createCustDBFromWeb(int secSize){
-		System.out.print("--> Creating Custom DB (from aws) ... ");
+		//System.out.print("--> Creating Custom DB (from aws) ... ");
 		ArrayList<String> dates = AhrDate.getDatesBetween(sdate, edate);
 		FCI fciMS = new FCI(false, "./../in/mstates.txt");
 		FCI fciBD = new FCI(false, Globals.bydate_path);
@@ -891,12 +893,12 @@ public class ANN {
 		toFile.add(line3);
 		toFile.add(line4);
 		AhrIO.writeToFile("./../data/ml/ann/cust/db_sizes.txt", toFile, ",");
-		System.out.println("DONE");
+		//System.out.println("DONE");
 	}
 
 	//creates the cust DB for ANN from local disk
 	public void createCustDBFromLocal(int secSize){
-		System.out.print("--> Creating Custom DB ... ");
+		//System.out.print("--> Creating Custom DB ... ");
 		ArrayList<String> dates = AhrDate.getDatesBetween(sdate, edate);
 		FCI fciMS = new FCI(false, "./../in/mstates.txt");
 		ArrayList<ArrayList<String>> mstates = AhrIO.scanFile("./../in/mstates.txt", ",");
@@ -1003,7 +1005,7 @@ public class ANN {
 				}
 			}
 		}
-		System.out.println("DONE");
+		//System.out.println("DONE");
 		//write info to file
 		ArrayList<ArrayList<String>> toFile = new ArrayList<ArrayList<String>>();
 		ArrayList<String> line1 = new ArrayList<String>();
@@ -1033,7 +1035,7 @@ public class ANN {
 
 	//create only the train DB (from web DB)
 	public void createTrainDBFromWeb(int secSize){
-		System.out.println("--> Creating Custom Train DB From Web ... ");
+		//System.out.println("--> Creating Custom Train DB From Web ... ");
 		ArrayList<String> dates = AhrDate.getDatesBetween(sdate, edate);
 		FCI fciMS = new FCI(false, "./../in/mstates.txt");
 		FCI fciBD = new FCI(false, Globals.bydate_path);
@@ -1125,12 +1127,12 @@ public class ANN {
 		dbSizes.add(line3);
 		dbSizes.add(line4);
 		AhrIO.writeToFile("./../data/ml/ann/cust/db_sizes.txt", dbSizes, ",");
-		System.out.println("DONE");
+		//System.out.println("DONE");
 	}
 
 	//create only the train DB (from local disk)
 	public void createTrainDBFromLocal(int secSize){
-		System.out.print("--> Creating Custom Train DB ... ");
+		//System.out.print("--> Creating Custom Train DB ... ");
 		//read in mstates info
 		String msPath = "./../in/mstates.txt";
 		FCI fciMS = new FCI(false, msPath);
@@ -1216,12 +1218,12 @@ public class ANN {
 		dbSizes.add(line3);
 		dbSizes.add(line4);
 		AhrIO.writeToFile("./../data/ml/ann/cust/db_sizes.txt", dbSizes, ",");
-		System.out.println("DONE");
+		//System.out.println("DONE");
 	}
 
 	//create only the test DB (from web DB)
 	public void createTestDBFromWeb(int secSize){
-		System.out.println("--> Creating Custom Test DB From Web ... ");
+		//System.out.println("--> Creating Custom Test DB From Web ... ");
 		//basic vars
 		int groupSize = 50;
 		int oddLines = 0;
@@ -1293,12 +1295,12 @@ public class ANN {
 		dbSizes.get(2).set(1, String.valueOf(oddLines));
 		dbSizes.get(3).set(1, String.valueOf(oddSections));
 		AhrIO.writeToFile(dbsPath, dbSizes, ",");
-		System.out.println("DONE");
+		//System.out.println("DONE");
 	}
 
 	//create only the test DB (from local disk)
 	public void createTestDBFromLocal(int secSize){
-		System.out.print("--> Creating Custom Test DB ... ");
+		//System.out.print("--> Creating Custom Test DB ... ");
 		//read in mstates info
 		String msPath = "./../in/mstates.txt";
 		FCI fciMS = new FCI(false, msPath);
@@ -1365,7 +1367,7 @@ public class ANN {
 		dbSizes.get(2).set(1, String.valueOf(oddLines));
 		dbSizes.get(3).set(1, String.valueOf(oddSections));
 		AhrIO.writeToFile(dbsPath, dbSizes, ",");
-		System.out.println("DONE");
+		//System.out.println("DONE");
 	}
 
 	//create ML line (predictor and target vars) from full ByDate line
@@ -1454,7 +1456,7 @@ public class ANN {
 			double cval = snet.outputLayer.get(i).getValue();		//calculated value
 			avgError += Math.abs(rval - cval);
 			if(Math.abs(rval - cval) > 1.0){
-				System.out.println("Real Value: " + rval + "  |  Calc Value: " + cval);
+				System.out.println("ERR: Real Value: " + rval + "  |  Calc Value: " + cval);
 			}
 		}
 		avgError = avgError / totOutputs;

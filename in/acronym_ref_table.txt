@@ -1,8 +1,12 @@
-APAPT~Average Percent Appreciation Per Transaction~Main performance metric for a machine learning algorithm.
-APY~Annual Percent Yield~Main performance metric for a fully optimized trading strategy.
-SPD~Stocks Per Day~Number of stock predictions that are calculated on any given date.
-TVI~Target Variable Index~Is the target length in days in which to measure the APAPT, the APAPT is then placed in the database as the only target variable. There are 6 target variables tracked and indexed ...<ul><li>    [0] = 1-Day Intraday %</li><li>    [1] = 1-Day Interday %</li><li>    [2] = 2-Day %</li><li>    [3] = 3-Day %</li><li>    [4] = 5-Day %</li><li>    [5] = 10-Day %</li></ul>
+SK~Single Key~Key that connects a unique number to the state of a completed machine learning algorithm for a specific market state. A unique SK can connect to the param values used in algo, the performance of the algo, the predictions of the algo, as well as the structure of the resultant ANN.
+AK~Aggregate Key~Key that connects a unique number to a combination of SKs that have market states such that the aggregate key will be able to give predictions on any date, which can have any market state.
+APAPT~Average Percent Appreciation Per Transaction~Main performance metric for a machine learning algorithm. Is the average of all predicted trades assuming buy-in at start of a day and sell-out at end of a day x days later where x is determined by the TVI. 
+APY~Annual Percent Yield~Main performance metric for an optimized trading strategy. It is the appreciation a strategy gains over a year assuming all trades go through a realistic order simulator with all limits in place.
+YoY~Year-over-Year Growth~ Is like APY but assumes all trades are 100% effective and all dollars in a porfolio are 100% utilized every day. It is the absolute max appreciation possible. 
+SPD~Stocks Per Day~Number of stocks that are considered when giving a predictions from a key (SK or AK) on any given day. Also the number considered when calculating the performance of a key (SK or AK).
+TVI~Target Variable Index~Is the target length in days in which to measure the APAPT, the APAPT is then placed in the database as the only target variable. There are 10 target variables tracked and indexed ...<ul><li>    [0] = 1-Day Intraday %</li><li>    [1] = 1-Day Interday %</li><li>    [2] = 2-Day Intraday %</li><li>    [3] = 2-Day Interday %</li><li>    [4] = 3-Day Intraday %</li><li>    [5] = 3-Day Interday %</li><li>    [6] = 5-Day Intraday %</li><li>    [7] = 5-Day Interday %</li><li>    [8] = 10-Day Intraday %</li><li>    [9] = 10-Day Interday %</li></ul>
 MS Mask~Market State Bitmask~8-digit bitmask where each bit answers a question about the markets current price vs its x-day SMA, where the more significant the bit the larger the x. Its purpose is to split the database into sections to focus an algorithm onto a specific market state.
-Ind Mask~Indicator Bitmask~24-digit bitmask where each bit represents a yes or no whether each indicator is included 
-BIM~Buy-In Multiplier~Part of trading strategy that limits price of stock in which you buy-in at.
-SOM~Sell-Out Multiplier~Part of trading strategy that limits price of stock in which you sell-out at.
+Ind Mask~Indicator Bitmask~24-digit bitmask where each bit represents a yes or no whether each indicator should be considered in the machine learning algorithm.
+BIM~Buy-In Multiplier~Is a multiplier of the stocks last close price. A trade cannot be entered unless the price is better than the price * multiplier (better means &lt if long call, &gt if short call).
+SOM~Sell-Out Multiplier~Is a multiplier of the trades buy-in price. A trade will be closed if the limit represented by the SOM is reached.
+MOP~Max Order Price~When simulating trades, this value limits the value of an order (buy price * shares) to prevent unhindered exponential growth.

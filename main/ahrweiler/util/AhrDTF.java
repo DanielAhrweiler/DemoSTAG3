@@ -16,7 +16,7 @@ public class AhrDTF {
 		int lineSize = in.get(0).size();
 		for(int i = 0; i < in.size(); i++){
 			if(in.get(i).size() != lineSize){
-				System.out.println("Line Size: " + lineSize+"  |  Line at "+ i +" : "+ in.get(i).size());
+				System.out.println("ERR: Line Size: " + lineSize+"  |  Line at "+ i +" : "+ in.get(i).size());
 			}
 		}
 		if(!in.isEmpty()){

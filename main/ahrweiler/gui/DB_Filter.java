@@ -136,7 +136,7 @@ public class DB_Filter {
 		taFilterDetails.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 12));
 		taFilterDetails.setText(setBasicFilter(tfStartMC.getText(), tfEndMC.getText(),
 											 tfSector.getText(), taIndustry.getText()));
-		System.out.println("--> Filter Text : " + sf.getText());
+		//System.out.println("--> Filter Text : " + sf.getText());
 
 		//init starting filter lines
 		sf.setMarketCap(Integer.parseInt(tfStartMC.getText()), Integer.parseInt(tfEndMC.getText()));
@@ -211,7 +211,7 @@ public class DB_Filter {
 					String secStr = tfSector.getText().replaceAll("\\s+", "");
 					secStr = secStr.replaceAll(",", "");
 					int secInt = Integer.parseInt(secStr);
-					System.out.println("--> secInt = " + secInt);
+					//System.out.println("--> secInt = " + secInt);
 					ArrayList<String> uniqSectors = new ArrayList<String>();
 					ArrayList<String> uniqInds = new ArrayList<String>();
 					FCI fciSC = new FCI(false, "./../in/sector_codes.txt");
@@ -353,6 +353,7 @@ public class DB_Filter {
 		});
 		bApply.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e){
+				frame.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
 				String mrDate = AhrDate.mostRecentDate(AhrIO.getNamesInPath("./../../DB_Intrinio/Clean/ByDate/"));
 				sf.applyFilter(mrDate);
 				ArrayList<ArrayList<String>> res = sf.getResults();
@@ -368,6 +369,7 @@ public class DB_Filter {
 				}
 				String[][] data = AhrAL.toArr2D(res);
 				pTableSort.updateModel(data, header);
+				frame.setCursor(null);
 			}
 		});
 		bReset.addActionListener(new ActionListener() {
@@ -396,7 +398,7 @@ public class DB_Filter {
 				}
 				tfPath += String.valueOf(maxFileNum+1) + ".txt";
 				AhrIO.writeToFile(tfPath, sf.getData(), "~");
-				System.out.println("==> File \""+tfPath+"\' written to file.");
+				//System.out.println("==> File \""+tfPath+"\' written to file.");
 			}
 		});
 

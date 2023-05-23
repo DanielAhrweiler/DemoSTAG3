@@ -144,10 +144,10 @@ public class RCode {
 			newColors[this.line_colors.length-1] = this.line_colors[idx];
 			this.line_colors = newColors;
 		}
-		System.out.println("Colors after removal : \n");
-		for(int i = 0; i < newColors.length; i++){
-			System.out.println("  "+i+") "+newColors[i]);
-		}
+		//System.out.println("Colors after removal : \n");
+		//for(int i = 0; i < newColors.length; i++){
+		//	System.out.println("  "+i+") "+newColors[i]);
+		//}
 	}
 	public void resetColors(){
 		this.line_colors = Globals.r_color_scheme;
@@ -231,7 +231,7 @@ public class RCode {
 				uniqVars.add(fc.get(i).get(1));
 			}
 		}
-		System.out.println("--> uniqVars = " + uniqVars);
+		//System.out.println("--> uniqVars = " + uniqVars);
 		//create R vars for in R code
 		String dateColName = varNames.get(0);
 		String varColName = varNames.get(1);

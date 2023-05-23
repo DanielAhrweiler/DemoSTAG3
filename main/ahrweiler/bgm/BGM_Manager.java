@@ -53,7 +53,7 @@ public class BGM_Manager {
 			this.bestSK[i] = Integer.parseInt(bestSKstr[i]);
 		}
 		//set best BIM/SOM for each best single key (if calced yet)
-		System.out.println("--> In BGM_Manager(), sk_bso = "+laRow.get(fciLA.getIdx("sk_bso")));
+		//System.out.println("--> In BGM_Manager(), sk_bso = "+laRow.get(fciLA.getIdx("sk_bso")));
 		if(!laRow.get(fciLA.getIdx("sk_bso")).equals("ph")){
 			String[] skBimSom = laRow.get(fciLA.getIdx("sk_bso")).split("~");
 			this.skBuyIn = new double[skBimSom.length][2];
@@ -64,7 +64,7 @@ public class BGM_Manager {
 			}
 		}
 		//set best BIM/SOM for agg key in general (if calced yet)
-		System.out.println("--> In BGM_Manager(), ak_bso = "+laRow.get(fciLA.getIdx("ak_bso")));
+		//System.out.println("--> In BGM_Manager(), ak_bso = "+laRow.get(fciLA.getIdx("ak_bso")));
 		if(!laRow.get(fciLA.getIdx("ak_bso")).equals("ph")){
 			String[] akPair = laRow.get(fciLA.getIdx("ak_bso")).split("\\|");
 			this.akBuyIn = new double[2];
@@ -91,7 +91,7 @@ public class BGM_Manager {
 	
 		//focus on a single key (also inits an AttributesSK obj)
 		if(bestSK.length > 0){
-			System.out.println("--> BGM Initialized w/ SK"+bestSK[0]);
+			//System.out.println("--> BGM Initialized w/ SK"+bestSK[0]);
 			setFocusSK(bestSK[0]); 
 		}else{
 			System.out.println("ERROR in constructor : no SKs found");
@@ -998,8 +998,8 @@ public class BGM_Manager {
 		//calc bso files
 		ArrayList<String> bsoTrain = bsoMultiple(getSDate(), getEDate(), "100", is_min_trig, use_sk_bso);
 		ArrayList<String> bsoTest = bsoMultiple(getSDate(), getEDate(), "010", is_min_trig, use_sk_bso);
-		System.out.println("==> BSO Train Data: " + bsoTrain);
-		System.out.println("==> BSO Test Data: " + bsoTest);
+		//System.out.println("==> BSO Train Data: " + bsoTrain);
+		//System.out.println("==> BSO Test Data: " + bsoTest);
 		//get row from keys_perf
 		String kpPath = "./../out/sk/log/"+bgmLC+"/keys_perf.txt";
 		FCI fciKP = new FCI(true, kpPath);
@@ -1350,9 +1350,9 @@ public class BGM_Manager {
 	}
 	public void genBasisSK_ANN(int skID){
 		if(getFocusSK() != skID || true){
-			System.out.print("--> Changed focus from "+getFocusSK());
+			//System.out.print("--> Changed focus from "+getFocusSK());
 			setFocusSK(skID);
-			System.out.println(" to " + getFocusSK());
+			//System.out.println(" to " + getFocusSK());
 		}
 		String sdate = kattr.getSDate();
 		String edate = AhrDate.getTodaysDate();
@@ -1591,7 +1591,7 @@ public class BGM_Manager {
 		Collections.sort(dates);
 		dates.remove(0);
 		if(dates.size() < 1){
-			System.out.println("--> ANN SK"+skID+" ... ALREADY UP-TO-DATE");
+			//System.out.println("--> ANN SK"+skID+" ... ALREADY UP-TO-DATE");
 			return;
 		}
 		//find dates that have tbd vals from last update
@@ -1627,7 +1627,7 @@ public class BGM_Manager {
 			}
 		}
 		AhrIO.writeToFile(bsPath+"ann/ANN_"+String.valueOf(skID)+".txt", basis, ",");
-		System.out.println("--> ANN SK"+skID+" ... UPDATED");
+		//System.out.println("--> ANN SK"+skID+" ... UPDATED");
 	}
 
 	//updates a AK basis file
@@ -1651,7 +1651,7 @@ public class BGM_Manager {
 		String edate = AhrDate.getTodaysDate();
 		ArrayList<String> dates = AhrDate.getDatesBetween(mrDate, edate);
 		if(dates.size() <= 1){
-			System.out.println("--> "+bgmUC+" AK"+this.id+" ... already UP-TO-DATE.");
+			//System.out.println("--> "+bgmUC+" AK"+this.id+" ... already UP-TO-DATE.");
 			return;
 		}
 		//find dates that have tbd vals from last update
@@ -1682,7 +1682,7 @@ public class BGM_Manager {
 		}
 		//write to file
 		AhrIO.writeToFile(akPath, basis, ",");
-		System.out.println("--> "+bgmUC+" AK"+this.id+" ... UPDATED");
+		//System.out.println("--> "+bgmUC+" AK"+this.id+" ... UPDATED");
 	}
 
 	//calc TTV for a given date

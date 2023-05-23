@@ -94,7 +94,7 @@ public class DB_DataIntegrity {
 				//TODO put function somewhere in demo java file
 				//DB_Manager dbm = new DB_Manager();
 				//ArrayList<ArrayList<String>> mc = dbm.singleDayMC(date);
-				AhrAL.print(mc);
+				//AhrAL.print(mc);
 			}
 		});
 		bPlotSB.addActionListener(new ActionListener() {
@@ -243,7 +243,7 @@ public class DB_DataIntegrity {
 					indName = indType;
 					srcIdx = fciSR.getIdx(indMap.get(indType));
 				}
-				System.out.println("--> srcIdx = "+srcIdx);
+				//System.out.println("--> srcIdx = "+srcIdx);
 				//retrieve val from DB
 				String rndStock = "";
 				String rndDate = "";

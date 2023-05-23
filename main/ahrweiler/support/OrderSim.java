@@ -4,6 +4,7 @@ import ahrweiler.support.FCI;
 import java.io.*;
 import java.util.*;
 import java.lang.Math;
+import javax.swing.JOptionPane;
 
 public class OrderSim {	//simulates ordering in reality 
 
@@ -89,7 +90,7 @@ public class OrderSim {	//simulates ordering in reality
 		String ksPath = "./../out/sk/log/"+bgmLC+"/keys_struct.txt";
 		FCI fciKS = new FCI(true, ksPath);
 		ArrayList<String> ksRow = AhrIO.scanRow(ksPath, ",", String.valueOf(keyID));
-		System.out.println("--> ksRow = "+ksRow);
+		//System.out.println("--> ksRow = "+ksRow);
 		//fill out attrs from keys_struct file
 		this.keyNum = keyID;
 		this.dbUsed = ksRow.get(fciKS.getIdx("db_used"));
@@ -107,7 +108,8 @@ public class OrderSim {	//simulates ordering in reality
 			this.is_long = true;
 			this.cmult = 1.0;
 		}else{
-			System.out.println("ERR: Call for SK"+keyID+" not found.");
+			String message = "Call data for SK"+keyID+" not found.";
+			JOptionPane.showMessageDialog(null, message, "OrderSim Error", JOptionPane.ERROR_MESSAGE);
 		}
 		this.setDateRange(ksRow.get(fciKS.getIdx("start_date")), ksRow.get(fciKS.getIdx("end_date")));
 		//set path and FCI for basis file
@@ -878,10 +880,10 @@ public class OrderSim {	//simulates ordering in reality
 				line.add(String.format("%.5f", getYoyAppr()));
 				line.add(String.format("%.3f", getPosPer()));
 				bsoMult.add(line);
-				System.out.println("BIM: "+String.format("%.3f",itrBIM)+
-									"  |  SOM: "+String.format("%.3f",itrSOM)+
-									"  |  YoY %: "+String.format("%.3f",itrYOY)+
-									"  |  Best YoY %: "+String.format("%.3f",bestYOY));
+				//System.out.println("BIM: "+String.format("%.3f",itrBIM)+
+				//					"  |  SOM: "+String.format("%.3f",itrSOM)+
+				//					"  |  YoY %: "+String.format("%.3f",itrYOY)+
+				//					"  |  Best YoY %: "+String.format("%.3f",bestYOY));
 
 			}
 		}
@@ -913,10 +915,10 @@ public class OrderSim {	//simulates ordering in reality
 					line.add(String.format("%.5f", getYoyAppr()));
 					line.add(String.format("%.3f", getPosPer()));
 					bsoMult.add(line);
-					System.out.println("BIM: "+String.format("%.3f",itrBIM)+
-										"  |  SOM: "+String.format("%.3f",itrSOM)+
-										"  |  YoY %: "+String.format("%.3f",itrYOY)+
-										"  |  Best YoY %: "+String.format("%.3f",bestYOY));
+					//System.out.println("BIM: "+String.format("%.3f",itrBIM)+
+					//					"  |  SOM: "+String.format("%.3f",itrSOM)+
+					//					"  |  YoY %: "+String.format("%.3f",itrYOY)+
+					//					"  |  Best YoY %: "+String.format("%.3f",bestYOY));
 				}
 			}
 		}
@@ -947,10 +949,10 @@ public class OrderSim {	//simulates ordering in reality
 					line.add(String.format("%.5f", getYoyAppr()));
 					line.add(String.format("%.3f", getPosPer()));
 					bsoMult.add(line);
-					System.out.println("BIM: "+String.format("%.3f",itrBIM)+
-										"  |  SOM: "+String.format("%.3f",itrSOM)+
-										"  |  YoY %: "+String.format("%.3f",itrYOY)+
-										"  |  Best YoY %: "+String.format("%.3f",bestYOY));
+					//System.out.println("BIM: "+String.format("%.3f",itrBIM)+
+					//					"  |  SOM: "+String.format("%.3f",itrSOM)+
+					//					"  |  YoY %: "+String.format("%.3f",itrYOY)+
+					//					"  |  Best YoY %: "+String.format("%.3f",bestYOY));
 				}
 			}
 		}
@@ -981,10 +983,10 @@ public class OrderSim {	//simulates ordering in reality
 					line.add(String.format("%.5f", getYoyAppr()));
 					line.add(String.format("%.3f", getPosPer()));
 					bsoMult.add(line);
-					System.out.println("BIM: "+String.format("%.3f",itrBIM)+
-										"  |  SOM: "+String.format("%.3f",itrSOM)+
-										"  |  YoY %: "+String.format("%.3f",itrYOY)+
-										"  |  Best YoY %: "+String.format("%.3f",bestYOY));
+					//System.out.println("BIM: "+String.format("%.3f",itrBIM)+
+					//					"  |  SOM: "+String.format("%.3f",itrSOM)+
+					//					"  |  YoY %: "+String.format("%.3f",itrYOY)+
+					//					"  |  Best YoY %: "+String.format("%.3f",bestYOY));
 				}
 			}
 		}
@@ -993,7 +995,7 @@ public class OrderSim {	//simulates ordering in reality
 		setBIM(bestBIM);
 		setSOM(bestSOM);
 		calcOrderList();
-		printData();
+		//printData();
 	}
 	
 	//given a TTV code from a basis line, returns bool whether code pass OrderSim ttvMask

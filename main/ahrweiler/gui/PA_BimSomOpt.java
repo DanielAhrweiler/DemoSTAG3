@@ -735,7 +735,8 @@ public class PA_BimSomOpt {
 					rframe.setVisible(true);
 					ii.getImage().flush();
 				}else{
-					System.out.println("ERR: unknown plot index.");
+					String message = "Unknown plot index.";
+					JOptionPane.showMessageDialog(frame, message, "Index Error", JOptionPane.ERROR_MESSAGE);
 				}
 			}
 		});

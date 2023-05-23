@@ -38,7 +38,7 @@ public class AhrAL {
 	}
 	//converts String 2D-AL to 2D-Array
 	public static String[][] toArr2D(ArrayList<ArrayList<String>> al){
-		System.out.println("--> In toArr2D: rows = "+al.size());
+		//System.out.println("--> In toArr2D: rows = "+al.size());
 		if(al.size() > 0){
 			String[][] arr = new String[al.size()][al.get(0).size()];
 			for(int i = 0; i < al.size(); i++){

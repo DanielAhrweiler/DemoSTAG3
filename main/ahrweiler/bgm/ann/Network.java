@@ -63,7 +63,7 @@ public class Network {
 		lCount++;
 		this.totalNodes = nTotal;
 		this.totalLayers = lCount;
-		System.out.println("Hidden Layers: " + hiddenLayers.size());
+		//System.out.println("Hidden Layers: " + hiddenLayers.size());
 	}
 	public Network(String fpath){//TODO change to read in struct files correctly, w/ bias and val
 		this.totalError = 0.0;

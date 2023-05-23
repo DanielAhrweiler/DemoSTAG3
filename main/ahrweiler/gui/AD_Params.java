@@ -92,6 +92,8 @@ public class AD_Params {
 		//button functionality
 		bSaveParams.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e){
+				boolean has_input_err = false;
+				String errMessage = "Error(s):\n";
 				AttributesSK kattr = new AttributesSK();
 				kattr.setSDate(tfSDate.getText());
 				kattr.setEDate(tfEDate.getText());
@@ -99,24 +101,31 @@ public class AD_Params {
 					int spd = Integer.parseInt(tfSPD.getText());
 					kattr.setSPD(spd);
 				}catch(NumberFormatException ex){
-					System.out.println("ERR: SPD text cannot be converted to int.");
+					has_input_err = true;
+					errMessage += "\nSPD text cannot be converted to int.";
 				}
 				kattr.setTVI(cbTVI.getSelectedIndex());
 				try{
 					double plateau = Double.parseDouble(tfPlateau.getText());
 					kattr.setPlateau(plateau);
 				}catch(NumberFormatException ex){
-					System.out.println("ERR: Plateau text cannot be converted to double.");
+					has_input_err = true;
+					errMessage += "\nPlateau text cannot be converted to double.";
 				}
 				try{
 					double learnRate = Double.parseDouble(tfLearnRate.getText());
 					kattr.setLearnRate(learnRate);
 				}catch(NumberFormatException ex){
-					System.out.println("ERR: Learn Rate text cannot be converted to double.");
+					has_input_err = true;
+					errMessage += "\nLearn Rate text cannot be converted to double.";
 				}
 				kattr.setIndMask(tfIndMask.getText());
-				kattr.saveToFile("./../data/tmp/sk_attrs.txt");
-				frame.dispose();
+				if(has_input_err){
+					JOptionPane.showMessageDialog(frame, errMessage, "Input Error", JOptionPane.ERROR_MESSAGE);
+				}else{
+					kattr.saveToFile("./../data/tmp/sk_attrs.txt");
+					frame.dispose();
+				}
 			}
 		});
 		bRevertDef.addActionListener(new ActionListener() {

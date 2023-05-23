@@ -243,7 +243,8 @@ public class DB_Charting {
 					cbExchange.setEnabled(false);
 					cbIndex.setEnabled(true);				
 				}else{
-					System.out.println("ERR: No RadioButton in Add Index is selected.");
+					String message = "No RadioButton in Add Index is selected.";
+					JOptionPane.showMessageDialog(frame, message, "Input Error", JOptionPane.ERROR_MESSAGE);
 				}
 			}
 		};
@@ -410,7 +411,8 @@ public class DB_Charting {
 							newData = getLocalDataForPlot(dbPath+fname, sdate, edate, colIdx, sma);					
 						}
 				}else{
-					System.out.println("ERR: no comp chosen.");
+					String message = "No component selected.";
+					JOptionPane.showMessageDialog(frame, message, "Input Error", JOptionPane.ERROR_MESSAGE);
 				}
 				if(sma > 1){
 					csvColName += ".sma"+String.valueOf(sma);
@@ -468,7 +470,7 @@ public class DB_Charting {
 					}
 					if(oldData.get(i).get(2).equals("NA") && i < (oldData.size()-1)){
 						faDate = AhrDate.maxDate(faDate, oldData.get(i+1).get(0));
-						System.out.println("--> New faDate : " + faDate);
+						//System.out.println("--> New faDate : " + faDate);
 					}
 				}
 				ArrayList<ArrayList<String>> oldDataTmp = new ArrayList<ArrayList<String>>();
@@ -482,7 +484,7 @@ public class DB_Charting {
 				//AhrAL.print(oldData);
 				//go thru col names to find (native) SMA vals
 				Collections.reverse(uniqVars);
-				System.out.println("--> UniqVars = " + uniqVars);
+				//System.out.println("--> UniqVars = " + uniqVars);
 				int[] cprtIdx = new int[uniqVars.size()];
 				int[] smaVals = new int[uniqVars.size()];
 				for(int i = 0; i < uniqVars.size(); i++){
@@ -494,7 +496,7 @@ public class DB_Charting {
 							periodCount++;
 						}
 					}
-					System.out.println("--> Col Name : "+uniqVars.get(i)+"  |  periodCount = "+periodCount);
+					//System.out.println("--> Col Name : "+uniqVars.get(i)+"  |  periodCount = "+periodCount);
 					if(periodCount > 0){
 						String[] parts = uniqVars.get(i).split("\\.");
 						if(parts[parts.length-1].contains("sma")){
@@ -514,6 +516,7 @@ public class DB_Charting {
 					cprtIdx[i] = itrIdx;
 					smaVals[i] = smaVal;
 				}
+				/*
 				System.out.print("--> Counterpart Indexes : [");
 				for(int i = 0; i < cprtIdx.length; i++){
 					System.out.print(cprtIdx[i] + " ");
@@ -524,6 +527,7 @@ public class DB_Charting {
 					System.out.print(smaVals[i] + " ");
 				}
 				System.out.println("]");
+				*/
 				ArrayList<ArrayList<String>> normData = new ArrayList<ArrayList<String>>();
 				//itr thru vars, calcing all non SMA vals first
 				for(int i = 0; i < uniqVars.size(); i++){
@@ -609,7 +613,7 @@ public class DB_Charting {
 				rframe.pack();
 				rframe.setVisible(true);
 				ii.getImage().flush();
-				System.out.println("--> Popped out Normalization Chart.");
+				//System.out.println("--> Popped out Normalization Chart.");
 			}
 		});
 		bSpecial.addActionListener(new ActionListener(){
@@ -741,8 +745,8 @@ public class DB_Charting {
 				return str1.compareTo(str2);
 			}
 		});
-		System.out.println("***** In retreiveNewDataForPlot() *****");
-		System.out.println("--> 1st Date : " + data.get(0).get(0) + "\n--> Last Date : " + data.get(data.size()-1).get(0));
+		//System.out.println("***** In retreiveNewDataForPlot() *****");
+		//System.out.println("--> 1st Date : " + data.get(0).get(0) + "\n--> Last Date : " + data.get(data.size()-1).get(0));
 		if(sma > 1){
 			ArrayList<ArrayList<String>> smaData = new ArrayList<ArrayList<String>>();
 			for(int i = sma; i < data.size(); i++){
@@ -768,7 +772,7 @@ public class DB_Charting {
 		sqlc.setDateRange(sdate, edate);
 		ArrayList<ArrayList<String>> data = sqlc.selectCols(tname, colNames);
 		Collections.reverse(data);
-		AhrAL.print(data);
+		//AhrAL.print(data);
 		if(sma > 1 && colNames.size() == 2 && data.size() >= sma){
 			ArrayList<ArrayList<String>> smaData = calcSMA(data, sma);
 			return smaData;
@@ -784,7 +788,7 @@ public class DB_Charting {
 		sqlc.setDateRange(sdate, edate);
 		ArrayList<ArrayList<String>> data = sqlc.selectCols(tname, colNames);
 		Collections.reverse(data);
-		AhrAL.print(data);
+		//AhrAL.print(data);
 		if(sma > 1 && colNames.size() == 2 && data.size() >= sma){
 			ArrayList<ArrayList<String>> smaData = calcSMA(data, sma);
 			return smaData;
@@ -800,7 +804,7 @@ public class DB_Charting {
 		sqlc.setDateRange(sdate, edate);
 		ArrayList<ArrayList<String>> data = sqlc.selectCols(tname, colNames);
 		Collections.reverse(data);
-		AhrAL.print(data);
+		//AhrAL.print(data);
 		if(sma > 1 && colNames.size() == 2 && data.size() >= sma){
 			ArrayList<ArrayList<String>> smaData = calcSMA(data, sma);
 			return smaData;
@@ -816,7 +820,7 @@ public class DB_Charting {
 		sqlc.setDateRange(sdate, edate);
 		ArrayList<ArrayList<String>> data = sqlc.selectCols(tname, colNames);
 		Collections.reverse(data);
-		AhrAL.print(data);
+		//AhrAL.print(data);
 		if(sma > 1 && colNames.size() == 2 && data.size() >= sma){
 			ArrayList<ArrayList<String>> smaData = calcSMA(data, sma);
 			return smaData;

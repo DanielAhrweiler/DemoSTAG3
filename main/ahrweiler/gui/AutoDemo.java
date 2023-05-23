@@ -136,7 +136,7 @@ class SingleKeyWorker extends SwingWorker<Void, String>{
 	}
 	@Override
 	protected Void doInBackground() {
-		System.out.println("======= In skWork"+this.itr+" doInBackground() =======");
+		//System.out.println("======= In skWork"+this.itr+" doInBackground() =======");
 		double progress = 0;
 		setProgress((int)progress);
 		int progDB = 10;
@@ -172,18 +172,18 @@ class SingleKeyWorker extends SwingWorker<Void, String>{
 		double step = (100-(progDB+progDB+progBasis+progBasis)) / ((double)totSections * loopNum);
 		//calc SK
 		publish("Running ANN algorithm ... ");
-		System.out.println("Total Sections : " + totSections);
+		//System.out.println("Total Sections : " + totSections);
 		for(int i = 0; i < (totSections*loopNum); i++){
 			if(!isCancelled()){
-				System.out.print(i+",");
+				//System.out.print(i+",");
 				ann.calcSKBySection(i%totSections);
 				progress += step;
 				setProgress((int)Math.round(progress));
 			}else{
-				System.out.println("Thread skWork"+this.itr+" is cancelled().");
+				//System.out.println("Thread skWork"+this.itr+" is cancelled().");
 			}
 		}
-		System.out.println("DONE");
+		//System.out.println("DONE");
 		//save created SK info to file
 		ann.writeToFileSK();
 		//create basis file (calc actual predictions)
@@ -204,7 +204,7 @@ class SingleKeyWorker extends SwingWorker<Void, String>{
 		progress += (double)progBasis;
 		setProgress((int)progress);
 
-		System.out.println("--> End of doInBackground()");
+		//System.out.println("--> End of doInBackground()");
 		return null;
 	}
 	@Override
@@ -245,7 +245,7 @@ class AggKeyWorker extends SwingWorker<Void, String>{
 
 	@Override
 	protected Void doInBackground(){
-		System.out.println("======= In akWork doInBackground() =======");
+		//System.out.println("======= In akWork doInBackground() =======");
 		setProgress(0);
 		publish("Writing Basic AK Info To File ...");
 		ArrayList<ArrayList<String>> laFile = AhrIO.scanFile(this.laPath, ",");
@@ -310,7 +310,7 @@ class AggKeyWorker extends SwingWorker<Void, String>{
 		akLongLine.set(fciLA.getIdx("best_keys"), skeysLongStr);
 		laFile.add(akLongLine);
 		AhrIO.writeToFile(this.laPath, laFile, ",");
-		System.out.println("--> akWork1 -> doInBackground() -> after writeToFile()");
+		//System.out.println("--> akWork1 -> doInBackground() -> after writeToFile()");
 		//create AK basis files (both short and long)
 		setProgress(20);
 		publish("Creating Short Aggregate Key (AK"+sakStr+") ...");
@@ -332,7 +332,7 @@ class AggKeyWorker extends SwingWorker<Void, String>{
 		akLong.perfToFileAK(longPerf);
 		setProgress(100);	
 
-		System.out.println("--> End of doInBackground()");
+		//System.out.println("--> End of doInBackground()");
 		return null;
 	}
 	@Override
@@ -482,7 +482,7 @@ class BimSomOptWorker extends SwingWorker<Void, String>{
 				dates.remove(elimDates.get(j));
 			}
 		}
-		System.out.println("--> In bsoWork, dates left after rnd basis creation : " + dates);
+		//System.out.println("--> In bsoWork, dates left after rnd basis creation : " + dates);
 		//write rnd basis file
 		AhrIO.writeToFile("./../out/sk/baseis/rnd/RND_"+String.valueOf(totSamplings)+".txt", allRND, ",");
 		//write new lines to keys_struct & keys_perf
@@ -538,7 +538,7 @@ class BimSomOptWorker extends SwingWorker<Void, String>{
 		progress += progressSteps[4];
 		setProgress(progress);
 
-		System.out.println("--> End of doInBackground()");
+		//System.out.println("--> End of doInBackground()");
 		return null;
 	}
 	@Override
@@ -1015,7 +1015,7 @@ public class AutoDemo {
 				BenchmarkWorker bmWork = new BenchmarkWorker(tBenchmark, totSamplings);
 				bmWork.addPropertyChangeListener(bmPCL);
 				bmWork.execute();
-				System.out.println("--> Post bmWork thread.");
+				//System.out.println("--> Post bmWork thread.");
 			}
 		});
 		bPlot.addActionListener(new ActionListener(){
@@ -1099,7 +1099,7 @@ public class AutoDemo {
 					}
 					for(int i = 0; i < 6; i++){
 						avgs[i] = avgs[i] / (double)counts[i];
-						System.out.println("Avg"+i+" : "+String.format("%.3f", avgs[i]));
+						//System.out.println("Avg"+i+" : "+String.format("%.3f", avgs[i]));
 					}
 					//R related paths and plot dims
 					String dataPath = "./../data/r/rdata/ad_mappr_baw.csv";
@@ -1340,13 +1340,13 @@ public class AutoDemo {
 			int lastLongRowIdx = laFile.size()-1;
 			String shortID = laFile.get(lastShortRowIdx).get(fciLA.getIdx("ak_num"));
 			String shortBimSom = laFile.get(lastShortRowIdx).get(fciLA.getIdx("ak_bso"));
-			System.out.println("--> shortBimSom = " + shortBimSom);
+			//System.out.println("--> shortBimSom = " + shortBimSom);
 			String shortBim = shortBimSom.split("\\|")[0];
 			String shortSom = shortBimSom.split("\\|")[1];
 			String shortAPAPT = laFile.get(lastShortRowIdx).get(fciLA.getIdx("bso_test_apapt"));
 			String longID = laFile.get(lastLongRowIdx).get(fciLA.getIdx("ak_num"));
 			String longBimSom = laFile.get(lastLongRowIdx).get(fciLA.getIdx("ak_bso"));
-			System.out.println("--> longBimSom = " + longBimSom);
+			//System.out.println("--> longBimSom = " + longBimSom);
 			String longBim = longBimSom.split("\\|")[0];
 			String longSom = longBimSom.split("\\|")[1];
 			String longAPAPT = laFile.get(lastLongRowIdx).get(fciLA.getIdx("bso_test_apapt"));

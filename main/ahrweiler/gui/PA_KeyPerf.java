@@ -275,7 +275,7 @@ public class PA_KeyPerf {
 				String keyNum = cbKeyNum.getSelectedItem().toString();
 				int tvi = -1;
 				if(rbSK.isSelected()){
-					String ksPath = "./../out/sk/log/keys_struct.txt";
+					String ksPath = "./../out/sk/log/ann/keys_struct.txt";
 					FCI fciKS = new FCI(true, ksPath);
 					ArrayList<String> ksRow = AhrIO.scanRow(ksPath, ",", keyNum);
 					tvi = Integer.parseInt(ksRow.get(fciKS.getIdx("tvi")));
@@ -393,7 +393,7 @@ public class PA_KeyPerf {
 				kmonik += knum; 
 				//get plot for selected option
 				int idx = cbBgmPlots.getSelectedIndex();
-				System.out.println("==> Plot Idx = " + idx);
+				//System.out.println("==> Plot Idx = " + idx);
 				if(idx == 0){//appr distn: b&w and cumlative
 					//basic plot vars
 					String plotPathBaw = "./../resources/pa_distn_baw.png";
@@ -419,8 +419,8 @@ public class PA_KeyPerf {
 					double trimVal = 0.025;	//0-1, what % of vals you want trimmed on top & bot
 					int startTrim = (int)((double)methAppr.size() * trimVal);
 					int endTrim = (int)((double)methAppr.size() - ((double)methAppr.size() * trimVal));
-					System.out.println("StartTrim = "+startTrim+"  |  EndTrim = "+endTrim+"  |  "+
-									"Count = "+methAppr.size());
+					//System.out.println("StartTrim = "+startTrim+"  |  EndTrim = "+endTrim+"  |  "+
+					//				"Count = "+methAppr.size());
 					for(int i = startTrim; i < endTrim; i++){
 						trimAppr.add(Double.parseDouble(methAppr.get(i)));
 					}
@@ -698,7 +698,8 @@ public class PA_KeyPerf {
 			public void actionPerformed(ActionEvent e){
 				String sfName = cbFilter.getSelectedItem().toString();
 				if(sfName.equals("None")){
-					System.out.println("==> No filter selected.");
+					String message = "No filter selected.";
+					JOptionPane.showMessageDialog(frame, message, "Input Error", JOptionPane.ERROR_MESSAGE);
 				}else{
 					ArrayList<ArrayList<String>> fc = AhrIO.scanFile("./../data/filters/"+sfName+".txt", "~");
 					System.out.println("===== Active Filters for "+sfName+" ====="); 
@@ -817,7 +818,8 @@ public class PA_KeyPerf {
 					growth.add(0, growthHeader);
 					AhrIO.writeToFile("./../data/r/rdata/pa_portgrowth.csv", AhrDTF.melt(growth, "date"), ",");
 				}else{
-					System.out.println("ERR: " + bsPath +" does not exist.");
+					String message = "The path : "+bsPath+" does not exist.";
+					JOptionPane.showMessageDialog(frame, message, "Path Error", JOptionPane.ERROR_MESSAGE);
 				}
 				//resume GUI
 				frame.setCursor(null);
@@ -834,7 +836,7 @@ public class PA_KeyPerf {
 				int ydim = 650;
 				//get plot for selected option
 				int idx = cbRndPlots.getSelectedIndex();
-				System.out.println("==> Plot Idx = " + idx);
+				//System.out.println("==> Plot Idx = " + idx);
 				if(idx == 0){//appr distn: b&w and cumlative
 					String plotPathBaw = "./../resources/pa_distn_baw.png";
 					String plotPathCdf = "./../resources/pa_distn_cdf.png";
@@ -851,8 +853,8 @@ public class PA_KeyPerf {
 					double trimVal = 0.025;	//0-1, what % of vals you want trimmed on top & bot
 					int startTrim = (int)((double)methAppr.size() * trimVal);
 					int endTrim = (int)((double)methAppr.size() - ((double)methAppr.size() * trimVal));
-					System.out.println("StartTrim = "+startTrim+"  |  EndTrim = "+endTrim+"  |  "+
-									"Count = "+methAppr.size());
+					//System.out.println("StartTrim = "+startTrim+"  |  EndTrim = "+endTrim+"  |  "+
+					//				"Count = "+methAppr.size());
 					for(int i = startTrim; i < endTrim; i++){
 						trimAppr.add(Double.parseDouble(methAppr.get(i)));
 					}
@@ -1318,16 +1320,17 @@ public class PA_KeyPerf {
 				String rawSecStr = tfSector.getText();
 				String rawIndStr = taIndustry.getText();
 				boolean good_vals = true;
+				String errMessage = "Error(s):\n";
 				if(!mcStart.matches("[0-9]+") || !mcEnd.matches("[0-9]+")){
-					System.out.println("ERR: market cap values must be integers.");
+					errMessage += "\nMarket cap values must be integers.";
 					good_vals = false;
 				}
 				if(!rawSecStr.replace(",","").matches("[0-9]+")){
-					System.out.println("ERR: sector values must be comma seperated integers");
+					errMessage += "\nSector values must be comma seperated integers";
 					good_vals = false;
 				} 
 				if(!rawIndStr.replace(",","").matches("[0-9]+") && !rawIndStr.equals("")){
-					System.out.println("ERR: industry values must be comma seperated integers.");
+					errMessage += "\nIndustry values must be comma seperated integers.";
 					good_vals = false;
 				}
 				if(good_vals){
@@ -1336,6 +1339,8 @@ public class PA_KeyPerf {
 					sf.setIndustries(rawIndStr);
 					taFilterDetails.setText(sf.getText());
 					dialog.setVisible(true);
+				}else{
+					JOptionPane.showMessageDialog(dialog, errMessage, "Input Error", JOptionPane.ERROR_MESSAGE);
 				}
 			}
 		});
@@ -1350,7 +1355,8 @@ public class PA_KeyPerf {
 					sf.addIndicatorFilter(AhrAL.toAL(new String[]{indNum, rngStart, rngEnd}));
 					taFilterDetails.setText(sf.getText());
 				}else{
-					System.out.println("ERR: indicator values can only be numbers.");
+					String message = "Indicator values can only be integers in range [0-65535]";
+					JOptionPane.showMessageDialog(dialog, message, "Input Error", JOptionPane.ERROR_MESSAGE);
 				}
 			}
 		});
@@ -1433,7 +1439,7 @@ public class PA_KeyPerf {
 		if(filterName.equals("None")){//no filtering of rnd selection
 			for(int i = 0; i < dates.size(); i++){
 				if(i%50 == 0){
-					System.out.println("--> Rnd Basis File progress: "+i+" out of "+dates.size());
+					//System.out.println("--> Rnd Basis File progress: "+i+" out of "+dates.size());
 				}
 				ArrayList<String> tickers = AhrIO.scanCol("./../../DB_Intrinio/Clean/ByDate/"+dates.get(i)+".txt",
 											"~", fciBD.getIdx("ticker"));
@@ -1462,7 +1468,7 @@ public class PA_KeyPerf {
 				if(i%2 == 0){
 					//System.out.println("--> Rnd Basis File progress: "+i+" out of "+dates.size());
 				}
-				System.out.println("==> In applyFilter("+dates.get(i)+")");
+				//System.out.println("==> In applyFilter("+dates.get(i)+")");
 				sf.applyFilter(dates.get(i));
 				ArrayList<ArrayList<String>> results = sf.getResults();
 				int flexibleSS = sampleSize;
@@ -1481,7 +1487,7 @@ public class PA_KeyPerf {
 					while(uniqTickers.contains(results.get(rndIdx).get(0))){
 						rndIdx = rnd.nextInt(results.size());
 						//System.out.print(rndIdx+", ");
-						System.out.println("--> uniqTicker size = " + uniqTickers.size());
+						//System.out.println("--> uniqTicker size = " + uniqTickers.size());
 					}
 					uniqTickers.add(results.get(rndIdx).get(0));
 					line.add(dates.get(i));

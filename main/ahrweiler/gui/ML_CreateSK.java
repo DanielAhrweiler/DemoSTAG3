@@ -148,10 +148,13 @@ public class ML_CreateSK {
 		});
 		bCalcSK1.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				System.out.println("--> Calculate SK for ANN");
+				//System.out.println("--> Calculate SK for ANN");
+				frame.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
 				//set up algo info
 				String ksPath = "./../out/sk/log/ann/keys_struct.txt";
+				String kpPath = "./../out/sk/log/ann/keys_perf.txt";
 				FCI fciKS = new FCI(true, ksPath);
+				FCI fciKP = new FCI(true, kpPath);
 				ArrayList<ArrayList<String>> keys = AhrIO.scanFile(ksPath,",");
 				int maxID = -1;
 				if(keys.size() > 1){
@@ -194,35 +197,60 @@ public class ML_CreateSK {
 				}
 				algo.setIndMask(indMask);
 				//run the ANN
-				System.out.println("--> In ML_CreateSK, calc SK"+id+" and SK"+(id+1));
+				//System.out.println("--> In ML_CreateSK, calc SK"+id+" and SK"+(id+1));
 				long time1 = System.currentTimeMillis();
 				algo.calcSK();
+				//create basis file
 				long time2 = System.currentTimeMillis();
 				BGM_Manager skShort = new BGM_Manager("ANN", id);
 				skShort.genBasisSK(id);
+				//calc perf for short SK
+				ArrayList<String> perfMetrics = new ArrayList<String>();
 				long time3 = System.currentTimeMillis();
 				String shortBasisPath = "./../out/sk/baseis/ann/ANN_"+String.valueOf(id)+".txt";
 				ArrayList<String> shortPerf = skShort.perfFromBasisFile(shortBasisPath);
+				perfMetrics.add(shortPerf.get(3));
+				perfMetrics.add(shortPerf.get(4));
 				skShort.perfToFileSK(shortPerf);			//save short basic SK perf to keys_perf
 				skShort.bsoPerfToFileSK(true, false);		//save short BSO perf to keys_perf
+				perfMetrics.add(AhrIO.scanCell(kpPath, ",", String.valueOf(id), fciKP.getIdx("bso_test_apapt")));
+				//calc perf for long SK
 				long time4 = System.currentTimeMillis();
 				BGM_Manager skLong = new BGM_Manager("ANN", id+1);
 				skLong.genBasisSK(id+1);
 				long time5 = System.currentTimeMillis();
 				String longBasisPath = "./../out/sk/baseis/ann/ANN_"+String.valueOf(id+1)+".txt";
 				ArrayList<String> longPerf = skLong.perfFromBasisFile(longBasisPath);
+				perfMetrics.add(longPerf.get(3));
+				perfMetrics.add(longPerf.get(4));
 				skLong.perfToFileSK(longPerf);				//save long basic SK perf to keys_perf
 				skLong.bsoPerfToFileSK(true, false);		//save long BSO perf to keys_perf
+				perfMetrics.add(AhrIO.scanCell(kpPath, ",", String.valueOf(id+1), fciKP.getIdx("bso_test_apapt")));
 				long time6 = System.currentTimeMillis();
 
 
-				System.out.println("******* Time Marks *****\n"+
-									"--> calcSK() : "+(time2-time1)+" ms\n"+
-									"--> Gen Short Basis : "+(time3-time2)+" ms\n"+
-									"--> Calc Short Perf : "+(time4-time3)+" ms\n"+
-									"--> Gen Long Basis  : "+(time5-time4)+" ms\n"+
-									"--> Calc Long Perf  : "+(time6-time5)+" ms\n");
-				System.out.println("==> SK calculated and info printed to files.");
+				//System.out.println("******* Time Marks *****\n"+
+				//					"--> calcSK() : "+(time2-time1)+" ms\n"+
+				//					"--> Gen Short Basis : "+(time3-time2)+" ms\n"+
+				//					"--> Calc Short Perf : "+(time4-time3)+" ms\n"+
+				//					"--> Gen Long Basis  : "+(time5-time4)+" ms\n"+
+				//					"--> Calc Long Perf  : "+(time6-time5)+" ms\n");
+
+				//display sk info
+				frame.setCursor(null);
+				String message = "SK"+String.valueOf(id)+" created successfully."+
+								"\nSome test dataset metrics ..."+
+								"\n   > Plateau APAPT = "+perfMetrics.get(0)+
+								"\n   > True APAPT    = "+perfMetrics.get(1)+
+								"\n   > BSO APAPT     = "+perfMetrics.get(2)+ 
+								"\nSK"+String.valueOf(id+1)+" created successfully."+
+								"\nSome test dataset metrics ..."+
+								"\n   > Plateau APAPT = "+perfMetrics.get(3)+
+								"\n   > True APAPT    = "+perfMetrics.get(4)+
+								"\n   > BSO APAPT     = "+perfMetrics.get(5)+
+								"\nTheir parameters and full performance metrics can be seen at :"+
+								"\n   Machine Learning -> SK, AK, Basis Info -> Single Keys";
+				JOptionPane.showMessageDialog(frame, message, "Key Created", JOptionPane.PLAIN_MESSAGE);
 			}
 		});
 

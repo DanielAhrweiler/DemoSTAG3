@@ -275,8 +275,8 @@ public class STAG3 {
 				}
 			}
 		}
-		System.out.println("--> All SKs not in score_percentiles.txt");
-		AhrAL.print(allSK);
+		//System.out.println("--> All SKs not in score_percentiles.txt");
+		//AhrAL.print(allSK);
 		//itr thru all new SKs, write percentiles to file
 		ArrayList<ArrayList<String>> tf = AhrIO.scanFile("./../out/score_percentiles.txt", ",");
 		String skbPath = "./../out/sk/baseis/";
@@ -317,7 +317,8 @@ public class STAG3 {
 			tf.add(line);
 		}
 		AhrIO.writeToFile("./../out/score_percentiles.txt", tf, ",");
-		System.out.println("--> score_precentiles.txt ... UPDATED");
+		String message = "File score_percentiles.txt has been update.";
+		JOptionPane.showMessageDialog(null, message, "Update", JOptionPane.PLAIN_MESSAGE);
 	}
 
 

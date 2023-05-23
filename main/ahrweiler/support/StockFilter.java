@@ -116,8 +116,8 @@ public class StockFilter {
 		this.indRanges = new ArrayList<NameAndRange>();
 		//sort out the filter lines
 		ArrayList<ArrayList<String>> filters = AhrIO.scanFile(fpath, "~");
-		System.out.println("--> In StockFilter(fpath) constructor, filters are ...");
-		AhrAL.print(filters);
+		//System.out.println("--> In StockFilter(fpath) constructor, filters are ...");
+		//AhrAL.print(filters);
 		for(int i = 0; i < filters.size(); i++){
 			if(filters.get(i).get(0).contains("ind") && !filters.get(i).get(0).equals("industry")){
 				this.indRanges.add(new NameAndRange(filters.get(i)));
@@ -211,7 +211,7 @@ public class StockFilter {
 	public void applySecIndFilterOld(){
 		//cols [0]    ticker
 		//	   [1]    sec/ind code
-		System.out.println("--> In applySecIndFilter()");
+		//System.out.println("--> In applySecIndFilter()");
 
 		//get all (non xx) codes from sector_ticks.txt
 		ArrayList<ArrayList<String>> stFC = AhrIO.scanFile("./../in/sector_ticks.txt", ",");
@@ -223,8 +223,8 @@ public class StockFilter {
 			}
 		}
 	
-		System.out.println("--> Sector List : " + this.sectors);
-		System.out.println("--> Industry List : " + this.industries);
+		//System.out.println("--> Sector List : " + this.sectors);
+		//System.out.println("--> Industry List : " + this.industries);
 		//determine all sectors/industries (no xx) to get tickers from in sector_ticks.txt
 		ArrayList<Integer> stList = new ArrayList<Integer>();
 		if(this.industries.size() > 0){
@@ -243,7 +243,7 @@ public class StockFilter {
 				}
 			}
 		}
-		System.out.println("  > stList = " + stList);
+		//System.out.println("  > stList = " + stList);
 		//itr thru sector_ticks.txt and add all necessary tickers
 		ArrayList<String> scTicks = new ArrayList<String>();
 		for(int i = 0; i < stFC.size(); i++){
@@ -284,8 +284,8 @@ public class StockFilter {
 			}
 		}
 	
-		System.out.println("--> Sector List : " + this.sectors);
-		System.out.println("--> Industry List : " + this.industries);
+		//System.out.println("--> Sector List : " + this.sectors);
+		//System.out.println("--> Industry List : " + this.industries);
 		//determine all sectors/industries (no xx) to get tickers from in sector_ticks.txt
 		ArrayList<Integer> stList = new ArrayList<Integer>();
 		if(this.industries.size() > 0){
@@ -304,7 +304,7 @@ public class StockFilter {
 				}
 			}
 		}
-		System.out.println("  > stList = " + stList);
+		//System.out.println("  > stList = " + stList);
 		//itr thru sector_ticks.txt and add all necessary tickers
 		ArrayList<String> passCodes = new ArrayList<String>();
 		for(int i = 0; i < secTicks.size(); i++){
@@ -401,8 +401,8 @@ public class StockFilter {
 
 	//apply all filter lines and return all stocks that fall within all ranges
 	public void applyFilter(String date){
-		System.out.println("--> In applyFilter("+date+")");
-		System.out.println("--> sf text :\n"+getText());
+		//System.out.println("--> In applyFilter("+date+")");
+		//System.out.println("--> sf text :\n"+getText());
 		//cols [0]  ticker
 		//	   [1]  mc
 		//	   [2]  code
@@ -447,123 +447,6 @@ public class StockFilter {
 			results.add(line);
 		}
 		
-		/*
-		//check to see if pass MC rule, and all indicator range rules
-		long stime = System.currentTimeMillis();
-		if(Globals.uses_mysql_source){
-			//check MC first
-			SQLCode sqlc = new SQLCode("aws");
-			sqlc.setDB("sbase");
-			sqlc.addWhereCond("WHERE `date` = '2022-05-27' AND `market_cap` BETWEEN "+this.mcRange.getStartVal()+
-								" AND "+this.mcRange.getEndVal());
-			//get table names, col names and fetch data (MC)
-			ArrayList<String> tnames = AhrAL.getCol(this.scodes, 0);
-			ArrayList<String> colNames = AhrAL.toAL(new String[]{"ticker", "market_cap"});
-			ArrayList<ArrayList<String>> passMC = sqlc.selectUnion(tnames, colNames);
-			//System.out.println("--> MySQL Passes MC : ");
-			//AhrAL.print(passMC);
-			//check indicator ranges
-			sqlc = new SQLCode("aws");
-			sqlc.setDB("snorm");
-			sqlc.addWhereCond("WHERE `date` = '2022-05-27'");
-			colNames = new ArrayList<String>();
-			colNames.add("ticker");
-			for(int i = 0; i < this.indRanges.size(); i++){
-				NameAndRange itrInd = this.indRanges.get(i);
-				String itrName = itrInd.getName();
-				colNames.add(itrName);
-				int itrStartRange = itrInd.getStartVal();
-				int itrEndRange = itrInd.getEndVal();
-				String wcond = "WHERE `"+itrName+"` BETWEEN "+itrStartRange+" AND "+itrEndRange;
-				sqlc.addWhereCond(wcond);
-			}
-			//get table names, col names and fetch data (MC)
-			tnames = AhrAL.getCol(passMC, 0);
-			ArrayList<ArrayList<String>> passInds = new ArrayList<ArrayList<String>>();
-			if(colNames.size() > 0){
-				passInds = sqlc.selectUnion(tnames, colNames);
-			}
-			//System.out.println("--> MySQL Passes Indicators : ");
-			//AhrAL.print(passInds);
-			//add MC and sec/ind codes into passInds for final filter data struct
-			for(int i = 0; i < passInds.size(); i++){
-				String itrTick = passInds.get(i).get(0);
-				int mcIdx = AhrAL.getRowIdx(passMC, itrTick);
-				int scIdx = AhrAL.getRowIdx(this.scodes, itrTick);
-				if(mcIdx != -1 && scIdx != -1){
-					ArrayList<String> line = passInds.get(i);
-					line.add(1, passMC.get(mcIdx).get(1));
-					line.add(2, this.scodes.get(scIdx).get(1));
-					this.results.add(line);
-				}
-			}
-			//System.out.println("--> Final Results (MySQL) ...");
-			//AhrAL.print(this.results);
-		}else{
-			for(int i = 0; i < this.scodes.size(); i++){
-				String ticker = this.scodes.get(i).get(0);
-				String scode = this.scodes.get(i).get(1);
-				if(i%500==0){
-					//System.out.println("--> bdFile progress: "+i+" out of "+bdFile.size());
-				}
-				ArrayList<String> vals = new ArrayList<String>();
-				double mcVal = -1.0;
-				boolean is_in_bd = true;
-				boolean passes_ind_rules = true;
-				boolean passes_mc = true;
-				for(int j = 0; j < this.indRanges.size(); j++){
-					NameAndRange itrNAR = this.indRanges.get(j);
-					String vname = itrNAR.getName();
-					int vrs = itrNAR.getStartVal();
-					int vre = itrNAR.getEndVal();
-					int bdIdx = AhrAL.getRowIdx(bdFile, ticker);
-					if(bdIdx == -1){
-						is_in_bd = false;
-					}else{
-						int itrVal = Integer.parseInt(bdFile.get(bdIdx).get(fciBD.getIdx(vname)));
-						if(itrVal < vrs || itrVal > vre){
-							passes_ind_rules = false;
-						}
-						vals.add(String.valueOf(itrVal));
-					}
-
-				}
-				if(is_in_bd && passes_ind_rules){//still have to check for mc, industry and sector
-					//check market cap
-					FCI fciSB = new FCI(false, "./../../DB_Intrinio/Main/S_Base/");
-					ArrayList<String> sbLine = new ArrayList<String>();
-					if(!Globals.uses_mysql_source){
-						SQLCode sqlc = new SQLCode("aws");
-						sqlc.setDB("sbase");
-						sqlc.addWhereCond("WHERE `date` = '"+date+"'");
-						//sbLine = sqlc.selectUnion(ticker, AhrAL.toAL(new String[]{"*"}), date, true);
-					}else{
-						sbLine = AhrIO.scanRow("./../../DB_Intrinio/Main/S_Base/"+ticker+".txt","~",date);
-					}
-					//System.out.println("--> Date: "+date+"  |  Ticker: "+ticker+"  | sbLine: "+sbLine);
-					if(sbLine.size() < fciSB.getTags().size()){
-						//System.out.println("ERR ==> sbLine: "+sbLine);
-						//errTicks.add(ticker);
-					}else{
-						mcVal = Double.parseDouble(sbLine.get(fciSB.getIdx("market_cap")));
-					}
-					if(mcVal < this.mcRange.getStartVal() || mcVal > this.mcRange.getEndVal()){
-						passes_mc = false;
-					}
-				}
-				//System.out.println("Is In BD: "+is_in_bd+"  |  Passes Ind Rules: "+passes_ind_rules+"  |  Passes MC: "+passes_mc);
-				if(is_in_bd && passes_ind_rules && passes_mc){
-					vals.add(0, scode);
-					vals.add(0, String.format("%.4f", mcVal));
-					vals.add(0, ticker);
-					this.results.add(vals);
-				}
-			}
-		}
-		long etime = System.currentTimeMillis();
-		System.out.println("Elapsed Time : " + (etime - stime) + " ms");
-		*/
-
 		//print out results
 		//System.out.println("==> Error Ticks on "+date+" ("+errTicks.size()+" total): "+errTicks);
 		//System.out.println("--> Final Results ... ");

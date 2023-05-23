@@ -108,9 +108,9 @@ public class TableSortPanel extends JPanel {
 		this.header = header;
 		this.data = data;
 		dtm = new DefaultTableModel(data, header);
-		System.out.println("DTM   :\n  -> Cols = "+dtm.getColumnCount()+"\n  -> Rows = "+dtm.getRowCount());	
+		//System.out.println("DTM   :\n  -> Cols = "+dtm.getColumnCount()+"\n  -> Rows = "+dtm.getRowCount());	
 		table.setModel(dtm);
-		System.out.println("Table :\n  -> Cols = "+table.getColumnCount()+"\n  -> Rows = "+table.getRowCount());	
+		//System.out.println("Table :\n  -> Cols = "+table.getColumnCount()+"\n  -> Rows = "+table.getRowCount());	
 		setColWidths();
 		cbSortCol.removeAllItems();
 		for(int i = 0; i < this.header.length; i++){
@@ -135,7 +135,7 @@ public class TableSortPanel extends JPanel {
 	}
 	//set column widths according to data
 	public void setColWidths(){
-		System.out.println("TSP Width = " + this.getWidth());
+		//System.out.println("TSP Width = " + this.getWidth());
 		ArrayList<Integer> minWidths = new ArrayList<Integer>();
 		ArrayList<Integer> prefWidths = new ArrayList<Integer>();
 		int totMinWidth = 0;

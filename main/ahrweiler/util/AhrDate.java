@@ -271,7 +271,7 @@ public class AhrDate {
 
 	//sort a 2D AL by date (assuming date is 1st col)
 	public static void sortByDate(ArrayList<ArrayList<String>> al, boolean is_asc){
-		System.out.println("--> in sortByDate()");
+		//System.out.println("--> in sortByDate()");
 		Collections.sort(al, new Comparator<ArrayList<String>>(){
 			@Override
 			public int compare(ArrayList<String> obj1, ArrayList<String> obj2){
@@ -283,7 +283,7 @@ public class AhrDate {
 						compVal = str1.compareTo(str2);
 					}
 				}
-				System.out.println("str1 = " +str1+"  |  str2 = "+str2+"\n--> compVal = "+compVal);
+				//System.out.println("str1 = " +str1+"  |  str2 = "+str2+"\n--> compVal = "+compVal);
 				return compVal;
 			}
 		});	
