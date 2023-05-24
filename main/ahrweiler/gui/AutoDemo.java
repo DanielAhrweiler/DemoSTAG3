@@ -45,7 +45,7 @@ class BenchmarkWorker extends SwingWorker<ArrayList<ArrayList<Double>>, ArrayLis
 	BenchmarkWorker(JTable table, int totSamplings){
 		this.table = table;
 		this.totSamplings = totSamplings;
-		this.kpPath = "./../out/sk/log/rnd/keys_perf.txt";
+		this.kpPath = AhrIO.uniPath("./../out/sk/log/rnd/keys_perf.txt");
 		fciKP = new FCI(true, kpPath);			
 	}
 	@Override
@@ -190,7 +190,7 @@ class SingleKeyWorker extends SwingWorker<Void, String>{
 		publish("Calculating Short Predictions ... ");
 		BGM_Manager shortSK = new BGM_Manager("ANN", ann.getID());
 		shortSK.genBasisSK(ann.getID());
-		String shortBasisPath = "./../out/sk/baseis/ann/ANN_"+String.valueOf(ann.getID())+".txt";
+		String shortBasisPath = AhrIO.uniPath("./../out/sk/baseis/ann/ANN_"+String.valueOf(ann.getID())+".txt");
 		ArrayList<String> shortPerf = shortSK.perfFromBasisFile(shortBasisPath);
 		shortSK.perfToFileSK(shortPerf);	
 		progress += (double)progBasis;
@@ -198,7 +198,7 @@ class SingleKeyWorker extends SwingWorker<Void, String>{
 		publish("Calculating Long Predictions ... ");
 		BGM_Manager longSK = new BGM_Manager("ANN", ann.getID()+1);
 		longSK.genBasisSK(ann.getID()+1);
-		String longBasisPath = "./../out/sk/baseis/ann/ANN_"+String.valueOf(ann.getID()+1)+".txt";
+		String longBasisPath = AhrIO.uniPath("./../out/sk/baseis/ann/ANN_"+String.valueOf(ann.getID()+1)+".txt");
 		ArrayList<String> longPerf = longSK.perfFromBasisFile(longBasisPath);
 		longSK.perfToFileSK(longPerf);
 		progress += (double)progBasis;
@@ -227,9 +227,9 @@ class AggKeyWorker extends SwingWorker<Void, String>{
 	private JLabel lb;
 	private JProgressBar pb;
 	public AggKeyWorker(JLabel lb, JProgressBar pb){
-		this.ksPath = "./../out/sk/log/ann/keys_struct.txt";
+		this.ksPath = AhrIO.uniPath("./../out/sk/log/ann/keys_struct.txt");
 		this.fciKS = new FCI(true, this.ksPath);
-		this.laPath = "./../out/ak/log/ak_log.txt";
+		this.laPath = AhrIO.uniPath("./../out/ak/log/ak_log.txt");
 		this.fciLA = new FCI(true, this.laPath);
 		this.lb = lb;
 		this.pb = pb;
@@ -318,7 +318,7 @@ class AggKeyWorker extends SwingWorker<Void, String>{
 		akShort.genBasisAK();
 		setProgress(40);
 		publish("Calculating Performance For AK"+sakStr+" ...");
-		String shortPath = "./../out/ak/baseis/ann/ANN_"+sakStr+".txt";
+		String shortPath = AhrIO.uniPath("./../out/ak/baseis/ann/ANN_"+sakStr+".txt");
 		ArrayList<String> shortPerf = akShort.perfFromBasisFile(shortPath);
 		akShort.perfToFileAK(shortPerf);
 		setProgress(60);
@@ -327,7 +327,7 @@ class AggKeyWorker extends SwingWorker<Void, String>{
 		akLong.genBasisAK();
 		setProgress(80);
 		publish("Calculating Performance For AK"+lakStr+" ...");
-		String longPath = "./../out/ak/baseis/ann/ANN_"+lakStr+".txt";
+		String longPath = AhrIO.uniPath("./../out/ak/baseis/ann/ANN_"+lakStr+".txt");
 		ArrayList<String> longPerf = akLong.perfFromBasisFile(longPath);
 		akLong.perfToFileAK(longPerf);
 		setProgress(100);	
@@ -358,7 +358,7 @@ class BimSomOptWorker extends SwingWorker<Void, String>{
 	private int picDimY;
 	private int totSamplings;
 	public BimSomOptWorker(JLabel lb, JProgressBar pb, int dimX, int dimY, int totSamplings){
-		this.laPath = "./../out/ak/log/ak_log.txt";
+		this.laPath = AhrIO.uniPath("./../out/ak/log/ak_log.txt");
 		this.fciLA = new FCI(true, this.laPath);
 		this.lb = lb;
 		this.pb = pb;
@@ -377,7 +377,7 @@ class BimSomOptWorker extends SwingWorker<Void, String>{
 
 	@Override
 	protected Void doInBackground(){
-		String bmPath = "./../data/tmp/bso_multiple.txt";
+		String bmPath = AhrIO.uniPath("./../data/tmp/bso_multiple.txt");
 		FCI fciBM = new FCI(false, bmPath);
 		int progress = 0;
 		setProgress(progress);
@@ -397,20 +397,20 @@ class BimSomOptWorker extends SwingWorker<Void, String>{
 		setProgress(progress);
 		//===== short AK =====
 		String sakName = "AK"+String.valueOf(shortID);
-		String shortDataPath = "./../data/r/rdata/demo_short_heat.csv";
-		String shortPlotPath = "./../resources/demo_short_heat.png";
-		String shortScriptPath = "./../data/r/rscripts/demo_short_heat.R";
+		String shortDataPath = AhrIO.uniPath("./../data/r/rdata/demo_short_heat.csv");
+		String shortPlotPath = AhrIO.uniPath("./../resources/demo_short_heat.png");
+		String shortScriptPath = AhrIO.uniPath("./../data/r/rscripts/demo_short_heat.R");
 		//[1] calc BSO
 		publish("Calculating BIM/SOM Optimization for "+sakName+" (short calls) ...");
 		BGM_Manager akShort = new BGM_Manager(shortID);
 		OrderSim osimShort = new OrderSim(shortID);
 		osimShort.setTtvMask("010");
 		osimShort.calcBSO();
-		ArrayList<ArrayList<String>> orderlist = AhrIO.scanFile("./../data/tmp/os_orderlist.txt", ",");
+		ArrayList<ArrayList<String>> orderlist = AhrIO.scanFile(AhrIO.uniPath("./../data/tmp/os_orderlist.txt"), ",");
 		ArrayList<String> firstLine = new ArrayList<String>();
 		firstLine.add(String.format("%.2f", osimShort.getYoyAppr()));
 		orderlist.add(0, firstLine);
-		AhrIO.writeToFile("./../data/tmp/ad_ol_short_bso.txt", orderlist, ",");
+		AhrIO.writeToFile(AhrIO.uniPath("./../data/tmp/ad_ol_short_bso.txt"), orderlist, ",");
 		akShort.bsoPerfToFileAK(osimShort);
 		progress += progressSteps[1];
 		setProgress(progress);
@@ -428,20 +428,20 @@ class BimSomOptWorker extends SwingWorker<Void, String>{
 		AhrIO.writeToFile(shortDataPath, shortRF, ",");
 		//===== long AK =====
 		String lakName = "AK"+String.valueOf(longID);
-		String longDataPath = "./../data/r/rdata/demo_long_heat.csv";
-		String longPlotPath = "./../resources/demo_long_heat.png";
-		String longScriptPath = "./../data/r/rscripts/demo_long_heat.R";
+		String longDataPath = AhrIO.uniPath("./../data/r/rdata/demo_long_heat.csv");
+		String longPlotPath = AhrIO.uniPath("./../resources/demo_long_heat.png");
+		String longScriptPath = AhrIO.uniPath("./../data/r/rscripts/demo_long_heat.R");
 		//[1] calc BIM/SOM Opt (BSO)
 		publish("Calculating BIM/SOM Optimization for "+lakName+" (long calls) ...");
 		BGM_Manager akLong = new BGM_Manager(longID);
 		OrderSim osimLong = new OrderSim(longID);
 		osimLong.setTtvMask("010");
 		osimLong.calcBSO();
-		orderlist = AhrIO.scanFile("./../data/tmp/os_orderlist.txt", ",");
+		orderlist = AhrIO.scanFile(AhrIO.uniPath("./../data/tmp/os_orderlist.txt"), ",");
 		firstLine = new ArrayList<String>();
 		firstLine.add(String.format("%.2f", osimLong.getYoyAppr()));
 		orderlist.add(0, firstLine);
-		AhrIO.writeToFile("./../data/tmp/ad_ol_long_bso.txt", orderlist, ",");
+		AhrIO.writeToFile(AhrIO.uniPath("./../data/tmp/ad_ol_long_bso.txt"), orderlist, ",");
 		akLong.bsoPerfToFileAK(osimLong);
 		progress += progressSteps[2];
 		setProgress(progress);
@@ -462,7 +462,7 @@ class BimSomOptWorker extends SwingWorker<Void, String>{
 		AttributesSK kattr = new AttributesSK("./../data/tmp/sk_attrs.txt");
 		ArrayList<String> dates = AhrDate.getDatesBetween(kattr.getSDate(), kattr.getEDate());
 		//create another rnd basis file using all others to fill all dates
-		String bsPath = "./../out/sk/baseis/rnd/";
+		String bsPath = AhrIO.uniPath("./../out/sk/baseis/rnd/");
 		FCI fciBS = new FCI(false, bsPath);
 		ArrayList<String> rndBasisFiles = AhrIO.getFilesInPath(bsPath);
 		ArrayList<ArrayList<String>> allRND = new ArrayList<ArrayList<String>>();
@@ -484,10 +484,11 @@ class BimSomOptWorker extends SwingWorker<Void, String>{
 		}
 		//System.out.println("--> In bsoWork, dates left after rnd basis creation : " + dates);
 		//write rnd basis file
-		AhrIO.writeToFile("./../out/sk/baseis/rnd/RND_"+String.valueOf(totSamplings)+".txt", allRND, ",");
+		String rbPath = AhrIO.uniPath("./../out/sk/baseis/rnd/RND_"+String.valueOf(totSamplings)+".txt");
+		AhrIO.writeToFile(rbPath, allRND, ",");
 		//write new lines to keys_struct & keys_perf
-		String ksPath = "./../out/sk/log/rnd/keys_struct.txt";
-		String kpPath = "./../out/sk/log/rnd/keys_perf.txt";
+		String ksPath = AhrIO.uniPath("./../out/sk/log/rnd/keys_struct.txt");
+		String kpPath = AhrIO.uniPath("./../out/sk/log/rnd/keys_perf.txt");
 		FCI fciKS= new FCI(true, ksPath);
 		FCI fciKP = new FCI(true, kpPath);
 		ArrayList<ArrayList<String>> ksFile = AhrIO.scanFile(ksPath, ",");
@@ -506,7 +507,7 @@ class BimSomOptWorker extends SwingWorker<Void, String>{
 		OrderSim osimRnd = new OrderSim("rnd", totSamplings);
 		osimRnd.setTtvMask("010");
 		osimRnd.calcBSO();
-		orderlist = AhrIO.scanFile("./../data/tmp/os_orderlist.txt", ",");
+		orderlist = AhrIO.scanFile(AhrIO.uniPath("./../data/tmp/os_orderlist.txt"), ",");
 		firstLine = new ArrayList<String>();
 		firstLine.add(String.format("%.3f", osimRnd.getBIM()));
 		firstLine.add(String.format("%.3f", osimRnd.getSOM()));
@@ -514,7 +515,7 @@ class BimSomOptWorker extends SwingWorker<Void, String>{
 		firstLine.add(String.format("%.2f", osimRnd.getYoyAppr()));
 		AhrDate.sortDates2D(orderlist, true, 0);
 		orderlist.add(0, firstLine);
-		AhrIO.writeToFile("./../data/tmp/ad_ol_rnd_bso.txt", orderlist, ",");
+		AhrIO.writeToFile(AhrIO.uniPath("./../data/tmp/ad_ol_rnd_bso.txt"), orderlist, ",");
 		progress += progressSteps[3];
 		setProgress(progress);	
 
@@ -523,18 +524,18 @@ class BimSomOptWorker extends SwingWorker<Void, String>{
 		osimShort.setBIM(0.001);
 		osimShort.setSOM(50.0);
 		osimShort.calcOrderList();
-		orderlist = AhrIO.scanFile("./../data/tmp/os_orderlist.txt", ",");
-		AhrIO.writeToFile("./../data/tmp/ad_ol_short_normal.txt", orderlist, ",");	
+		orderlist = AhrIO.scanFile(AhrIO.uniPath("./../data/tmp/os_orderlist.txt"), ",");
+		AhrIO.writeToFile(AhrIO.uniPath("./../data/tmp/ad_ol_short_normal.txt"), orderlist, ",");	
 		osimLong.setBIM(50.0);
 		osimLong.setSOM(0.001);
 		osimLong.calcOrderList();
-		orderlist = AhrIO.scanFile("./../data/tmp/os_orderlist.txt", ",");
-		AhrIO.writeToFile("./../data/tmp/ad_ol_long_normal.txt", orderlist, ",");	
+		orderlist = AhrIO.scanFile(AhrIO.uniPath("./../data/tmp/os_orderlist.txt"), ",");
+		AhrIO.writeToFile(AhrIO.uniPath("./../data/tmp/ad_ol_long_normal.txt"), orderlist, ",");	
 		osimRnd.setBIM(50.0);
 		osimRnd.setSOM(0.001);
 		osimRnd.calcOrderList();
-		orderlist = AhrIO.scanFile("./../data/tmp/os_orderlist.txt", ",");
-		AhrIO.writeToFile("./../data/tmp/ad_ol_rnd_normal.txt", orderlist, ",");	
+		orderlist = AhrIO.scanFile(AhrIO.uniPath("./../data/tmp/os_orderlist.txt"), ",");
+		AhrIO.writeToFile(AhrIO.uniPath("./../data/tmp/ad_ol_rnd_normal.txt"), orderlist, ",");	
 		progress += progressSteps[4];
 		setProgress(progress);
 
@@ -575,7 +576,7 @@ public class AutoDemo {
 		//lists and over-arching data
 		int picDimX = 440;
 		int picDimY = 500;
-		ImageIcon iiPic = new ImageIcon("./../resources/cool.png");
+		ImageIcon iiPic = new ImageIcon(AhrIO.uniPath("./../resources/cool.png"));
 		AttributesSK defAttrs = new AttributesSK();
 		defAttrs.saveToFile("./../data/tmp/sk_attrs.txt");
 		String[] resultPlotList = new String[]{"Appr Distribution (B&W)", "Portfolio Growth ($)"};
@@ -986,8 +987,8 @@ public class AutoDemo {
 				pTrades.setVisible(false);
 
 				//remove lines from rnd keys_Struct & keys_perf
-				String ksPath = "./../out/sk/log/rnd/keys_struct.txt";
-				String kpPath = "./../out/sk/log/rnd/keys_perf.txt";
+				String ksPath = AhrIO.uniPath("./../out/sk/log/rnd/keys_struct.txt");
+				String kpPath = AhrIO.uniPath("./../out/sk/log/rnd/keys_perf.txt");
 				ArrayList<String> ksRow = AhrIO.scanRow(ksPath, ",", 0);
 				ArrayList<String> kpRow = AhrIO.scanRow(kpPath, ",", 0);
 				ArrayList<ArrayList<String>> ksFile = new ArrayList<ArrayList<String>>();
@@ -997,7 +998,7 @@ public class AutoDemo {
 				AhrIO.writeToFile(ksPath, ksFile, ",");
 				AhrIO.writeToFile(kpPath, kpFile, ",");
 				//remove rnd tmp basis files
-				String rbPath = "./../out/sk/baseis/rnd/";
+				String rbPath = AhrIO.uniPath("./../out/sk/baseis/rnd/");
 				ArrayList<String> rndFiles = AhrIO.getFilesInPath(rbPath);
 				for(int i = 0; i < rndFiles.size(); i++){
 					File file = new File(rbPath+rndFiles.get(i));
@@ -1024,11 +1025,12 @@ public class AutoDemo {
 				double[] avgs = new double[6];
 				int[] counts = new int[6];
 				if(plotIdx == 0){//B&W, appr distn
-					FCI fciOL = new FCI(false, "./../data/tmp/os_orderlist.txt");
+					FCI fciOL = new FCI(false, AhrIO.uniPath("./../data/tmp/os_orderlist.txt"));
 					//data to write to file for R to use
 					ArrayList<ArrayList<String>> rdata = new ArrayList<ArrayList<String>>();
 					rdata.add(AhrAL.toAL(new String[]{"variable", "value"}));
-					ArrayList<ArrayList<String>> orderlist = AhrIO.scanFile("./../data/tmp/ad_ol_short_normal.txt", ",");
+					String aosnPath = AhrIO.uniPath("./../data/tmp/ad_ol_short_normal.txt");
+					ArrayList<ArrayList<String>> orderlist = AhrIO.scanFile(aosnPath, ",");
 					for(int i = 0; i < orderlist.size(); i++){
 						String itrMethAppr = orderlist.get(i).get(fciOL.getIdx("method_appr"));
 						avgs[0] += Double.parseDouble(itrMethAppr);
@@ -1038,7 +1040,7 @@ public class AutoDemo {
 						line.add(itrMethAppr);
 						rdata.add(line);
 					}
-					orderlist = AhrIO.scanFile("./../data/tmp/ad_ol_short_bso.txt",",");
+					orderlist = AhrIO.scanFile(AhrIO.uniPath("./../data/tmp/ad_ol_short_bso.txt"),",");
 					for(int i = 0; i < orderlist.size(); i++){
 						String itrMethAppr = orderlist.get(i).get(fciOL.getIdx("method_appr"));
 						String itrTrigCode = orderlist.get(i).get(fciOL.getIdx("trigger_code"));
@@ -1051,7 +1053,7 @@ public class AutoDemo {
 							rdata.add(line);
 						}
 					}
-					orderlist = AhrIO.scanFile("./../data/tmp/ad_ol_rnd_normal.txt", ",");
+					orderlist = AhrIO.scanFile(AhrIO.uniPath("./../data/tmp/ad_ol_rnd_normal.txt"), ",");
 					for(int i = 0; i < orderlist.size(); i++){
 						String itrMethAppr = orderlist.get(i).get(fciOL.getIdx("method_appr"));
 						avgs[2] += Double.parseDouble(itrMethAppr);
@@ -1061,7 +1063,7 @@ public class AutoDemo {
 						line.add(itrMethAppr);
 						rdata.add(line);
 					}
-					orderlist = AhrIO.scanFile("./../data/tmp/ad_ol_rnd_bso.txt",",");
+					orderlist = AhrIO.scanFile(AhrIO.uniPath("./../data/tmp/ad_ol_rnd_bso.txt"),",");
 					for(int i = 0; i < orderlist.size(); i++){
 						String itrMethAppr = orderlist.get(i).get(fciOL.getIdx("method_appr"));
 						String itrTrigCode = orderlist.get(i).get(fciOL.getIdx("trigger_code"));
@@ -1074,7 +1076,7 @@ public class AutoDemo {
 							rdata.add(line);
 						}
 					}
-					orderlist = AhrIO.scanFile("./../data/tmp/ad_ol_long_normal.txt", ",");
+					orderlist = AhrIO.scanFile(AhrIO.uniPath("./../data/tmp/ad_ol_long_normal.txt"), ",");
 					for(int i = 0; i < orderlist.size(); i++){
 						String itrMethAppr = orderlist.get(i).get(fciOL.getIdx("method_appr"));
 						avgs[4] += Double.parseDouble(itrMethAppr);
@@ -1084,7 +1086,7 @@ public class AutoDemo {
 						line.add(itrMethAppr);
 						rdata.add(line);
 					}
-					orderlist = AhrIO.scanFile("./../data/tmp/ad_ol_long_bso.txt",",");
+					orderlist = AhrIO.scanFile(AhrIO.uniPath("./../data/tmp/ad_ol_long_bso.txt"),",");
 					for(int i = 0; i < orderlist.size(); i++){
 						String itrMethAppr = orderlist.get(i).get(fciOL.getIdx("method_appr"));
 						String itrTrigCode = orderlist.get(i).get(fciOL.getIdx("trigger_code"));
@@ -1102,10 +1104,10 @@ public class AutoDemo {
 						//System.out.println("Avg"+i+" : "+String.format("%.3f", avgs[i]));
 					}
 					//R related paths and plot dims
-					String dataPath = "./../data/r/rdata/ad_mappr_baw.csv";
-					String scriptPath = "./../data/r/rscripts/ad_mappr_baw.R";
-					String plotPath1 = "./../resources/ad_mappr_baw1.png";
-					String plotPath2 = "./../resources/ad_mappr_baw2.png";
+					String dataPath = AhrIO.uniPath("./../data/r/rdata/ad_mappr_baw.csv");
+					String scriptPath = AhrIO.uniPath("./../data/r/rscripts/ad_mappr_baw.R");
+					String plotPath1 = AhrIO.uniPath("./../resources/ad_mappr_baw1.png");
+					String plotPath2 = AhrIO.uniPath("./../resources/ad_mappr_baw2.png");
 					int xdim = 500;
 					int ydim = 500;
 					//create R plot
@@ -1143,9 +1145,9 @@ public class AutoDemo {
 					iiBAW2.getImage().flush();
 				}else if(plotIdx == 1){//portfolio growth, short
 					//R related paths and plot dims
-					String dataPath = "./../data/r/rdata/ad_growth.csv";
-					String scriptPath = "./../data/r/rscripts/ad_growth.R";
-					String plotPath = "./../resources/ad_growth.png";
+					String dataPath = AhrIO.uniPath("./../data/r/rdata/ad_growth.csv");
+					String scriptPath = AhrIO.uniPath("./../data/r/rscripts/ad_growth.R");
+					String plotPath = AhrIO.uniPath("./../resources/ad_growth.png");
 					int xdim = 800;
 					int ydim = 600;
 					//create growth data
@@ -1153,7 +1155,8 @@ public class AutoDemo {
 					ArrayList<ArrayList<String>> rdata = new ArrayList<ArrayList<String>>();
 					rdata.add(AhrAL.toAL(new String[]{"date", "variable", "value"}));
 					OrderSim osim = new OrderSim();
-					ArrayList<ArrayList<String>> orderlist = AhrIO.scanFile("./../data/tmp/ad_ol_short_bso.txt", ",");
+					String aosbPath = AhrIO.uniPath("./../data/tmp/ad_ol_short_bso.txt");
+					ArrayList<ArrayList<String>> orderlist = AhrIO.scanFile(aosbPath, ",");
 					osim.setIsLong(false);
 					osim.setOrderList(orderlist);
 					ArrayList<ArrayList<String>> growth = osim.calcGrowth(principal);
@@ -1164,7 +1167,7 @@ public class AutoDemo {
 						line.add(growth.get(i).get(1));
 						rdata.add(line);
 					}
-					orderlist = AhrIO.scanFile("./../data/tmp/ad_ol_rnd_bso.txt", ",");
+					orderlist = AhrIO.scanFile(AhrIO.uniPath("./../data/tmp/ad_ol_rnd_bso.txt"), ",");
 					osim.setIsLong(true);
 					osim.setOrderList(orderlist);
 					growth = osim.calcGrowth(principal);
@@ -1175,7 +1178,7 @@ public class AutoDemo {
 						line.add(growth.get(i).get(1));
 						rdata.add(line);
 					}
-					orderlist = AhrIO.scanFile("./../data/tmp/ad_ol_long_bso.txt", ",");
+					orderlist = AhrIO.scanFile(AhrIO.uniPath("./../data/tmp/ad_ol_long_bso.txt"), ",");
 					osim.setIsLong(true);
 					osim.setOrderList(orderlist);
 					growth = osim.calcGrowth(principal);
@@ -1222,13 +1225,13 @@ public class AutoDemo {
 				String olPath = "";
 				String rfTitle = "";
 				if(cbIdx == 0){
-					olPath = "./../data/tmp/ad_ol_short_bso.txt";
+					olPath = AhrIO.uniPath("./../data/tmp/ad_ol_short_bso.txt");
 					rfTitle = "All Trades for AK (short trading strategy)";
 				}else if(cbIdx == 1){
-					olPath = "./../data/tmp/ad_ol_rnd_bso.txt";
+					olPath = AhrIO.uniPath("./../data/tmp/ad_ol_rnd_bso.txt");
 					rfTitle = "All Trades for AK (random trading strategy)";
 				}else if(cbIdx == 2){
-					olPath = "./../data/tmp/ad_ol_long_bso.txt";
+					olPath = AhrIO.uniPath("./../data/tmp/ad_ol_long_bso.txt");
 					rfTitle = "All Trades for AK (long trading strategy)";
 				}
 				//create sperate frame to show data
@@ -1245,7 +1248,7 @@ public class AutoDemo {
 	//----------------- Table Data Functions ------------------
 	//fill out given JTable w/ data from last SKs in keys_perf.txt
 	private void fillTableSK(JTable table){
-		String kpPath = "./../out/sk/log/ann/keys_perf.txt";
+		String kpPath = AhrIO.uniPath("./../out/sk/log/ann/keys_perf.txt");
 		FCI fciKP = new FCI(true, kpPath);
 		ArrayList<ArrayList<String>> kpFile = AhrIO.scanFile(kpPath, ",");
 		if(kpFile.size() >= 3){
@@ -1279,7 +1282,7 @@ public class AutoDemo {
 	}
 	//fill out given JTable w/ data from last AKs in ak_log.txt
 	private void fillTableAK(JTable table){
-		String laPath = "./../out/ak/log/ak_log.txt";
+		String laPath = AhrIO.uniPath("./../out/ak/log/ak_log.txt");
 		FCI fciLA = new FCI(true, laPath);
 		ArrayList<ArrayList<String>> laFile = AhrIO.scanFile(laPath, ",");
 		if(laFile.size() > 2){
@@ -1313,13 +1316,13 @@ public class AutoDemo {
 	}
 	//fill out given JTable w/ data from AKs BSO data
 	private void fillTableBSO(JTable table){
-		String laPath = "./../out/ak/log/ak_log.txt";
+		String laPath = AhrIO.uniPath("./../out/ak/log/ak_log.txt");
 		FCI fciLA = new FCI(true, laPath);
 		ArrayList<ArrayList<String>> laFile = AhrIO.scanFile(laPath, ",");
 		//get APY vals from tmp files then update to remove it from file
-		String solPath = "./../data/tmp/ad_ol_short_bso.txt";
-		String lolPath = "./../data/tmp/ad_ol_long_bso.txt";
-		String rolPath = "./../data/tmp/ad_ol_rnd_bso.txt";
+		String solPath = AhrIO.uniPath("./../data/tmp/ad_ol_short_bso.txt");
+		String lolPath = AhrIO.uniPath("./../data/tmp/ad_ol_long_bso.txt");
+		String rolPath = AhrIO.uniPath("./../data/tmp/ad_ol_rnd_bso.txt");
 		ArrayList<ArrayList<String>> solFile = AhrIO.scanFile(solPath, ",");
 		ArrayList<ArrayList<String>> lolFile = AhrIO.scanFile(lolPath, ",");
 		ArrayList<ArrayList<String>> rolFile = AhrIO.scanFile(rolPath, ",");

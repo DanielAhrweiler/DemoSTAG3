@@ -1,4 +1,5 @@
 package ahrweiler.support;
+import ahrweiler.Globals;
 import ahrweiler.util.*;
 import ahrweiler.support.FCI;
 import java.io.*;
@@ -45,6 +46,7 @@ public class OrderSim {	//simulates ordering in reality
 		this.tvi = 1;	
 	}
 	public OrderSim(String basisPath){//empty init
+		basisPath = AhrIO.uniPath(basisPath);
 		this.bfPath = basisPath;
 		this.fciBF = new FCI(false, basisPath);
 		this.techBuf = new ArrayList<ArrayList<ArrayList<String>>>();
@@ -56,13 +58,13 @@ public class OrderSim {	//simulates ordering in reality
 	public OrderSim(int keyID){//for agg key (dont need bgm)
 		this.keyNum = keyID;
 		//read in this keys row in ak_log
-		String laPath = "./../out/ak/log/ak_log.txt";
+		String laPath = AhrIO.uniPath("./../out/ak/log/ak_log.txt");
 		ArrayList<String> laRow = AhrIO.scanRow(laPath, ",", String.valueOf(keyID));
 		FCI fciLA = new FCI(true, laPath);
 		//assign class objs according to file row
 		String bgmLC = laRow.get(fciLA.getIdx("bgm")).toLowerCase();
 		String bgmUC = bgmLC.toUpperCase();
-		this.bfPath = "./../out/ak/baseis/"+bgmLC+"/"+bgmUC+"_"+String.valueOf(keyID)+".txt";
+		this.bfPath = AhrIO.uniPath("./../out/ak/baseis/"+bgmLC+"/"+bgmUC+"_"+String.valueOf(keyID)+".txt");
 		this.dbUsed = laRow.get(fciLA.getIdx("db_used"));
 		if(this.dbUsed .equals("YH")){
 			this.dbUsed = "Yahoo";
@@ -87,7 +89,7 @@ public class OrderSim {	//simulates ordering in reality
 		//get info from keys_struct
 		String bgmLC = bgm.toLowerCase();
 		String bgmUC = bgm.toUpperCase();
-		String ksPath = "./../out/sk/log/"+bgmLC+"/keys_struct.txt";
+		String ksPath = AhrIO.uniPath("./../out/sk/log/"+bgmLC+"/keys_struct.txt");
 		FCI fciKS = new FCI(true, ksPath);
 		ArrayList<String> ksRow = AhrIO.scanRow(ksPath, ",", String.valueOf(keyID));
 		//System.out.println("--> ksRow = "+ksRow);
@@ -113,7 +115,7 @@ public class OrderSim {	//simulates ordering in reality
 		}
 		this.setDateRange(ksRow.get(fciKS.getIdx("start_date")), ksRow.get(fciKS.getIdx("end_date")));
 		//set path and FCI for basis file
-		this.bfPath = "./../out/sk/baseis/"+bgmLC+"/"+bgmUC+"_"+String.valueOf(keyID)+".txt";
+		this.bfPath = AhrIO.uniPath("./../out/sk/baseis/"+bgmLC+"/"+bgmUC+"_"+String.valueOf(keyID)+".txt");
 		this.fciBF = new FCI(false, this.bfPath);
 		//init empty ALs
 		this.techBuf = new ArrayList<ArrayList<ArrayList<String>>>();
@@ -279,13 +281,11 @@ public class OrderSim {	//simulates ordering in reality
 				}
 			}
 		}
-
 		//itr thru each passed line and calc order line
 		for(int i = 0; i < slist.size(); i++){
 			String date = slist.get(i).get(0);
 			String tick = slist.get(i).get(1);
-			//String dbPath = "./../../DB_"+this.dbUsed+"/Main/"+this.dbUsed+"/"+tick+".txt";
-			String dbPath = "./../../DB_Intrinio/Main/Intrinio/"+tick+".txt";
+			String dbPath = Globals.intrinio_path+tick+".txt";
 			ArrayList<String> line = new ArrayList<String>();
 			line.add(date);								// [0] date
 			line.add(tick);								// [1] ticker
@@ -376,7 +376,7 @@ public class OrderSim {	//simulates ordering in reality
 				tfTechBuf.add(this.techBuf.get(i).get(j));
 			}
 		}
-		AhrIO.writeToFile("./../data/tmp/os_techbuf.txt", tfTechBuf, ",");
+		AhrIO.writeToFile(AhrIO.uniPath("./../data/tmp/os_techbuf.txt"), tfTechBuf, ",");
 	}
 
 	public void calcOrderList(){
@@ -385,7 +385,7 @@ public class OrderSim {	//simulates ordering in reality
 		}else{
 			//System.out.println("TechBuf size = " + techBuf.size());
 		}
-		FCI fciTB = new FCI(false, "./../../DB_Intrinio/Main/Intrinio/");
+		FCI fciTB = new FCI(false, Globals.intrinio_path);
 		this.trigAppr = 0.0;
 		this.tpr = 0.0;
 		this.posPer = 0.0;
@@ -649,7 +649,7 @@ public class OrderSim {	//simulates ordering in reality
 		this.bimPer = ((double)bimCount / (double)this.techBuf.size()) * 100.0;
 		this.somPer = ((double)somCount / (double)this.techBuf.size()) * 100.0;
 
-		AhrIO.writeToFile("./../data/tmp/os_orderlist.txt", this.orders, ",");
+		AhrIO.writeToFile(AhrIO.uniPath("./../data/tmp/os_orderlist.txt"), this.orders, ",");
 
 		//calc active trades
 		calcActiveTrades();
@@ -664,9 +664,9 @@ public class OrderSim {	//simulates ordering in reality
 		this.yoyAppr = this.yoyAppr * 100.0;
 
 		//write to file OL earlier to test
-		AhrIO.writeToFile("./../data/tmp/os_orderlist.txt", this.orders, ",");
+		AhrIO.writeToFile(AhrIO.uniPath("./../data/tmp/os_orderlist.txt"), this.orders, ",");
 		//write orderlist to file, order by meth % and write that to file also
-		String olPath = "./../data/tmp/os_orderlist.txt";
+		String olPath = AhrIO.uniPath("./../data/tmp/os_orderlist.txt");
 		FCI fciOL = new FCI(false, olPath);
 		ArrayList<ArrayList<String>> olByAppr = new ArrayList<ArrayList<String>>(this.orders);
 		Collections.sort(olByAppr, new Comparator<ArrayList<String>>(){
@@ -678,12 +678,12 @@ public class OrderSim {	//simulates ordering in reality
 			}
 		});
 		AhrIO.writeToFile(olPath, this.orders, ",");
-		AhrIO.writeToFile("./../data/tmp/os_orderlist_byappr.txt", olByAppr, ",");
+		AhrIO.writeToFile(AhrIO.uniPath("./../data/tmp/os_orderlist_byappr.txt"), olByAppr, ",");
 	}
 
 	//calc growth on a porfolio using the calculated order list
 	public ArrayList<ArrayList<String>> calcGrowth2(double value){
-		FCI fciOL = new FCI(false, "./../data/tmp/os_orderlist.txt");
+		FCI fciOL = new FCI(false, AhrIO.uniPath("./../data/tmp/os_orderlist.txt"));
 		ArrayList<ArrayList<String>> growth = new ArrayList<ArrayList<String>>();
 		String date = this.orders.get(0).get(fciOL.getIdx("date"));
 		//itr thru orders, calcing growth
@@ -719,7 +719,7 @@ public class OrderSim {	//simulates ordering in reality
 	//totValue = cash on hand + sum of all invested into trades
 	public ArrayList<ArrayList<String>> calcGrowth(double totValue){
 		ArrayList<ArrayList<String>> portfolioValue = new ArrayList<ArrayList<String>>();
-		FCI fciOL = new FCI(false, "./../data/tmp/os_orderlist.txt");
+		FCI fciOL = new FCI(false, AhrIO.uniPath("./../data/tmp/os_orderlist.txt"));
 		//find out SPD to calc # of max active trades at one time
 		String date = this.orders.get(0).get(fciOL.getIdx("date"));
 		int spd = -1;
@@ -793,7 +793,7 @@ public class OrderSim {	//simulates ordering in reality
 
 	//calc num of ongoing trading going on on every date (goes up w/ SPD and TVI)
 	public void calcActiveTrades(){
-		FCI fciOL = new FCI(false, "./../data/tmp/os_orderlist.txt");
+		FCI fciOL = new FCI(false, AhrIO.uniPath("./../data/tmp/os_orderlist.txt"));
 		ArrayList<ArrayList<String>> activeTrades = new ArrayList<ArrayList<String>>();
 		activeTrades.add(AhrAL.toAL(new String[]{"date", "active_count"}));
 		ArrayList<String> activeBuf = new ArrayList<String>();
@@ -832,7 +832,7 @@ public class OrderSim {	//simulates ordering in reality
 				activeBuf.add(buf);
 			}
 		}
-		AhrIO.writeToFile("./../data/tmp/os_activetrades.csv", activeTrades, ",");
+		AhrIO.writeToFile(AhrIO.uniPath("./../data/tmp/os_activetrades.csv"), activeTrades, ",");
 	}
 	
 	//calc best BIM/SOM from narrowing down on ever increasing BIM/SOM combo precision
@@ -990,7 +990,7 @@ public class OrderSim {	//simulates ordering in reality
 				}
 			}
 		}
-		AhrIO.writeToFile("./../data/tmp/bso_multiple.txt", bsoMult, ",");
+		AhrIO.writeToFile(AhrIO.uniPath("./../data/tmp/bso_multiple.txt"), bsoMult, ",");
 		//calc one last time on best combo so can check files
 		setBIM(bestBIM);
 		setSOM(bestSOM);

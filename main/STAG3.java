@@ -46,8 +46,8 @@ public class STAG3 {
 	public void init(){
 		System.out.print("--> Initializing Data ... ");
 		//remove lines from rnd keys_Struct & keys_perf
-		String ksPath = "./../out/sk/log/rnd/keys_struct.txt";
-		String kpPath = "./../out/sk/log/rnd/keys_perf.txt";
+		String ksPath = AhrIO.uniPath("./../out/sk/log/rnd/keys_struct.txt");
+		String kpPath = AhrIO.uniPath("./../out/sk/log/rnd/keys_perf.txt");
 		ArrayList<String> ksRow = AhrIO.scanRow(ksPath, ",", 0);
 		ArrayList<String> kpRow = AhrIO.scanRow(kpPath, ",", 0);
 		ArrayList<ArrayList<String>> ksFile = new ArrayList<ArrayList<String>>();
@@ -57,7 +57,7 @@ public class STAG3 {
 		AhrIO.writeToFile(ksPath, ksFile, ",");
 		AhrIO.writeToFile(kpPath, kpFile, ",");
 		//remove rnd tmp basis files
-		String rbPath = "./../out/sk/baseis/rnd/";
+		String rbPath = AhrIO.uniPath("./../out/sk/baseis/rnd/");
 		ArrayList<String> rndFiles = AhrIO.getFilesInPath(rbPath);
 		for(int i = 0; i < rndFiles.size(); i++){
 			File file = new File(rbPath+rndFiles.get(i));
@@ -67,7 +67,7 @@ public class STAG3 {
 		}
 		//set sk_attrs.txt to default values
 		AttributesSK kattr = new AttributesSK();
-		kattr.saveToFile("./../data/tmp/sk_attrs.txt");
+		kattr.saveToFile(AhrIO.uniPath("./../data/tmp/sk_attrs.txt"));
 		System.out.println("DONE");
 	}
 
@@ -226,9 +226,9 @@ public class STAG3 {
 
 	//create line in ./../out/SAP/score_percentiles.txt for all SKs in all epoch AKs
 	public void updateScorePercentiles(){
-		String epPath = "./../in/epochs.txt";
-		String spPath = "./../out/score_percentiles.txt";
-		String laPath = "./../out/ak/log/ak_log.txt";
+		String epPath = AhrIO.uniPath("./../in/epochs.txt");
+		String spPath = AhrIO.uniPath("./../out/score_percentiles.txt");
+		String laPath = AhrIO.uniPath("./../out/ak/log/ak_log.txt");
 		FCI fciEP = new FCI(false, epPath);
 		FCI fciLA = new FCI(true, laPath);
 		ArrayList<ArrayList<String>> epochFile = AhrIO.scanFile(epPath, ",");
@@ -278,8 +278,8 @@ public class STAG3 {
 		//System.out.println("--> All SKs not in score_percentiles.txt");
 		//AhrAL.print(allSK);
 		//itr thru all new SKs, write percentiles to file
-		ArrayList<ArrayList<String>> tf = AhrIO.scanFile("./../out/score_percentiles.txt", ",");
-		String skbPath = "./../out/sk/baseis/";
+		ArrayList<ArrayList<String>> tf = AhrIO.scanFile(spPath, ",");
+		String skbPath = AhrIO.uniPath("./../out/sk/baseis/");
 		FCI fciSKB = new FCI(false, skbPath);
 		for(int i = 0; i < allSK.size(); i++){
 			String bgm = allSK.get(i).get(0);
@@ -288,7 +288,8 @@ public class STAG3 {
 			String edate = allSK.get(i).get(3);
 			String call = allSK.get(i).get(4);
 			ArrayList<Double> scores = new ArrayList<Double>();
-			ArrayList<ArrayList<String>> skBasis = AhrIO.scanFile(skbPath+bgm+"/"+bgm+"_"+skNum+".txt", ",");
+			String skbPathFull = AhrIO.uniPath(skbPath+bgm+"/"+bgm+"_"+skNum+".txt");
+			ArrayList<ArrayList<String>> skBasis = AhrIO.scanFile(skbPathFull, ",");
 			for(int j = 0; j < skBasis.size(); j++){
 				String itrDate = skBasis.get(j).get(fciSKB.getIdx("date"));
 				if(AhrDate.isDateInPeriod(itrDate, sdate, edate)){
@@ -316,7 +317,7 @@ public class STAG3 {
 			}
 			tf.add(line);
 		}
-		AhrIO.writeToFile("./../out/score_percentiles.txt", tf, ",");
+		AhrIO.writeToFile(spPath, tf, ",");
 		String message = "File score_percentiles.txt has been update.";
 		JOptionPane.showMessageDialog(null, message, "Update", JOptionPane.PLAIN_MESSAGE);
 	}
@@ -326,7 +327,7 @@ public class STAG3 {
 	//counts hm instances of all market states and writes to file
 	public void countMarketStates(){
 		System.out.print("--> Counting all market states in mstates.txt ... ");
-		String msPath = "./../in/mstates.txt";
+		String msPath = AhrIO.uniPath("./../in/mstates.txt");
 		FCI fciMS = new FCI(false, msPath);
 		ArrayList<String> mstates = AhrIO.scanCol(msPath, ",", fciMS.getIdx("ms_mask"));
 		//save powers of 3	
@@ -377,7 +378,7 @@ public class STAG3 {
 			}
 		});
 		//write allStates to file
-		AhrIO.writeToFile("./../out/ms_count.txt", allStates, ",");
+		AhrIO.writeToFile(AhrIO.uniPath("./../out/ms_count.txt"), allStates, ",");
 		System.out.println("DONE");
 	}
 
@@ -388,7 +389,7 @@ public class STAG3 {
 		SQLCode sqlc = new SQLCode();
 		sqlc.setDB("snorm");
 		ArrayList<String> snTables = sqlc.getTables();
-		ArrayList<String> dates = AhrIO.scanCol("./../in/open_dates.txt", ",", 0);
+		ArrayList<String> dates = AhrIO.scanCol(AhrIO.uniPath("./../in/open_dates.txt"), ",", 0);
 		ArrayList<ArrayList<String>> narByDate = new ArrayList<ArrayList<String>>();
 		for(int i = 0; i < dates.size(); i++){
 			String itrDate = dates.get(i);
@@ -410,6 +411,6 @@ public class STAG3 {
 			nbdLine.add(0, dates.get(i));
 			narByDate.add(nbdLine);
 		}
-		AhrIO.writeToFile("./../in/nar_by_date.txt", narByDate, ",");
+		AhrIO.writeToFile(AhrIO.uniPath("./../in/nar_by_date.txt"), narByDate, ",");
 	}
 }

@@ -41,7 +41,7 @@ public class ML_Basis {
 		int prefY = 700;
 
 		//get data from files for init table data
-		String ksPath = "./../out/sk/log/ann/keys_struct.txt";
+		String ksPath = AhrIO.uniPath("./../out/sk/log/ann/keys_struct.txt");
 		FCI fciSK = new FCI(true, ksPath);
 		ArrayList<ArrayList<String>> skLog = AhrIO.scanFile(ksPath, ",");
 		skLog.remove(0);
@@ -65,7 +65,7 @@ public class ML_Basis {
 		}	
 
 		
-		ksPath = "./../out/ak/log/ak_log.txt";
+		ksPath = AhrIO.uniPath("./../out/ak/log/ak_log.txt");
 		FCI fciAK = new FCI(true, ksPath);
 		ArrayList<ArrayList<String>> akLog = AhrIO.scanFile(ksPath, ",");
 		akLog.remove(0);
@@ -124,15 +124,15 @@ public class ML_Basis {
 		TableSortPanel tspBasis;
 		if(cbKeyNum.getItemCount() > 0){
 			if(rbSK.isSelected()){
-				bsPath = "./../out/sk/baseis/ann/ANN_"+cbKeyNum.getSelectedItem().toString()+".txt";
-				fciBS = new FCI(false, "./../out/sk/baseis/");
+				bsPath = AhrIO.uniPath("./../out/sk/baseis/ann/ANN_"+cbKeyNum.getSelectedItem().toString()+".txt");
+				fciBS = new FCI(false, AhrIO.uniPath("./../out/sk/baseis/"));
 			}else{
-				bsPath = "./../out/ak/baseis/ann/ANN_"+cbKeyNum.getSelectedItem().toString()+".txt";
-				fciBS = new FCI(false, "./../out/ak/baseis/");
+				bsPath = AhrIO.uniPath("./../out/ak/baseis/ann/ANN_"+cbKeyNum.getSelectedItem().toString()+".txt");
+				fciBS = new FCI(false, AhrIO.uniPath("./../out/ak/baseis/"));
 			}
 			tspBasis = new TableSortPanel(bsPath, AhrAL.toArr(fciBS.getTags()));
 		}else{
-			fciBS = new FCI(false, "./../out/sk/baseis/");
+			fciBS = new FCI(false, AhrIO.uniPath("./../out/sk/baseis/"));
 			tspBasis = new TableSortPanel(new String[0][0], AhrAL.toArr(fciBS.getTags()));
 		}
 
@@ -151,11 +151,11 @@ public class ML_Basis {
 				String bsPath2 = "";
 				FCI fciBS2;
 				if(rbSK.isSelected()){
-					bsPath2 = "./../out/sk/baseis/ann/ANN_"+cbKeyNum.getSelectedItem().toString()+".txt";
-					fciBS2 = new FCI(false, "./../out/sk/baseis/");
+					bsPath2 = AhrIO.uniPath("./../out/sk/baseis/ann/ANN_"+cbKeyNum.getSelectedItem().toString()+".txt");
+					fciBS2 = new FCI(false, AhrIO.uniPath("./../out/sk/baseis/"));
 				}else{
-					bsPath2 = "./../out/ak/baseis/ann/ANN_"+cbKeyNum.getSelectedItem().toString()+".txt";
-					fciBS2 = new FCI(false, "./../out/ak/baseis/");
+					bsPath2 = AhrIO.uniPath("./../out/ak/baseis/ann/ANN_"+cbKeyNum.getSelectedItem().toString()+".txt");
+					fciBS2 = new FCI(false, AhrIO.uniPath("./../out/ak/baseis/"));
 
 				}
 				String[][] data = AhrAL.toArr2D(AhrIO.scanFile(bsPath2, ","));
@@ -205,11 +205,11 @@ public class ML_Basis {
 	public ArrayList<String> getKeyList(boolean is_sk){
 		ArrayList<String> keyList = new ArrayList<String>();
 		if(is_sk){
-			String ksPath = "./../out/sk/log/ann/keys_struct.txt";
+			String ksPath = AhrIO.uniPath("./../out/sk/log/ann/keys_struct.txt");
 			FCI fciKS = new FCI(true, ksPath); 
 			keyList = AhrIO.scanCol(ksPath, ",", fciKS.getIdx("sk_num"));
 		}else{
-			String ksPath = "./../out/ak/log/ak_log.txt";
+			String ksPath = AhrIO.uniPath("./../out/ak/log/ak_log.txt");
 			FCI fciKS = new FCI(true, ksPath); 
 			keyList = AhrIO.scanCol(ksPath, ",", fciKS.getIdx("ak_num"));
 		}

@@ -17,6 +17,7 @@ public class AhrIO {
 
 	//File scanner that returns all file contents packed in a nested arraylist
 	public static ArrayList<ArrayList<String>> scanFile(String path, String delim){
+		path = uniPath(path);
 		ArrayList<ArrayList<String>> contents = new ArrayList<ArrayList<String>>();
 		String pLine = "";			//reads txt file into this string to be manipulated
 		try{
@@ -41,6 +42,7 @@ public class AhrIO {
 
 	//prints 2D array of strings to a file
 	public static void writeToFile(String path, ArrayList<ArrayList<String>> pts, String delim){
+		path = uniPath(path);
 		//check if file exists
 		File f = new File(path);
 		//Write any 2D array list to file
@@ -62,6 +64,7 @@ public class AhrIO {
 
 	//File scanner that returns a row with specified 1st col val
 	public static ArrayList<String> scanRow(String path, String delim, String rowName){
+		path = uniPath(path);
 		ArrayList<String> line = new ArrayList<String>();
 		boolean rowReached = false;
 		try{
@@ -86,6 +89,7 @@ public class AhrIO {
 
 	//File scanner that returns a row with specified 1st col val
 	public static ArrayList<String> scanRow(String path, String delim, int rowIdx){
+		path = uniPath(path);
 		ArrayList<String> line = new ArrayList<String>();
 		boolean rowReached = false;
 		int rowCount = 0;
@@ -112,6 +116,7 @@ public class AhrIO {
 
 	//File scanner that returns all rows that match specified col val
 	public static ArrayList<ArrayList<String>> scanSelectRows(String path, String delim, String rowVal, int colIdx){
+		path = uniPath(path);
 		ArrayList<ArrayList<String>> content = new ArrayList<ArrayList<String>>();
 		try{
 	    	BufferedReader file_in = new BufferedReader(new FileReader(path));
@@ -136,6 +141,7 @@ public class AhrIO {
 
 	//File scanner that returns a rnd row from a file or folder of files
 	public static ArrayList<String> scanRndRow(String path, String delim, boolean is_folder){
+		path = uniPath(path);
 		ArrayList<String> row = new ArrayList<String>();
 		Random rnd = new Random();
 		if(is_folder){	//sel row from folder of files
@@ -154,6 +160,7 @@ public class AhrIO {
 
 	//File scanner that returns a row with specified 1st col val
 	public static String scanCell(String path, String delim, int rowIdx, int colIdx){
+		path = uniPath(path);
 		String cellStr = "";
 		boolean rowReached = false;
 		int rowCount = 0;
@@ -178,6 +185,7 @@ public class AhrIO {
 	
 	//File scanner that returns a row with specified 1st col val
 	public static String scanCell(String path, String delim, String rowName, int colIdx){
+		path = uniPath(path);
 		String cellStr = "";
 		boolean rowReached = false;
 		try{
@@ -200,6 +208,7 @@ public class AhrIO {
 
 	//File scanner that returns one column in a file alongside the inputs index col
 	public static ArrayList<ArrayList<String>> scanColWithIndex(String path, String delim, int colIdx){
+		path = uniPath(path);
 		ArrayList<ArrayList<String>> contents = new ArrayList<ArrayList<String>>();
 		String pLine = "";			//reads txt file into this string to be manipulated
 		try{
@@ -223,6 +232,7 @@ public class AhrIO {
 
 	//File scanner that returns one column in a file in a 1D AL
 	public static ArrayList<String> scanCol(String path, String delim, int colIdx){
+		path = uniPath(path);
 		ArrayList<String> contents = new ArrayList<String>();
 		String pLine = "";			//reads txt file into this string to be manipulated
 		try{
@@ -248,6 +258,7 @@ public class AhrIO {
 	//get list of tickers from a certain file path
 	//TODO get names by reading before period not by static 4 chars
 	public static ArrayList<String> getNamesInPath(String path){
+		path = uniPath(path);
 		File folder = new File(path);
 		File[] lof = folder.listFiles();
 		ArrayList<String> names = new ArrayList<String>();
@@ -258,6 +269,7 @@ public class AhrIO {
     }
 	//get list of tickers from a certain file path
 	public static ArrayList<String> getFilesInPath(String path){
+		path = uniPath(path);
 		File folder = new File(path);
 		File[] lof = folder.listFiles();
 		ArrayList<String> names = new ArrayList<String>();
@@ -265,6 +277,12 @@ public class AhrIO {
 			names.add(lof[a].getName());
 		}
 		return names;
+	}
+
+	//translate linux path to universal path
+	public static String uniPath(String path){
+		String fs = File.separator;
+		return path.replaceAll("/", fs);
 	}
     
 }

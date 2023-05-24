@@ -151,8 +151,8 @@ public class ML_CreateSK {
 				//System.out.println("--> Calculate SK for ANN");
 				frame.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
 				//set up algo info
-				String ksPath = "./../out/sk/log/ann/keys_struct.txt";
-				String kpPath = "./../out/sk/log/ann/keys_perf.txt";
+				String ksPath = AhrIO.uniPath("./../out/sk/log/ann/keys_struct.txt");
+				String kpPath = AhrIO.uniPath("./../out/sk/log/ann/keys_perf.txt");
 				FCI fciKS = new FCI(true, ksPath);
 				FCI fciKP = new FCI(true, kpPath);
 				ArrayList<ArrayList<String>> keys = AhrIO.scanFile(ksPath,",");
@@ -207,7 +207,7 @@ public class ML_CreateSK {
 				//calc perf for short SK
 				ArrayList<String> perfMetrics = new ArrayList<String>();
 				long time3 = System.currentTimeMillis();
-				String shortBasisPath = "./../out/sk/baseis/ann/ANN_"+String.valueOf(id)+".txt";
+				String shortBasisPath = AhrIO.uniPath("./../out/sk/baseis/ann/ANN_"+String.valueOf(id)+".txt");
 				ArrayList<String> shortPerf = skShort.perfFromBasisFile(shortBasisPath);
 				perfMetrics.add(shortPerf.get(3));
 				perfMetrics.add(shortPerf.get(4));
@@ -219,7 +219,7 @@ public class ML_CreateSK {
 				BGM_Manager skLong = new BGM_Manager("ANN", id+1);
 				skLong.genBasisSK(id+1);
 				long time5 = System.currentTimeMillis();
-				String longBasisPath = "./../out/sk/baseis/ann/ANN_"+String.valueOf(id+1)+".txt";
+				String longBasisPath = AhrIO.uniPath("./../out/sk/baseis/ann/ANN_"+String.valueOf(id+1)+".txt");
 				ArrayList<String> longPerf = skLong.perfFromBasisFile(longBasisPath);
 				perfMetrics.add(longPerf.get(3));
 				perfMetrics.add(longPerf.get(4));

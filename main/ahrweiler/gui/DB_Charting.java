@@ -30,11 +30,11 @@ public class DB_Charting {
 		String[] cblStockInds = {"Price", "Volume"};
 		String[] cblIndexes = {"QQQ - Top NASDAQ", "SPY - Top S&P500", "DIA - Top Dow Jones"};
 		String[] cblSpecial = {"Inflows by Sector", "Gold To Dow Ratio", "PM vs Intra"};
-		File fr_data = new File("./../data/r/rdata/db_chart.csv");
+		File fr_data = new File(AhrIO.uniPath("./../data/r/rdata/db_chart.csv"));
 		if(fr_data.exists()){
 			fr_data.delete();
 		}
-		File fr_plot = new File("./../resources/db_chart.png");
+		File fr_plot = new File(AhrIO.uniPath("./../resources/db_chart.png"));
 		if(fr_plot.exists()){
 			fr_plot.delete();
 		}
@@ -269,9 +269,9 @@ public class DB_Charting {
 							 "%B", "ROC", "MFI", "CCI", "Mass", "TSI", "Ult Osc"};
 				int xdim = 980;
 				int ydim = 680;
-				String dataPath = "./../data/r/rdata/db_chart.csv";
-				String plotPath = "./../resources/db_chart.png";
-				String scriptPath = "./../data/r/rscripts/db_chart.R";
+				String dataPath = AhrIO.uniPath("./../data/r/rdata/db_chart.csv");
+				String plotPath = AhrIO.uniPath("./../resources/db_chart.png");
+				String scriptPath = AhrIO.uniPath("./../data/r/rscripts/db_chart.R");
 				tfNormDate.setText(tfSDate.getText());
 				int sma = Integer.parseInt(tfSMA.getText());
 				//get inputs from GUI
@@ -286,14 +286,14 @@ public class DB_Charting {
 				if(rbStock.isSelected()){
 					//set column names
 					String ticker = tfStockTicker.getText().toUpperCase();
-					String dbPath = "./../../DB_Intrinio/Main/Intrinio/"+ticker+".txt";
+					String dbPath = AhrIO.uniPath(Globals.intrinio_path+ticker+".txt");
 					int indIdx = cbStockInds.getSelectedIndex();
 					String dbColName = "adj_close";
 					csvColName = ticker;
 					File tickFile = new File(dbPath);
 					if(tickFile.exists()){
 						if(indIdx > 2){
-							dbPath = "./../../DB_Intrinio/Main/S_Norm/"+ticker+".txt";
+							dbPath = AhrIO.uniPath(Globals.snorm_path+ticker+".txt");
 						}
 						if(indIdx == 1){
 							dbColName = "adj_vol";
@@ -307,7 +307,6 @@ public class DB_Charting {
 						}
 						if(rbQuantYes.isSelected()){
 							quantmod_used = true;
-							dbPath = "./../../DB_Intrinio/Main/Intrinio/"+ticker+".txt";
 							RCode rcodeQM = new RCode();
 							rcodeQM.addPackage("quantmod");
 							rcodeQM.addCode("df <- read.delim.zoo(\""+dbPath+"\", "+
@@ -368,7 +367,7 @@ public class DB_Charting {
 							cname += "xx";
 						}
 						csvColName = siCode;
-						String dbPath = "./../../DB_Intrinio/Main/I_Base/";
+						String dbPath = Globals.ibase_path;
 						FCI fciIB = new FCI(false, dbPath);
 						int colIdx = fciIB.getIdx("close");
 						if(Globals.uses_mysql_source){
@@ -383,7 +382,7 @@ public class DB_Charting {
 						String tname = "exchanges";
 						String cname = "dmc_close_"+exchange.toLowerCase();
 						csvColName = exchange.toUpperCase();
-						String dbPath = "./../../DB_Intrinio/Main/M_Base/";
+						String dbPath = Globals.mbase_path;
 						FCI fciMB = new FCI(false, dbPath);
 						int colIdx = fciMB.getIdx("close");
 						if(Globals.uses_mysql_source){
@@ -398,7 +397,7 @@ public class DB_Charting {
 						ticker = ticker.replaceAll("\\s+", "").split("-")[0];
 						csvColName = ticker;
 						//String dbPath = "./../../DB_Intrinio/Main/S_Base/";
-						String dbPath = "./../../DB_Intrinio/Main/Intrinio/";
+						String dbPath = Globals.intrinio_path;
 						//FCI fciSB = new FCI(false, dbPath);
 						FCI fciIT = new FCI(false, dbPath);
 						//int colIdx = fciSB.getIdx("close");
@@ -455,11 +454,12 @@ public class DB_Charting {
 				String normDate = tfNormDate.getText().replaceAll("\\s+", "");
 				int xdim = 900;
 				int ydim = 650;
-				String dataPath = "./../data/r/rdata/db_chart_norm.csv";
-				String plotPath = "./../resources/db_chart_norm.png";
-				String scriptPath = "./../data/r/rscripts/db_chart_norm.R";
+				String dataPath = AhrIO.uniPath("./../data/r/rdata/db_chart_norm.csv");
+				String plotPath = AhrIO.uniPath("./../resources/db_chart_norm.png");
+				String scriptPath = AhrIO.uniPath("./../data/r/rscripts/db_chart_norm.R");
 				//get data for main chart, find the vars and first acceptable date
-				ArrayList<ArrayList<String>> oldData = AhrIO.scanFile("./../data/r/rdata/db_chart.csv", ",");//melted format!
+				String dbcPath = AhrIO.uniPath("./../data/r/rdata/db_chart.csv");
+				ArrayList<ArrayList<String>> oldData = AhrIO.scanFile(dbcPath, ",");//melted format!
 				ArrayList<String> header = oldData.get(0);			
 				oldData.remove(0);
 				String faDate = "1980-01-01";
@@ -639,9 +639,9 @@ public class DB_Charting {
 			public void actionPerformed(ActionEvent e){	
 				int xdim = 980;
 				int ydim = 680;
-				String dataPath = "./../data/r/rdata/db_chart.csv";
-				String plotPath = "./../resources/db_chart.png";
-				String scriptPath = "./../data/r/rscripts/db_chart.R";
+				String dataPath = AhrIO.uniPath("./../data/r/rdata/db_chart.csv");
+				String plotPath = AhrIO.uniPath("./../resources/db_chart.png");
+				String scriptPath = AhrIO.uniPath("./../data/r/rscripts/db_chart.R");
 				//remove line from combobox
 				int selectedIdx = cbListSeries.getSelectedIndex();
 				String selectedLine = cbListSeries.getSelectedItem().toString();
@@ -725,6 +725,7 @@ public class DB_Charting {
 
 	//getdata from local disk to chart
 	public ArrayList<ArrayList<String>> getLocalDataForPlot(String dbPath, String sdate, String edate, int colIdx, int sma){
+		dbPath = AhrIO.uniPath(dbPath);
 		FCI fciDB = new FCI(false, dbPath);
 		ArrayList<ArrayList<String>> data = new ArrayList<ArrayList<String>>();
 		data = AhrIO.scanColWithIndex(dbPath, "~", colIdx);
@@ -880,7 +881,7 @@ public class DB_Charting {
 		}else{
 		}
 		//itr thru ./../in/sector_codes.txt to get all industries for this sector
-		String scPath = "./../in/sector_codes.txt";
+		String scPath = AhrIO.uniPath("./../in/sector_codes.txt");
 		FCI fciSC = new FCI(false, scPath);
 		ArrayList<ArrayList<String>> scodes = AhrIO.scanSelectRows(scPath, "~", sector, fciSC.getIdx("sector"));
 		ArrayList<String> uniqInds = new ArrayList<String>();

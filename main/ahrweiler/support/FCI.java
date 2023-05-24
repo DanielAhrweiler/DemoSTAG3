@@ -20,7 +20,7 @@ public class FCI {
 	}
 	public FCI(boolean b1, String filePath){
 		//first fill log AL with all column tags from ./../in/fci_log.txt file
-		this.log = AhrIO.scanFile("./../in/fci_log.txt", ",");
+		this.log = AhrIO.scanFile(AhrIO.uniPath("./../in/fci_log.txt"), ",");
 
 		//fill rest of values from input
 		this.has_header = b1;
@@ -28,11 +28,11 @@ public class FCI {
 
 		//TODO fix and remove this section
 		if(!this.has_header){
-			if(this.path.contains("./../out/sk/baseis/")){
-				this.path = "./../out/sk/baseis/";
+			if(this.path.contains(AhrIO.uniPath("./../out/sk/baseis/"))){
+				this.path = AhrIO.uniPath("./../out/sk/baseis/");
 			}
-			if(this.path.contains("./../out/ak/baseis/")){
-				this.path = "./../out/ak/baseis/";
+			if(this.path.contains(AhrIO.uniPath("./../out/ak/baseis/"))){
+				this.path = AhrIO.uniPath("./../out/ak/baseis/");
 			}
 		}
 
@@ -72,9 +72,6 @@ public class FCI {
 				}
 			}
 		}
-
-
-
 		//System.out.println("Col Tags: " + this.columnTags);
 	}
 

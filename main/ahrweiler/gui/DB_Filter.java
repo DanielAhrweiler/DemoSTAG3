@@ -1,4 +1,5 @@
 package ahrweiler.gui;
+import ahrweiler.Globals;
 import ahrweiler.util.AhrIO;
 import ahrweiler.util.AhrDate;
 import ahrweiler.util.AhrAL;
@@ -146,8 +147,9 @@ public class DB_Filter {
 		//button functionality
 		bSectorList.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e){
-				ArrayList<ArrayList<String>> scFC = AhrIO.scanFile("./../in/sector_codes.txt", "~");
-				FCI fciSC = new FCI(false, "./../in/sector_codes.txt");
+				String scPath = AhrIO.uniPath("./../in/sector_codes.txt");
+				ArrayList<ArrayList<String>> scFC = AhrIO.scanFile(scPath, "~");
+				FCI fciSC = new FCI(false, scPath);
 				ArrayList<String> uniqSectors = new ArrayList<String>();
 				for(int i = 0; i < scFC.size(); i++){
 					String itrSector = scFC.get(i).get(fciSC.getIdx("sector"));
@@ -175,7 +177,7 @@ public class DB_Filter {
 			public void actionPerformed(ActionEvent e){
 				String oldStr = tfSector.getText();
 				String newStr = "";
-				String scPath = "./../in/sector_codes.txt";
+				String scPath = AhrIO.uniPath("./../in/sector_codes.txt");
 				FCI fciSC = new FCI(false, scPath);
 				ArrayList<String> scSectors = AhrIO.scanCol(scPath, "~", fciSC.getIdx("sector"));
 				HashSet<String> uniqSec = new HashSet<String>();
@@ -214,8 +216,9 @@ public class DB_Filter {
 					//System.out.println("--> secInt = " + secInt);
 					ArrayList<String> uniqSectors = new ArrayList<String>();
 					ArrayList<String> uniqInds = new ArrayList<String>();
-					FCI fciSC = new FCI(false, "./../in/sector_codes.txt");
-					ArrayList<ArrayList<String>> scFC = AhrIO.scanFile("./../in/sector_codes.txt", "~");
+					String scPath = AhrIO.uniPath("./../in/sector_codes.txt");
+					FCI fciSC = new FCI(false, scPath);
+					ArrayList<ArrayList<String>> scFC = AhrIO.scanFile(scPath, "~");
 					for(int i = 0; i < scFC.size(); i++){
 						String itrSector = scFC.get(i).get(fciSC.getIdx("sector"));
 						if(!uniqSectors.contains(itrSector)){
@@ -259,8 +262,9 @@ public class DB_Filter {
 				}
 				if(is_good_text){
 					int nearest100th = Integer.parseInt(tfSector.getText()) * 100;
-					ArrayList<ArrayList<String>> scFC = AhrIO.scanFile("./../in/sector_codes.txt", "~");
-					FCI fciSC = new FCI(false, "./../in/sector_codes.txt");				
+					String scPath = AhrIO.uniPath("./../in/sector_codes.txt");
+					ArrayList<ArrayList<String>> scFC = AhrIO.scanFile(scPath, "~");
+					FCI fciSC = new FCI(false, scPath);				
 					ArrayList<String> subcodes = new ArrayList<String>();
 					for(int i = 0; i < scFC.size(); i++){
 						int itrCode = Integer.parseInt(scFC.get(i).get(fciSC.getIdx("code")));
@@ -354,7 +358,7 @@ public class DB_Filter {
 		bApply.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e){
 				frame.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
-				String mrDate = AhrDate.mostRecentDate(AhrIO.getNamesInPath("./../../DB_Intrinio/Clean/ByDate/"));
+				String mrDate = AhrDate.mostRecentDate(AhrIO.getNamesInPath(Globals.bydate_path));
 				sf.applyFilter(mrDate);
 				ArrayList<ArrayList<String>> res = sf.getResults();
 				lbStockNum.setText("Number of Stocks: "+res.size()+" results");
@@ -387,9 +391,9 @@ public class DB_Filter {
 		});
 		bToFile.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e){
-				String tfPath = "./../data/filters/sfilter_";
+				String tfPath = AhrIO.uniPath("./../data/filters/sfilter_");
 				int maxFileNum = -1;
-				ArrayList<String> sfFiles = AhrIO.getNamesInPath("./../data/filters/");
+				ArrayList<String> sfFiles = AhrIO.getNamesInPath(AhrIO.uniPath("./../data/filters/"));
 				for(int i = 0; i < sfFiles.size(); i++){
 					int itrFileNum = Integer.parseInt(sfFiles.get(i).split("_")[1]);
 					if(itrFileNum > maxFileNum){

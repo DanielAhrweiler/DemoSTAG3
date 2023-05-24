@@ -39,7 +39,7 @@ public class BGM_Manager {
 		this.is_ak = true;
 		this.id = idVal;
 		//get info from agg basis log file
-		String laPath = "./../out/ak/log/ak_log.txt";
+		String laPath = AhrIO.uniPath("./../out/ak/log/ak_log.txt");
 		FCI fciLA = new FCI(true, laPath);
 		ArrayList<String> laRow = AhrIO.scanRow(laPath, ",", String.valueOf(idVal));
 		if(laRow.size() < 1){
@@ -73,9 +73,10 @@ public class BGM_Manager {
 		}
 		//couple each SK with its market state mask
 		this.statesSK = new ArrayList<ArrayList<String>>();
-		ArrayList<ArrayList<String>> ksFile = AhrIO.scanFile("./../out/sk/log/"+this.bgm+"/keys_struct.txt", ",");
-		FCI fciKS = new FCI(true, "./../out/sk/log/"+this.bgm+"/keys_struct.txt");
-		ArrayList<String> ksKeyCol = AhrIO.scanCol("./../out/sk/log/"+this.bgm+"/keys_struct.txt", ",", fciKS.getIdx("sk_num"));
+		String ksPath = AhrIO.uniPath("./../out/sk/log/"+this.bgm+"/keys_struct.txt");
+		FCI fciKS = new FCI(true, ksPath);
+		ArrayList<ArrayList<String>> ksFile = AhrIO.scanFile(ksPath, ",");
+		ArrayList<String> ksKeyCol = AhrIO.scanCol(ksPath, ",", fciKS.getIdx("sk_num"));
 		for(int i = 0; i < bestSK.length; i++){
 			ArrayList<String> stateLine = new ArrayList<String>();
 			stateLine.add(String.valueOf(bestSK[i]));
@@ -83,7 +84,7 @@ public class BGM_Manager {
 			if(ksIdx != -1){
 				stateLine.add(ksFile.get(ksIdx).get(fciKS.getIdx("ms_mask")));
 			}else{
-				System.out.println("ERROR: SK"+this.bestSK[i]+" not found in "+this.bgm+"/keys_struct.txt");
+				System.out.println("ERR: SK"+this.bestSK[i]+" not found in "+this.bgm+"/keys_struct.txt");
 				stateLine.add("");
 			}
 			this.statesSK.add(stateLine);	
@@ -94,7 +95,7 @@ public class BGM_Manager {
 			//System.out.println("--> BGM Initialized w/ SK"+bestSK[0]);
 			setFocusSK(bestSK[0]); 
 		}else{
-			System.out.println("ERROR in constructor : no SKs found");
+			System.out.println("ERR in constructor : no SKs found");
 		}
 	}
 	
@@ -118,8 +119,9 @@ public class BGM_Manager {
 	}
 	public int getSK(String date){
 		//get market state of QQQ for given date
-		FCI fciMS = new FCI(false, "./../in/mstates.txt");
-		ArrayList<String> msRow = AhrIO.scanRow("./../in/mstates.txt", ",", date);
+		String msPath = AhrIO.uniPath("./../in/mstates.txt");
+		FCI fciMS = new FCI(false, msPath);
+		ArrayList<String> msRow = AhrIO.scanRow(msPath, ",", date);
 		String msOfDate = msRow.get(fciMS.getIdx("ms_mask"));		
 		//get the best performing SK that matches with QQQ market state of this date
 		String bkOfDate = "";
@@ -137,8 +139,9 @@ public class BGM_Manager {
 		}
 		String msMask = getMsMask();
 		//get market state of QQQ for given date
-		FCI fciMS = new FCI(false, "./../in/mstates.txt");
-		ArrayList<String> msRow = AhrIO.scanRow("./../in/mstates.txt", ",", date);
+		String msPath = AhrIO.uniPath("./../in/mstates.txt");
+		FCI fciMS = new FCI(false, msPath);
+		ArrayList<String> msRow = AhrIO.scanRow(msPath, ",", date);
 		String msOfDate = msRow.get(fciMS.getIdx("ms_mask"));		
 		//yes or no if matches
 		boolean does_match = AhrGen.compareMasks(msMask, msOfDate);
@@ -244,7 +247,7 @@ public class BGM_Manager {
 		this.bgm = bgmVal;
 	}
 	public void setFocusSK(int skID){
-		String ksPath = "./../out/sk/log/"+this.bgm+"/keys_struct.txt";
+		String ksPath = AhrIO.uniPath("./../out/sk/log/"+this.bgm+"/keys_struct.txt");
 		this.kattr = new AttributesSK(this.bgm, ksPath, String.valueOf(skID));
 		this.focusSK = skID;
 		//if(this.bgm.equals("ANN")){
@@ -253,8 +256,9 @@ public class BGM_Manager {
 		//}
 	}
 	public void setFocusSK(String date){//set focus to best SK for this date
-		ArrayList<String> msRow = AhrIO.scanRow("./../in/mstates.txt", ",", date);
-		FCI fciMS = new FCI(false, "./../in/mstates.txt");
+		String msPath = AhrIO.uniPath("./../in/mstates.txt");
+		FCI fciMS = new FCI(false, msPath);
+		ArrayList<String> msRow = AhrIO.scanRow(msPath, ",", date);
 		String msOfDate = msRow.get(fciMS.getIdx("ms_mask"));
 
 		/*
@@ -324,10 +328,11 @@ public class BGM_Manager {
 		String indMask = kattr.getIndMask();
 		Network network = new Network("./../out/sk/log/ann/structure/struct_"+String.valueOf(skID)+".txt");
 		//get lines from Clean DB for this date (that also pass NAR)
-		String bdPath = "./../../DB_Intrinio/Clean/ByDate/"+date+".txt";
-		ArrayList<ArrayList<String>> allClean = AhrIO.scanFile(bdPath, "~");
+		String bdPath = AhrIO.uniPath(Globals.bydate_path);
+		String bdPathFull = AhrIO.uniPath(bdPath+date+".txt");
+		FCI fciBD = new FCI(false, bdPath);
+		ArrayList<ArrayList<String>> allClean = AhrIO.scanFile(bdPathFull, "~");
 		ArrayList<ArrayList<String>> narClean = new ArrayList<ArrayList<String>>();
-		FCI fciBD = new FCI(false, "./../../DB_Intrinio/Clean/ByDate/");
 		for(int i = 0; i < allClean.size(); i++){
 			String narMaskTmp = narMask;
 			String narItr = allClean.get(i).get(fciBD.getIdx("nar_mask"));
@@ -484,10 +489,11 @@ public class BGM_Manager {
 		String indMask = kattr.getIndMask();
 		Network network = new Network("./../out/sk/log/ann/structure/struct_"+String.valueOf(skID)+".txt");
 		//get lines from Clean DB for this date (that also pass NAR)
-		String bdPath = "./../../DB_Intrinio/Clean/ByDate/"+date+".txt";
-		ArrayList<ArrayList<String>> allClean = AhrIO.scanFile(bdPath, "~");
+		String bdPath = Globals.bydate_path;
+		String bdPathFull = AhrIO.uniPath(bdPath+date+".txt");
+		FCI fciBD = new FCI(false, bdPath);
+		ArrayList<ArrayList<String>> allClean = AhrIO.scanFile(bdPathFull, "~");
 		ArrayList<ArrayList<String>> narClean = new ArrayList<ArrayList<String>>();
-		FCI fciBD = new FCI(false, "./../../DB_Intrinio/Clean/ByDate/");
 		for(int i = 0; i < allClean.size(); i++){
 			String narMaskTmp = narMask;
 			String narItr = allClean.get(i).get(fciBD.getIdx("nar_mask"));
@@ -620,7 +626,7 @@ public class BGM_Manager {
 		}else if(bgm.equals("ann")){
 			score = calcScore_ANN(skID, date, ticker);
 		}else{
-			System.out.println("ERROR: Invalid BGM in makePredictions()");
+			System.out.println("ERR: Invalid BGM in makePredictions()");
 			score = -1;
 		}
 		return score;	
@@ -642,8 +648,9 @@ public class BGM_Manager {
 		Network network = new Network("./../out/sk/log/ann/structure/struct_"+String.valueOf(skID)+".txt");
 		ArrayList<String> dline = new ArrayList<String>();
 		//find line in Clean/ByDate that matches stock and date
-		ArrayList<ArrayList<String>> bdFile = AhrIO.scanFile("./../../DB_Intrinio/Clean/ByDate/"+date+".txt", "~");
-		FCI fciBD = new FCI(false, "./../../DB_Intrinio/Clean/ByDate/");
+		String bdPath = Globals.bydate_path;
+		ArrayList<ArrayList<String>> bdFile = AhrIO.scanFile(bdPath+date+".txt", "~");
+		FCI fciBD = new FCI(false, bdPath);
 		ArrayList<String> bdLine = new ArrayList<String>();
 		for(int i = 0; i < bdFile.size(); i++){
 			if(bdFile.get(i).get(fciBD.getIdx("ticker")).equals(ticker)){
@@ -670,7 +677,7 @@ public class BGM_Manager {
 
 	public ArrayList<Integer> scorePercentiles(int skID, ArrayList<String> scores){
 		//get row in score_percentiles.txt file that matches BGM & SK
-		String spPath = "./../out/score_percentiles.txt";
+		String spPath = AhrIO.uniPath("./../out/score_percentiles.txt");
 		ArrayList<ArrayList<String>> spFile = AhrIO.scanFile(spPath, ",");
 		ArrayList<String> spRow = new ArrayList<String>();
 		for(int i = 0; i < spFile.size(); i++){
@@ -742,18 +749,18 @@ public class BGM_Manager {
 	public void calcScorePercentiles(){
 		String bgmLC = kattr.getBGM();
 		String bgmUC = bgmLC.toUpperCase();
-		String spPath = "./../out/score_percentiles.txt";
-		String alPath = "./../out/ak/log/ak_log.txt";
+		String spPath = AhrIO.uniPath("./../out/score_percentiles.txt");
+		String alPath = AhrIO.uniPath("./../out/ak/log/ak_log.txt");
 		FCI fciAL = new FCI(true, alPath);
 		ArrayList<ArrayList<String>> spFile = AhrIO.scanFile(spPath, ",");
 		ArrayList<String> alRow = AhrIO.scanRow(alPath, ",", String.valueOf(this.id));
 		String call = alRow.get(fciAL.getIdx("call"));
 		String sdate = alRow.get(fciAL.getIdx("start_date"));
 		String edate = alRow.get(fciAL.getIdx("end_date"));
-		FCI fciSK = new FCI(false, "./../out/sk/baseis/");
+		FCI fciSK = new FCI(false, AhrIO.uniPath("./../out/sk/baseis/"));
 		for(int i = 0; i < this.bestSK.length; i++){
 			String skNum = String.valueOf(this.bestSK[i]);
-			String skPath = "./../out/sk/baseis/"+bgmLC+"/"+bgmUC+"_"+skNum+".txt";
+			String skPath = AhrIO.uniPath("./../out/sk/baseis/"+bgmLC+"/"+bgmUC+"_"+skNum+".txt");
 			ArrayList<Double> scores = new ArrayList<Double>();
 			ArrayList<ArrayList<String>> skBasis = AhrIO.scanFile(skPath, ",");
 			for(int j = 0; j < skBasis.size(); j++){
@@ -797,7 +804,7 @@ public class BGM_Manager {
 				spFile.set(skIdx, line);
 			}
 		}
-		AhrIO.writeToFile("./../out/score_percentiles.txt", spFile, ",");
+		AhrIO.writeToFile(spPath, spFile, ",");
 	}	
 
 	/*-------------------------------------------------------------------------------------
@@ -806,11 +813,12 @@ public class BGM_Manager {
 
 	//get performance data from reading it in from basis file
 	public ArrayList<String> perfFromBasisFile(String path){
+		path = AhrIO.uniPath(path);
 		FCI fciBS;
 		if(path.contains("ak")){
-			fciBS = new FCI(false, "./../out/ak/baseis/");
+			fciBS = new FCI(false, AhrIO.uniPath("./../out/ak/baseis/"));
 		}else{
-			fciBS = new FCI(false, "./../out/sk/baseis/");
+			fciBS = new FCI(false, AhrIO.uniPath("./../out/sk/baseis/"));
 		}
 		double plateau = getPlateau();
 		//init general perf data
@@ -878,7 +886,7 @@ public class BGM_Manager {
 		}else if(bgm.equals("ann")){
 			data = keyPerfSK_ANN();
 		}else{
-			System.out.println("ERROR: Invalid BGM in keyPerformance()");
+			System.out.println("ERR: Invalid BGM in keyPerformance()");
 		}
 		return data;
 	}
@@ -956,7 +964,7 @@ public class BGM_Manager {
 	//set perf data (from either basis file or makePred) to SK keys_perf.txt file
 	public void perfToFileSK(ArrayList<String> perf){
 		String bgmLC = kattr.getBGM();
-		String kpPath = "./../out/sk/log/"+bgmLC+"/keys_perf.txt";
+		String kpPath = AhrIO.uniPath("./../out/sk/log/"+bgmLC+"/keys_perf.txt");
 		FCI fciKP = new FCI(true, kpPath);
 		ArrayList<ArrayList<String>> kpFile = AhrIO.scanFile(kpPath, ",");
 		ArrayList<String> kpRow = AhrAL.getRow(kpFile, String.valueOf(id));
@@ -973,19 +981,18 @@ public class BGM_Manager {
 
 	//set perf data (from either basis file or makePred) to AK ak_log.txt file
 	public void perfToFileAK(ArrayList<String> perf){
-		String laPath = "./../out/ak/log/ak_log.txt";
-		FCI fciLA = new FCI(true, laPath);
-		ArrayList<ArrayList<String>> laFile = AhrIO.scanFile(laPath, ",");
-		ArrayList<String> laRow = AhrAL.getRow(laFile, String.valueOf(id));
-		laRow.set(fciLA.getIdx("true_train_apapt"), perf.get(1));
-		laRow.set(fciLA.getIdx("true_test_apapt"), perf.get(4));
-		laRow.set(fciLA.getIdx("true_train_posp"), perf.get(2));
-		laRow.set(fciLA.getIdx("true_test_posp"), perf.get(5));
-		int rowIdx = AhrAL.getRowIdx(laFile, String.valueOf(id));
-		laFile.set(rowIdx, laRow);
-		AhrIO.writeToFile(laPath, laFile, ",");
+		String alPath = AhrIO.uniPath("./../out/ak/log/ak_log.txt");
+		FCI fciAL = new FCI(true, alPath);
+		ArrayList<ArrayList<String>> alFile = AhrIO.scanFile(alPath, ",");
+		ArrayList<String> alRow = AhrAL.getRow(alFile, String.valueOf(id));
+		alRow.set(fciAL.getIdx("true_train_apapt"), perf.get(1));
+		alRow.set(fciAL.getIdx("true_test_apapt"), perf.get(4));
+		alRow.set(fciAL.getIdx("true_train_posp"), perf.get(2));
+		alRow.set(fciAL.getIdx("true_test_posp"), perf.get(5));
+		int rowIdx = AhrAL.getRowIdx(alFile, String.valueOf(id));
+		alFile.set(rowIdx, alRow);
+		AhrIO.writeToFile(alPath, alFile, ",");
 	}
-
 
 	
 	/*-------------------------------------------------------------------------------------
@@ -1001,9 +1008,9 @@ public class BGM_Manager {
 		//System.out.println("==> BSO Train Data: " + bsoTrain);
 		//System.out.println("==> BSO Test Data: " + bsoTest);
 		//get row from keys_perf
-		String kpPath = "./../out/sk/log/"+bgmLC+"/keys_perf.txt";
+		String kpPath = AhrIO.uniPath("./../out/sk/log/"+bgmLC+"/keys_perf.txt");
 		FCI fciKP = new FCI(true, kpPath);
-		ArrayList<ArrayList<String>> kpFile = AhrIO.scanFile(kpPath, ",");		
+		ArrayList<ArrayList<String>> kpFile = AhrIO.scanFile(kpPath, ",");
 		ArrayList<String> kpRow = AhrAL.getRow(kpFile, String.valueOf(id));
 		int rowIdx = AhrAL.getRowIdx(kpFile, String.valueOf(id));
 		//add bso vals to row and write back to file
@@ -1023,7 +1030,7 @@ public class BGM_Manager {
 		ArrayList<String> bsoTrain = bsoMultiple(getSDate(), getEDate(), "100", is_min_trig, use_sk_bso);
 		ArrayList<String> bsoTest = bsoMultiple(getSDate(), getEDate(), "010", is_min_trig, use_sk_bso);
 		//get row from ak_log
-		String laPath = "./../out/ak/log/ak_log.txt";
+		String laPath = AhrIO.uniPath("./../out/ak/log/ak_log.txt");
 		FCI fciLA = new FCI(true, laPath);
 		ArrayList<ArrayList<String>> laFile = AhrIO.scanFile(laPath, ",");		
 		ArrayList<String> laRow = AhrAL.getRow(laFile, String.valueOf(id));
@@ -1042,7 +1049,7 @@ public class BGM_Manager {
 	//write BIM/SOM Opt values to file when given an OrderSim obj, assumes BIM/SOM is already calced
 	public void bsoPerfToFileAK(OrderSim osim){
 		//get row from ak_log
-		String laPath = "./../out/ak/log/ak_log.txt";
+		String laPath = AhrIO.uniPath("./../out/ak/log/ak_log.txt");
 		FCI fciLA = new FCI(true, laPath);
 		ArrayList<ArrayList<String>> laFile = AhrIO.scanFile(laPath, ",");		
 		ArrayList<String> laRow = AhrAL.getRow(laFile, String.valueOf(osim.getID()));
@@ -1245,7 +1252,7 @@ public class BGM_Manager {
 				}
 			} 
 		}
-		AhrIO.writeToFile("./../data/tmp/bso_multiple.txt", allVals, ",");
+		AhrIO.writeToFile(AhrIO.uniPath("./../data/tmp/bso_multiple.txt"), allVals, ",");
 		//System.out.println("\n--> Best Vals 1st Round : " + bestVals);
 		//narrow down BIM/SOM to third sigfig
 		int bimItr = (int)(bestVals.get(0) * 1000.0);
@@ -1339,7 +1346,7 @@ public class BGM_Manager {
 		}else if(bgm.equals("ann")){
 			genBasisSK_ANN(skID);
 		}else{
-			System.out.println("ERROR: Invalid BGM in generateBasis()");
+			System.out.println("ERR: Invalid BGM in generateBasis()");
 		}
 	}
 	private void genBasisSK_GAD2(int skID){
@@ -1376,7 +1383,7 @@ public class BGM_Manager {
 				basis.add(tfLine);
 			}
 		}
-		AhrIO.writeToFile("./../out/sk/baseis/ann/ANN_"+String.valueOf(skID)+".txt", basis, ",");
+		AhrIO.writeToFile(AhrIO.uniPath("./../out/sk/baseis/ann/ANN_"+String.valueOf(skID)+".txt"), basis, ",");
 	}
 
 	//CONTROLLER FUNCT: generate basis file for AK
@@ -1399,12 +1406,13 @@ public class BGM_Manager {
 	}
 	private void genBasisAK_ANN(){
 		ArrayList<ArrayList<String>> basis = new ArrayList<ArrayList<String>>();
-		ArrayList<ArrayList<String>> laFile = AhrIO.scanFile("./../out/ak/log/ak_log.txt", ",");
-		FCI fciLA = new FCI(true, "./../out/ak/log/ak_log.txt");
-		ArrayList<String> laRow = new ArrayList<String>();
-		for(int i = 1; i < laFile.size(); i++){
-			if(this.id == Integer.parseInt(laFile.get(i).get(fciLA.getIdx("ak_num")))){
-				laRow = laFile.get(i);
+		String alPath = AhrIO.uniPath("./../out/ak/log/ak_log.txt");
+		FCI fciAL = new FCI(true, alPath);
+		ArrayList<ArrayList<String>> alFile = AhrIO.scanFile(alPath, ",");
+		ArrayList<String> alRow = new ArrayList<String>();
+		for(int i = 1; i < alFile.size(); i++){
+			if(this.id == Integer.parseInt(alFile.get(i).get(fciAL.getIdx("ak_num")))){
+				alRow = alFile.get(i);
 			}
 		}
 		//get relv info
@@ -1428,7 +1436,8 @@ public class BGM_Manager {
 				basis.add(tfLine);
 			}	
 		}
-		AhrIO.writeToFile("./../out/ak/baseis/ann/ANN_"+String.valueOf(this.id)+".txt", basis, ",");
+		String bfPath = AhrIO.uniPath("./../out/ak/baseis/ann/ANN_"+String.valueOf(this.id)+".txt");
+		AhrIO.writeToFile(bfPath, basis, ",");
 	}
 	//generate basis file for random sampling
 	//probability is val b/w [0-1], is chance of a file added for sampling (slims down files and computation)
@@ -1443,7 +1452,7 @@ public class BGM_Manager {
 		String msMask = kattr.getMsMask();
 		String narMask = kattr.getNarMask();
 		//get all possible dates from Clean/ByDate
-		String bdPath = "./../../DB_Intrinio/Clean/ByDate/";
+		String bdPath = Globals.bydate_path;
 		ArrayList<String> bdFilesAll = AhrIO.getNamesInPath(bdPath);
 		//only get dates that fit market mask and within date range
 		bdFilesAll = AhrDate.getDatesThatPassMarketMask(bdFilesAll, msMask);
@@ -1491,7 +1500,7 @@ public class BGM_Manager {
 			}
 		}
 		//write RND SK data to keys_struct
-		String ksPath = "./../out/sk/log/rnd/keys_struct.txt";
+		String ksPath = AhrIO.uniPath("./../out/sk/log/rnd/keys_struct.txt");
 		FCI fciKS = new FCI(true, ksPath);
 		ArrayList<ArrayList<String>> ksFile = AhrIO.scanFile(ksPath, ",");
 		int skNum = -1;
@@ -1532,7 +1541,7 @@ public class BGM_Manager {
 		apapt = apapt / (double)basis.size();
 		posp = (posp / (double)basis.size()) * 100.0;
 		//write basis to file and add to ./../out/sk/log/rnd/key_perf.txt
-		String kpPath = "./../out/sk/log/rnd/keys_perf.txt";
+		String kpPath = AhrIO.uniPath("./../out/sk/log/rnd/keys_perf.txt");
 		FCI fciKP = new FCI(true, kpPath);
 		ArrayList<ArrayList<String>> kpFile = AhrIO.scanFile(kpPath, ",");
 		ArrayList<String> kpLine = new ArrayList<String>();
@@ -1550,7 +1559,8 @@ public class BGM_Manager {
 		kpLine.add(String.format("%.3f", posp));			//[11] True Pos %
 		kpFile.add(kpLine);
 		AhrIO.writeToFile(kpPath, kpFile, ",");
-		AhrIO.writeToFile("./../out/sk/baseis/rnd/RND_"+String.valueOf(skNum)+".txt", basis, ",");
+		String rbPath = AhrIO.uniPath("./../out/sk/baseis/rnd/RND_"+String.valueOf(skNum)+".txt");
+		AhrIO.writeToFile(rbPath, basis, ",");
 	}
 	public void genBasisRnd(String sdate, String edate, int spd, int tvi, String msMask, String narMask, String filter){
 		ArrayList<ArrayList<String>> basis = new ArrayList<ArrayList<String>>();
@@ -1581,9 +1591,10 @@ public class BGM_Manager {
 		}
 		ArrayList<ArrayList<String>> basis = new ArrayList<ArrayList<String>>();
 		String msMask = kattr.getMsMask();
-		String bsPath = "./../out/sk/baseis/";
+		String bsPath = AhrIO.uniPath("./../out/sk/baseis/");
+		String bsPathFull = AhrIO.uniPath(bsPath+"ann/ANN_"+String.valueOf(skID)+".txt");
 		FCI fciBS = new FCI(false, bsPath);
-		ArrayList<ArrayList<String>> fc = AhrIO.scanFile(bsPath+"ann/ANN_"+String.valueOf(skID)+".txt", ",");
+		ArrayList<ArrayList<String>> fc = AhrIO.scanFile(bsPathFull, ",");
 		//get dates needed to update
 		String mrdate = fc.get(fc.size()-1).get(fciBS.getIdx("date"));
 		String edate = AhrDate.getTodaysDate();
@@ -1626,14 +1637,14 @@ public class BGM_Manager {
 				basis.add(tfLine);
 			}
 		}
-		AhrIO.writeToFile(bsPath+"ann/ANN_"+String.valueOf(skID)+".txt", basis, ",");
+		AhrIO.writeToFile(bsPathFull, basis, ",");
 		//System.out.println("--> ANN SK"+skID+" ... UPDATED");
 	}
 
 	//updates a AK basis file
 	public void updateBasisAK(){
 		ArrayList<ArrayList<String>> basis = new ArrayList<ArrayList<String>>();
-		String alPath = "./../out/ak/log/ak_log.txt";
+		String alPath = AhrIO.uniPath("./../out/ak/log/ak_log.txt");
 		ArrayList<String> alRow = AhrIO.scanRow(alPath, ",", String.valueOf(this.id));
 		FCI fciAL = new FCI(true, alPath);
 		String bgmLC = kattr.getBGM();
@@ -1644,9 +1655,9 @@ public class BGM_Manager {
 			updateBasisSK(Integer.parseInt(skeys[i]));
 		}
 		//get dates needed for update
-		String akPath = "./../out/ak/baseis/"+bgmLC+"/"+bgmUC+"_"+String.valueOf(this.id)+".txt";
+		String akPath = AhrIO.uniPath("./../out/ak/baseis/"+bgmLC+"/"+bgmUC+"_"+String.valueOf(this.id)+".txt");
 		ArrayList<ArrayList<String>> fc = AhrIO.scanFile(akPath, ",");
-		FCI fciBS = new FCI(false, "./../out/ak/baseis/");
+		FCI fciBS = new FCI(false, AhrIO.uniPath("./../out/ak/baseis/"));
 		String mrDate = fc.get(fc.size()-1).get(fciBS.getIdx("date"));
 		String edate = AhrDate.getTodaysDate();
 		ArrayList<String> dates = AhrDate.getDatesBetween(mrDate, edate);
@@ -1670,10 +1681,10 @@ public class BGM_Manager {
 			}
 		}	
 		//update, add new lines
-		fciBS = new FCI(false, "./../out/sk/baseis/");
+		fciBS = new FCI(false, AhrIO.uniPath("./../out/sk/baseis/"));
 		for(int i = 0; i < dates.size(); i++){
 			int skNum = getSK(dates.get(i));
-			String skPath = "./../out/sk/baseis/"+bgmLC+"/"+bgmUC+"_"+String.valueOf(skNum);
+			String skPath = AhrIO.uniPath("./../out/sk/baseis/"+bgmLC+"/"+bgmUC+"_"+String.valueOf(skNum));
 			skPath += ".txt";
 			ArrayList<ArrayList<String>> skRows = AhrIO.scanSelectRows(skPath, ",", dates.get(i), fciBS.getIdx("date"));
 			for(int j = 0; j < skRows.size(); j++){

@@ -214,7 +214,7 @@ public class DB_DataIntegrity {
 		bGetVal.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e){
 				//init vars and get vars from input panel
-				String srPath = "./../../DB_Intrinio/Main/S_Raw/";
+				String srPath = AhrIO.uniPath("./../../DB_Intrinio/Main/S_Raw/");
 				FCI fciSR = new FCI(false, srPath);
 				Random rnd = new Random();
 				String indType = cbFocusInd.getSelectedItem().toString();

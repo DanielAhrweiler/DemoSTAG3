@@ -45,6 +45,7 @@ public class TableSortPanel extends JPanel {
 	}
 	//file but no header given, header assumed to be 1st line in file
 	public TableSortPanel(String inPath){
+		inPath = AhrIO.uniPath(inPath);
 		ArrayList<ArrayList<String>> al = AhrIO.scanFile(inPath, ",");
 		//convert table header
 		this.header = new String[al.get(0).size()];
@@ -79,6 +80,7 @@ public class TableSortPanel extends JPanel {
 	}
 	//file and header is given
 	public TableSortPanel(String inPath, String[] header){
+		inPath = AhrIO.uniPath(inPath);
 		ArrayList<ArrayList<String>> al = AhrIO.scanFile(inPath, ",");
 		this.header = header;
 		//convert table data
@@ -221,7 +223,6 @@ public class TableSortPanel extends JPanel {
 		JScrollPane spTable = new JScrollPane(table, JScrollPane.VERTICAL_SCROLLBAR_ALWAYS,
 									JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
  
-									
 
 		//listeners
 		bSort.addActionListener(new ActionListener() {

@@ -43,6 +43,7 @@ public class AttributesSK {
 	}
 	//get attrs from file (./../data/tmp/sk_attrs.txt)
 	public AttributesSK(String path){
+		path = AhrIO.uniPath(path);
 		//default values in case line is not in file
 		this.bgm = "ann";
 		this.call = true;
@@ -121,6 +122,7 @@ public class AttributesSK {
 
 	//can pull attrs saved in keys_struct file
 	public AttributesSK(String bgm, String path, String rowName){
+		path = AhrIO.uniPath(path);
 		this.bgm = bgm.toLowerCase();
 		FCI fciKS = new FCI(true, path);
 		ArrayList<String> ksRow = AhrIO.scanRow(path, ",", rowName);
@@ -254,6 +256,7 @@ public class AttributesSK {
 
 	//save attrs to file
 	public void saveToFile(String path){
+		path = AhrIO.uniPath(path);
 		ArrayList<ArrayList<String>> tf = new ArrayList<ArrayList<String>>();
 		tf.add(AhrAL.toAL(new String[]{"bgm", this.bgm}));
 		tf.add(AhrAL.toAL(new String[]{"call", (new Boolean(this.call)).toString()}));

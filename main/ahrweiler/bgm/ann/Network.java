@@ -1,4 +1,5 @@
 package ahrweiler.bgm.ann;
+import ahrweiler.util.AhrIO;
 import java.util.ArrayList;
 import java.lang.Math;
 import java.io.*;
@@ -66,6 +67,7 @@ public class Network {
 		//System.out.println("Hidden Layers: " + hiddenLayers.size());
 	}
 	public Network(String fpath){//TODO change to read in struct files correctly, w/ bias and val
+		fpath = AhrIO.uniPath(fpath);
 		this.totalError = 0.0;
 		//read in info from ./../out/sk/log/ann/structure/ file
 		ArrayList<ArrayList<String>> fc = new ArrayList<ArrayList<String>>();

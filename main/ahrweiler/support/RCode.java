@@ -220,6 +220,8 @@ public class RCode {
 
 	//time series using data from file (single or multiple vars)
 	public void createTimeSeries(String inPath, String outPath, int xdim, int ydim){
+		inPath = AhrIO.uniPath(inPath);
+		outPath = AhrIO.uniPath(outPath);
 		xDataType = "date";
 		yDataType = "double";
 		//itr thru in file, get var names and uniq vars in dataset
@@ -264,6 +266,7 @@ public class RCode {
 
 	//box and whisker (horizontal)
 	public void createBAW(ArrayList<Double> al, String outPath, int xdim, int ydim){
+		outPath = AhrIO.uniPath(outPath);
 		xDataType = "double";
 		yDataType = "none";
 		addPackage("ggplot2");
@@ -283,6 +286,8 @@ public class RCode {
 		endPlot();
 	}
 	public void createBAW(String inPath, String outPath, int xdim, int ydim, boolean include_mean){
+		inPath = AhrIO.uniPath(inPath);
+		outPath = AhrIO.uniPath(outPath);
 		xDataType = "double";
 		yDataType = "none";
 		addPackage("ggplot2");
@@ -299,6 +304,7 @@ public class RCode {
 
 	//CDF plot (ggplot)
 	public void createCDF(ArrayList<Double> al, String outPath, int xdim, int ydim){
+		outPath = AhrIO.uniPath(outPath);
 		xDataType = "double";
 		yDataType = "double";
 		addPackage("ggplot2");
@@ -320,6 +326,7 @@ public class RCode {
 
 	//pie chart
 	public void createPie(ArrayList<ArrayList<String>> al, String outPath, int xdim, int ydim){
+		outPath = AhrIO.uniPath(outPath);
 		xDataType = "double";
 		yDataType = "none";
 		addPackage("ggplot2");
@@ -349,6 +356,8 @@ public class RCode {
 
 	//heatmap
 	public void createHeatmap(String inPath, String outPath, int xdim, int ydim){
+		inPath = AhrIO.uniPath(inPath);
+		outPath = AhrIO.uniPath(outPath);
 		xDataType = "double";
 		yDataType = "double";
 		addPackage("ggplot2");

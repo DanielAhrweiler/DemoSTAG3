@@ -109,6 +109,7 @@ public class StockFilter {
 		}
 	}
 	public StockFilter(String fpath){
+		fpath = AhrIO.uniPath(fpath);
 		this.scodes = new ArrayList<ArrayList<String>>();
 		this.results = new ArrayList<ArrayList<String>>();
 		this.sectors = new ArrayList<String>();
@@ -214,7 +215,8 @@ public class StockFilter {
 		//System.out.println("--> In applySecIndFilter()");
 
 		//get all (non xx) codes from sector_ticks.txt
-		ArrayList<ArrayList<String>> stFC = AhrIO.scanFile("./../in/sector_ticks.txt", ",");
+		String stPath = AhrIO.uniPath("./../in/sector_ticks.txt");
+		ArrayList<ArrayList<String>> stFC = AhrIO.scanFile(stPath, ",");
 		ArrayList<Integer> allCodes = new ArrayList<Integer>();
 		for(int i = 0; i < stFC.size(); i++){
 			String itrCode = stFC.get(i).get(0);
@@ -275,7 +277,8 @@ public class StockFilter {
 	//apply just sector/industry code filter
 	public void applySecIndFilter(){
 		//get all (non xx) codes from sector_ticks.txt
-		ArrayList<ArrayList<String>> secTicks = AhrIO.scanFile("./../in/sector_ticks.txt", ",");
+		String stPath = AhrIO.uniPath("./../in/sector_ticks.txt");
+		ArrayList<ArrayList<String>> secTicks = AhrIO.scanFile(stPath, ",");
 		ArrayList<Integer> allCodes = new ArrayList<Integer>();
 		for(int i = 0; i < secTicks.size(); i++){
 			String itrCode = secTicks.get(i).get(0);
@@ -415,7 +418,7 @@ public class StockFilter {
 		trackInds = new HashMap<String, ArrayList<Integer>>();
 		results = new ArrayList<ArrayList<String>>();
 		//get ByDate data from given date
-		String bdPath = "./../../DB_Intrinio/Clean/ByDate/";
+		String bdPath = Globals.bydate_path;
 		FCI fciBD = new FCI(false, bdPath);
 		ArrayList<ArrayList<String>> bdFile = new ArrayList<ArrayList<String>>();
 		if(Globals.uses_mysql_source){

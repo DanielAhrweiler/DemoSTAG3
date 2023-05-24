@@ -44,7 +44,7 @@ public class ANN {
 	//------------- CONSTRUCTORS ----------------
 	//pull data from a saved file
 	public ANN(int idNum){
-		String path = "./../out/sk/log/ann/keys_struct.txt";
+		String path = AhrIO.uniPath("./../out/sk/log/ann/keys_struct.txt");
 		FCI fciKS = new FCI(true, path);
 		ArrayList<String> ksLine = AhrIO.scanRow(path, ",", String.valueOf(idNum));
 		if(ksLine.size() > 3){
@@ -289,9 +289,9 @@ public class ANN {
 	//calcs SK and writes all necessary info to multiple files
 	public void calcSK(){
 		int secSize = 10000;
-		String dbsPath = "./../data/ml/ann/cust/db_sizes.txt";
-		String trainPath = "./../data/ml/ann/cust/train/";
-		String testPath = "./../data/ml/ann/cust/test/";
+		String dbsPath = AhrIO.uniPath("./../data/ml/ann/cust/db_sizes.txt");
+		String trainPath = AhrIO.uniPath("./../data/ml/ann/cust/train/");
+		String testPath = AhrIO.uniPath("./../data/ml/ann/cust/test/");
 		//print out basic info
 		/*
 		System.out.println("================= In calcSK ==================");
@@ -411,7 +411,8 @@ public class ANN {
 		
 		//OUTPUT: save ANN info to files
 		//[1] keys_struct.txt
-		ArrayList<ArrayList<String>> keys = AhrIO.scanFile("./../out/sk/log/ann/keys_struct.txt", ",");
+		String ksPath = AhrIO.uniPath("./../out/sk/log/ann/keys_struct.txt");
+		ArrayList<ArrayList<String>> keys = AhrIO.scanFile(ksPath, ",");
 		ArrayList<String> ksHeader = keys.get(0);
 		keys.remove(0);	//removes header
 		cdbs = AhrIO.scanFile(dbsPath, ",");
@@ -456,10 +457,11 @@ public class ANN {
 		keys.add(sline);
 		keys.add(lline);
 		keys.add(0, ksHeader);
-		AhrIO.writeToFile("./../out/sk/log/ann/keys_struct.txt", keys, ",");
+		AhrIO.writeToFile(ksPath, keys, ",");
 		//[2] struct_xxx.txt
 		ArrayList<ArrayList<String>> tfStruct = new ArrayList<ArrayList<String>>();
-		String fpath = "./../out/sk/log/ann/structure/struct_"+String.valueOf(id)+".txt";
+		String structPath1 = AhrIO.uniPath("./../out/sk/log/ann/structure/struct_"+String.valueOf(id)+".txt");
+		String structPath2 = AhrIO.uniPath("./../out/sk/log/ann/structure/struct_"+String.valueOf(id+1)+".txt");
 		for(int i = 0; i < ann.getTotalLayers(); i++){
 			ArrayList<String> strLine = new ArrayList<String>();
 			if(i == 0){//input layer
@@ -488,13 +490,16 @@ public class ANN {
 				}
 			}
 		}
-		AhrIO.writeToFile("./../out/sk/log/ann/structure/struct_"+id+".txt", tfStruct, ",");
-		AhrIO.writeToFile("./../out/sk/log/ann/structure/struct_"+(id+1)+".txt", tfStruct, ",");
+		AhrIO.writeToFile(structPath1, tfStruct, ",");
+		AhrIO.writeToFile(structPath2, tfStruct, ",");
 		//[3] write to file err log : err_xxx.txt
-		AhrIO.writeToFile("./../out/sk/log/ann/error/err_"+id+".txt", getErrorLog(), ",");
-		AhrIO.writeToFile("./../out/sk/log/ann/error/err_"+(id+1)+".txt", getErrorLog(), ",");
+		String errPath1 = AhrIO.uniPath("./../out/sk/log/ann/error/err_"+id+".txt");
+		String errPath2 = AhrIO.uniPath("./../out/sk/log/ann/error/err_"+(id+1)+".txt");
+		AhrIO.writeToFile(errPath1, getErrorLog(), ",");
+		AhrIO.writeToFile(errPath2, getErrorLog(), ",");
 		//[4] keys_perf.txt
-		ArrayList<ArrayList<String>> kpFile = AhrIO.scanFile("./../out/sk/log/ann/keys_perf.txt", ",");
+		String kpPath = AhrIO.uniPath("./../out/sk/log/ann/keys_perf.txt");
+		ArrayList<ArrayList<String>> kpFile = AhrIO.scanFile(kpPath, ",");
 		sline = new ArrayList<String>();
 		sline.add(String.valueOf(sskID));					//[0] sk_num
 		sline.add("0");										//[1] call
@@ -519,7 +524,7 @@ public class ANN {
 		lline.set(1, "1");
 		kpFile.add(sline);
 		kpFile.add(lline);
-		AhrIO.writeToFile("./../out/sk/log/ann/keys_perf.txt", kpFile, ",");
+		AhrIO.writeToFile(kpPath, kpFile, ",");
 
 		//Done
 		//System.out.println("Output Files WRITTEN");		
@@ -533,7 +538,7 @@ public class ANN {
 		//deleteCustDB();
 		//createCustDB(secSize);
 		//setup struct of ANN network and tracker vars
-		String trainPath = "./../data/ml/ann/cust/train/";
+		String trainPath = AhrIO.uniPath("./../data/ml/ann/cust/train/");
 		this.trainLineCount = 0;
 		this.testLineCount = 0;
 		ArrayList<Integer> hiddenDims = new ArrayList<Integer>();
@@ -542,7 +547,7 @@ public class ANN {
 		this.trainFiles = AhrIO.getFilesInPath(trainPath);
 		Collections.sort(this.trainFiles);
 		//calc ID numbers for short and long
-		String ksPath = "./../out/sk/log/ann/keys_struct.txt";
+		String ksPath = AhrIO.uniPath("./../out/sk/log/ann/keys_struct.txt");
 		FCI fciKS = new FCI(true, ksPath);
 		ArrayList<ArrayList<String>> ksFile = AhrIO.scanFile(ksPath, ",");
 		int maxID = -1;
@@ -560,8 +565,8 @@ public class ANN {
 
 	//calc 1 section of SK at a time
 	public void calcSKBySection(int sectionNum){
-		String trainPath = "./../data/ml/ann/cust/train/";
-		String testPath = "./../data/ml/ann/cust/test/";
+		String trainPath = AhrIO.uniPath("./../data/ml/ann/cust/train/");
+		String testPath = AhrIO.uniPath("./../data/ml/ann/cust/test/");
 		String trainFullPath = trainPath+trainFiles.get(sectionNum);
 		ArrayList<ArrayList<String>> trainFC = AhrIO.scanFile(trainFullPath, "~");
 		//train section of DB
@@ -626,10 +631,12 @@ public class ANN {
 		}
 		overallError = overallError / (double)errLog.size();
 		//[1] keys_struct.txt
-		ArrayList<ArrayList<String>> ksFile = AhrIO.scanFile("./../out/sk/log/ann/keys_struct.txt", ",");
+		String ksPath = AhrIO.uniPath("./../out/sk/log/ann/keys_struct.txt");
+		ArrayList<ArrayList<String>> ksFile = AhrIO.scanFile(ksPath, ",");
 		ArrayList<String> ksHeader = ksFile.get(0);
 		ksFile.remove(0);	//removes header
-		ArrayList<ArrayList<String>> cdbs = AhrIO.scanFile("./../data/ml/ann/cust/db_sizes.txt", ",");
+		String dbsPath = AhrIO.uniPath("./../data/ml/ann/cust/db_sizes.txt");
+		ArrayList<ArrayList<String>> cdbs = AhrIO.scanFile(dbsPath, ",");
 		int maxID = -1; 
 		for(int i = 0; i < ksFile.size(); i++){
 			if(Integer.parseInt(ksFile.get(i).get(0)) > maxID){
@@ -675,10 +682,11 @@ public class ANN {
 		ksFile.add(sline);
 		ksFile.add(lline);
 		ksFile.add(0, ksHeader);
-		AhrIO.writeToFile("./../out/sk/log/ann/keys_struct.txt", ksFile, ",");
+		AhrIO.writeToFile(ksPath, ksFile, ",");
 		//[2] struct_xxx.txt
 		ArrayList<ArrayList<String>> tfStruct = new ArrayList<ArrayList<String>>();
-		String fpath = "./../out/sk/log/ann/structure/struct_"+String.valueOf(id)+".txt";
+		String structPath1 = AhrIO.uniPath("./../out/sk/log/ann/structure/struct_"+String.valueOf(id)+".txt");
+		String structPath2 = AhrIO.uniPath("./../out/sk/log/ann/structure/struct_"+String.valueOf(id+1)+".txt");
 		for(int i = 0; i < this.network.getTotalLayers(); i++){
 			ArrayList<String> strLine = new ArrayList<String>();
 			if(i == 0){//input layer
@@ -707,13 +715,16 @@ public class ANN {
 				}
 			}
 		}
-		AhrIO.writeToFile("./../out/sk/log/ann/structure/struct_"+id+".txt", tfStruct, ",");
-		AhrIO.writeToFile("./../out/sk/log/ann/structure/struct_"+(id+1)+".txt", tfStruct, ",");
+		AhrIO.writeToFile(structPath1, tfStruct, ",");
+		AhrIO.writeToFile(structPath2, tfStruct, ",");
 		//[3] write to file err log : err_xxx.txt
-		AhrIO.writeToFile("./../out/sk/log/ann/error/err_"+id+".txt", getErrorLog(), ",");
-		AhrIO.writeToFile("./../out/sk/log/ann/error/err_"+(id+1)+".txt", getErrorLog(), ",");
+		String errPath1 = AhrIO.uniPath("./../out/sk/log/ann/error/err_"+id+".txt");
+		String errPath2 = AhrIO.uniPath("./../out/sk/log/ann/error/err_"+(id+1)+".txt");
+		AhrIO.writeToFile(errPath1, getErrorLog(), ",");
+		AhrIO.writeToFile(errPath2, getErrorLog(), ",");
 		//[4] keys_perf.txt
-		ArrayList<ArrayList<String>> kpFile = AhrIO.scanFile("./../out/sk/log/ann/keys_perf.txt", ",");
+		String kpPath = AhrIO.uniPath("./../out/sk/log/ann/keys_perf.txt");
+		ArrayList<ArrayList<String>> kpFile = AhrIO.scanFile(kpPath, ",");
 		sline = new ArrayList<String>();
 		sline.add(String.valueOf(sskID));					//[0] sk_num
 		sline.add("0");										//[1] call
@@ -738,7 +749,7 @@ public class ANN {
 		lline.set(1, "1");
 		kpFile.add(sline);
 		kpFile.add(lline);
-		AhrIO.writeToFile("./../out/sk/log/ann/keys_perf.txt", kpFile, ",");
+		AhrIO.writeToFile(kpPath, kpFile, ",");
 	}
 	
 
@@ -759,10 +770,11 @@ public class ANN {
 	public void createCustDBFromWeb(int secSize){
 		//System.out.print("--> Creating Custom DB (from aws) ... ");
 		ArrayList<String> dates = AhrDate.getDatesBetween(sdate, edate);
-		FCI fciMS = new FCI(false, "./../in/mstates.txt");
+		String msPath = AhrIO.uniPath("./../in/mstates.txt");
+		FCI fciMS = new FCI(false, msPath);
 		FCI fciBD = new FCI(false, Globals.bydate_path);
 		ArrayList<String> bdCols = AhrAL.toAL(Globals.mysql_bydate_cols);
-		ArrayList<ArrayList<String>> mstates = AhrIO.scanFile("./../in/mstates.txt", ",");
+		ArrayList<ArrayList<String>> mstates = AhrIO.scanFile(msPath, ",");
 		ArrayList<String> evenDates = new ArrayList<String>();
 		ArrayList<String> oddDates = new ArrayList<String>();
 		int evenLines = 0;
@@ -788,7 +800,7 @@ public class ANN {
 			}
 		}
 		//create the train sections and write them to file
-		String tfTrainPath = "./../data/ml/ann/cust/train/sec"+String.valueOf(evenSections)+".txt";
+		String tfTrainPath = AhrIO.uniPath("./../data/ml/ann/cust/train/sec"+String.valueOf(evenSections)+".txt");
 		ArrayList<ArrayList<String>> trainSection = new ArrayList<ArrayList<String>>();
 		ArrayList<ArrayList<String>> groupedTrainDates = new ArrayList<ArrayList<String>>();
 		int groupSize = 50;
@@ -817,7 +829,7 @@ public class ANN {
 						AhrIO.writeToFile(tfTrainPath, trainSection, "~");
 						trainSection = new ArrayList<ArrayList<String>>();
 						evenSections++;
-						tfTrainPath = "./../data/ml/ann/cust/train/sec"+String.valueOf(evenSections)+".txt";
+						tfTrainPath = AhrIO.uniPath("./../data/ml/ann/cust/train/sec"+String.valueOf(evenSections)+".txt");
 					}
 
 				}
@@ -829,7 +841,7 @@ public class ANN {
 			}
 		}
 		//create the test sections and write them to file
-		String tfTestPath = "./../data/ml/ann/cust/test/sec"+String.valueOf(oddSections)+".txt";
+		String tfTestPath = AhrIO.uniPath("./../data/ml/ann/cust/test/sec"+String.valueOf(oddSections)+".txt");
 		ArrayList<ArrayList<String>> testSection = new ArrayList<ArrayList<String>>();
 		ArrayList<ArrayList<String>> groupedTestDates = new ArrayList<ArrayList<String>>();
 		agroup = new ArrayList<String>();
@@ -857,7 +869,7 @@ public class ANN {
 						AhrIO.writeToFile(tfTestPath, testSection, "~");
 						testSection = new ArrayList<ArrayList<String>>();
 						oddSections++;
-						tfTestPath = "./../data/ml/ann/cust/test/sec"+String.valueOf(oddSections)+".txt";
+						tfTestPath = AhrIO.uniPath("./../data/ml/ann/cust/test/sec"+String.valueOf(oddSections)+".txt");
 					}
 
 				}
@@ -892,7 +904,7 @@ public class ANN {
 		toFile.add(line2);
 		toFile.add(line3);
 		toFile.add(line4);
-		AhrIO.writeToFile("./../data/ml/ann/cust/db_sizes.txt", toFile, ",");
+		AhrIO.writeToFile(AhrIO.uniPath("./../data/ml/ann/cust/db_sizes.txt"), toFile, ",");
 		//System.out.println("DONE");
 	}
 
@@ -900,8 +912,11 @@ public class ANN {
 	public void createCustDBFromLocal(int secSize){
 		//System.out.print("--> Creating Custom DB ... ");
 		ArrayList<String> dates = AhrDate.getDatesBetween(sdate, edate);
-		FCI fciMS = new FCI(false, "./../in/mstates.txt");
-		ArrayList<ArrayList<String>> mstates = AhrIO.scanFile("./../in/mstates.txt", ",");
+		String bdPath = Globals.bydate_path;
+		String msPath = AhrIO.uniPath("./../in/mstates.txt");
+		FCI fciBD = new FCI(false, bdPath);
+		FCI fciMS = new FCI(false, msPath);
+		ArrayList<ArrayList<String>> mstates = AhrIO.scanFile(msPath, ",");
 		ArrayList<String> evenDates = new ArrayList<String>();
 		ArrayList<String> oddDates = new ArrayList<String>();
 		int evenLines = 0;
@@ -930,9 +945,7 @@ public class ANN {
 		ArrayList<ArrayList<String>> tf = new ArrayList<ArrayList<String>>();
 		for(int i = 0; i < evenDates.size(); i++){
 			//get only clean lines that pass NAR
-			String bdBasePath = "./../../DB_"+db_name+"/Clean/ByDate/";
-			FCI fciBD = new FCI(false, bdBasePath);
-			ArrayList<ArrayList<String>> allClean = AhrIO.scanFile(bdBasePath+evenDates.get(i)+".txt", "~");		
+			ArrayList<ArrayList<String>> allClean = AhrIO.scanFile(bdPath+evenDates.get(i)+".txt", "~");		
 			ArrayList<ArrayList<String>> narClean = new ArrayList<ArrayList<String>>();
 			for(int j = 0; j < allClean.size(); j++){
 				String narItr = allClean.get(j).get(fciBD.getIdx("nar_mask"));
@@ -950,7 +963,7 @@ public class ANN {
 				if(!narClean.get(j).get(fciBD.getIdx(tvColName)).equals("tbd")){
 					ArrayList<String> mlLine = toLineML(narClean.get(j), fciBD.getTags());
 					//add line and write to file (if at limit)
-					String tfTrainPath = "./../data/ml/ann/cust/train/sec"+String.valueOf(evenSections)+".txt";
+					String tfTrainPath = AhrIO.uniPath("./../data/ml/ann/cust/train/sec"+String.valueOf(evenSections)+".txt");
 					tf.add(mlLine);
 					if(tf.size() >= secSize){
 						AhrIO.writeToFile(tfTrainPath, tf, "~");
@@ -969,8 +982,6 @@ public class ANN {
 		//itr thru all odd dates
 		for(int i = 0; i < oddDates.size(); i++){
 			//get only clean lines that pass NAR
-			String bdPath = "./../../DB_"+db_name+"/Clean/ByDate/";
-			FCI fciBD = new FCI(false, bdPath);
 			ArrayList<ArrayList<String>> allClean = AhrIO.scanFile(bdPath+oddDates.get(i)+".txt", "~");		
 			ArrayList<ArrayList<String>> narClean = new ArrayList<ArrayList<String>>();
 			for(int j = 0; j < allClean.size(); j++){
@@ -989,7 +1000,7 @@ public class ANN {
 				if(!narClean.get(j).get(fciBD.getIdx(tvColName)).equals("tbd")){
 					ArrayList<String> mlLine = toLineML(narClean.get(j), fciBD.getTags());
 					//add line and write to file (if at limit)
-					String tfTestPath = "./../data/ml/ann/cust/test/sec"+String.valueOf(oddSections)+".txt";
+					String tfTestPath = AhrIO.uniPath("./../data/ml/ann/cust/test/sec"+String.valueOf(oddSections)+".txt");
 					tf.add(mlLine);
 					if(tf.size() >= secSize){
 						AhrIO.writeToFile(tfTestPath, tf, "~");
@@ -1030,17 +1041,19 @@ public class ANN {
 		toFile.add(line2);
 		toFile.add(line3);
 		toFile.add(line4);
-		AhrIO.writeToFile("./../data/ml/ann/cust/db_sizes.txt", toFile, ",");
+		AhrIO.writeToFile(AhrIO.uniPath("./../data/ml/ann/cust/db_sizes.txt"), toFile, ",");
 	}
 
 	//create only the train DB (from web DB)
 	public void createTrainDBFromWeb(int secSize){
 		//System.out.println("--> Creating Custom Train DB From Web ... ");
 		ArrayList<String> dates = AhrDate.getDatesBetween(sdate, edate);
+		String msPath = AhrIO.uniPath("./../in/mstates.txt");
+		String bdPath = Globals.bydate_path;
 		FCI fciMS = new FCI(false, "./../in/mstates.txt");
-		FCI fciBD = new FCI(false, Globals.bydate_path);
+		FCI fciBD = new FCI(false, bdPath);
 		ArrayList<String> bdCols = AhrAL.toAL(Globals.mysql_bydate_cols);
-		ArrayList<ArrayList<String>> mstates = AhrIO.scanFile("./../in/mstates.txt", ",");
+		ArrayList<ArrayList<String>> mstates = AhrIO.scanFile(msPath, ",");
 		ArrayList<String> evenDates = new ArrayList<String>();
 		ArrayList<String> oddDates = new ArrayList<String>();
 		int evenLines = 0;
@@ -1062,7 +1075,7 @@ public class ANN {
 			}
 		}
 		//create the train sections and write them to file
-		String tfTrainPath = "./../data/ml/ann/cust/train/sec"+String.valueOf(evenSections)+".txt";
+		String tfTrainPath = AhrIO.uniPath("./../data/ml/ann/cust/train/sec"+String.valueOf(evenSections)+".txt");
 		ArrayList<ArrayList<String>> trainSection = new ArrayList<ArrayList<String>>();
 		ArrayList<ArrayList<String>> groupedTrainDates = new ArrayList<ArrayList<String>>();
 		int groupSize = 50;
@@ -1091,7 +1104,7 @@ public class ANN {
 						AhrIO.writeToFile(tfTrainPath, trainSection, "~");
 						trainSection = new ArrayList<ArrayList<String>>();
 						evenSections++;
-						tfTrainPath = "./../data/ml/ann/cust/train/sec"+String.valueOf(evenSections)+".txt";
+						tfTrainPath = AhrIO.uniPath("./../data/ml/ann/cust/train/sec"+String.valueOf(evenSections)+".txt");
 					}
 
 				}
@@ -1126,7 +1139,7 @@ public class ANN {
 		dbSizes.add(line2);
 		dbSizes.add(line3);
 		dbSizes.add(line4);
-		AhrIO.writeToFile("./../data/ml/ann/cust/db_sizes.txt", dbSizes, ",");
+		AhrIO.writeToFile(AhrIO.uniPath("./../data/ml/ann/cust/db_sizes.txt"), dbSizes, ",");
 		//System.out.println("DONE");
 	}
 
@@ -1134,8 +1147,10 @@ public class ANN {
 	public void createTrainDBFromLocal(int secSize){
 		//System.out.print("--> Creating Custom Train DB ... ");
 		//read in mstates info
-		String msPath = "./../in/mstates.txt";
+		String msPath = AhrIO.uniPath("./../in/mstates.txt");
+		String bdPath = Globals.bydate_path;
 		FCI fciMS = new FCI(false, msPath);
+		FCI fciBD = new FCI(false, bdPath);
 		ArrayList<ArrayList<String>> mstates = AhrIO.scanFile(msPath, ",");
 		ArrayList<String> msDates = AhrAL.getCol(mstates, fciMS.getIdx("date"));
 		//itr thru all dates in range and get all even dates
@@ -1157,9 +1172,7 @@ public class ANN {
 		ArrayList<ArrayList<String>> tf = new ArrayList<ArrayList<String>>();
 		for(int i = 0; i < evenDates.size(); i++){
 			//get only clean lines that pass NAR
-			String bdBasePath = "./../../DB_"+this.db_name+"/Clean/ByDate/";
-			FCI fciBD = new FCI(false, bdBasePath);
-			ArrayList<ArrayList<String>> allClean = AhrIO.scanFile(bdBasePath+evenDates.get(i)+".txt", "~");		
+			ArrayList<ArrayList<String>> allClean = AhrIO.scanFile(bdPath+evenDates.get(i)+".txt", "~");		
 			ArrayList<ArrayList<String>> narClean = new ArrayList<ArrayList<String>>();
 			for(int j = 0; j < allClean.size(); j++){
 				String narItr = allClean.get(j).get(fciBD.getIdx("nar_mask"));
@@ -1177,7 +1190,7 @@ public class ANN {
 				if(!narClean.get(j).get(fciBD.getIdx(tvColName)).equals("tbd")){	
 					ArrayList<String> mlLine = toLineML(narClean.get(j), fciBD.getTags());
 					//add line and write to file (if at limit)
-					String tfTrainPath = "./../data/ml/ann/cust/train/sec"+String.valueOf(evenSections)+".txt";
+					String tfTrainPath = AhrIO.uniPath("./../data/ml/ann/cust/train/sec"+String.valueOf(evenSections)+".txt");
 					tf.add(mlLine);
 					if(tf.size() >= secSize){
 						AhrIO.writeToFile(tfTrainPath, tf, "~");
@@ -1217,7 +1230,7 @@ public class ANN {
 		dbSizes.add(line2);
 		dbSizes.add(line3);
 		dbSizes.add(line4);
-		AhrIO.writeToFile("./../data/ml/ann/cust/db_sizes.txt", dbSizes, ",");
+		AhrIO.writeToFile(AhrIO.uniPath("./../data/ml/ann/cust/db_sizes.txt"), dbSizes, ",");
 		//System.out.println("DONE");
 	}
 
@@ -1228,13 +1241,15 @@ public class ANN {
 		int groupSize = 50;
 		int oddLines = 0;
 		int oddSections = 0;
-		FCI fciMS = new FCI(false, "./../in/mstates.txt");
-		FCI fciBD = new FCI(false, Globals.bydate_path);
+		String msPath = AhrIO.uniPath("./../in/mstates.txt");
+		String bdPath = Globals.bydate_path;
+		FCI fciMS = new FCI(false, msPath);
+		FCI fciBD = new FCI(false, bdPath);
 		ArrayList<String> bdCols = AhrAL.toAL(Globals.mysql_bydate_cols);
 		//idx MS dates, then put only odd dates into AL
 		ArrayList<String> oddDates = new ArrayList<String>();
 		ArrayList<String> dates = AhrDate.getDatesBetween(sdate, edate);
-		ArrayList<ArrayList<String>> mstates = AhrIO.scanFile("./../in/mstates.txt", ",");
+		ArrayList<ArrayList<String>> mstates = AhrIO.scanFile(msPath, ",");
 		ArrayList<String> msDates = new ArrayList<String>();
 		for(int i = 0; i < mstates.size(); i++){
 			msDates.add(mstates.get(i).get(fciMS.getIdx("date")));
@@ -1250,7 +1265,7 @@ public class ANN {
 			}
 		}
 		//create the test sections and write them to file
-		String tfTestPath = "./../data/ml/ann/cust/test/sec"+String.valueOf(oddSections)+".txt";
+		String tfTestPath = AhrIO.uniPath("./../data/ml/ann/cust/test/sec"+String.valueOf(oddSections)+".txt");
 		ArrayList<ArrayList<String>> testSection = new ArrayList<ArrayList<String>>();
 		ArrayList<ArrayList<String>> groupedTestDates = new ArrayList<ArrayList<String>>();
 		ArrayList<String> agroup = new ArrayList<String>();
@@ -1278,7 +1293,7 @@ public class ANN {
 						AhrIO.writeToFile(tfTestPath, testSection, "~");
 						testSection = new ArrayList<ArrayList<String>>();
 						oddSections++;
-						tfTestPath = "./../data/ml/ann/cust/test/sec"+String.valueOf(oddSections)+".txt";
+						tfTestPath = AhrIO.uniPath("./../data/ml/ann/cust/test/sec"+String.valueOf(oddSections)+".txt");
 					}
 
 				}
@@ -1290,7 +1305,7 @@ public class ANN {
 			}
 		}
 		//add test info to db_sizes.txt file
-		String dbsPath = "./../data/ml/ann/cust/db_sizes.txt";
+		String dbsPath = AhrIO.uniPath("./../data/ml/ann/cust/db_sizes.txt");
 		ArrayList<ArrayList<String>> dbSizes = AhrIO.scanFile(dbsPath, ",");
 		dbSizes.get(2).set(1, String.valueOf(oddLines));
 		dbSizes.get(3).set(1, String.valueOf(oddSections));
@@ -1302,8 +1317,10 @@ public class ANN {
 	public void createTestDBFromLocal(int secSize){
 		//System.out.print("--> Creating Custom Test DB ... ");
 		//read in mstates info
-		String msPath = "./../in/mstates.txt";
+		String msPath = AhrIO.uniPath("./../in/mstates.txt");
+		String bdPath = Globals.bydate_path;
 		FCI fciMS = new FCI(false, msPath);
+		FCI fciBD = new FCI(false, bdPath);
 		ArrayList<ArrayList<String>> mstates = AhrIO.scanFile(msPath, ",");
 		ArrayList<String> msDates = AhrAL.getCol(mstates, fciMS.getIdx("date"));
 		//itr thru all dates in range and get all even dates
@@ -1325,8 +1342,6 @@ public class ANN {
 		ArrayList<ArrayList<String>> tf = new ArrayList<ArrayList<String>>();
 		for(int i = 0; i < oddDates.size(); i++){
 			//get only clean lines that pass NAR
-			String bdPath = "./../../DB_"+this.db_name+"/Clean/ByDate/";
-			FCI fciBD = new FCI(false, bdPath);
 			ArrayList<ArrayList<String>> allClean = AhrIO.scanFile(bdPath+oddDates.get(i)+".txt", "~");		
 			ArrayList<ArrayList<String>> narClean = new ArrayList<ArrayList<String>>();
 			for(int j = 0; j < allClean.size(); j++){
@@ -1345,7 +1360,7 @@ public class ANN {
 				if(!narClean.get(j).get(fciBD.getIdx(tvColName)).equals("tbd")){
 					ArrayList<String> mlLine = toLineML(narClean.get(j), fciBD.getTags());
 					//add line and write to file (if at limit)
-					String tfTestPath = "./../data/ml/ann/cust/test/sec"+String.valueOf(oddSections)+".txt";
+					String tfTestPath = AhrIO.uniPath("./../data/ml/ann/cust/test/sec"+String.valueOf(oddSections)+".txt");
 					tf.add(mlLine);
 					if(tf.size() >= secSize){
 						AhrIO.writeToFile(tfTestPath, tf, "~");
@@ -1362,7 +1377,7 @@ public class ANN {
 			}
 		}
 		//add test info to db_sizes.txt file
-		String dbsPath = "./../data/ml/ann/cust/db_sizes.txt";
+		String dbsPath = AhrIO.uniPath("./../data/ml/ann/cust/db_sizes.txt");
 		ArrayList<ArrayList<String>> dbSizes = AhrIO.scanFile(dbsPath, ",");
 		dbSizes.get(2).set(1, String.valueOf(oddLines));
 		dbSizes.get(3).set(1, String.valueOf(oddSections));
@@ -1413,13 +1428,13 @@ public class ANN {
 
 	//delete all files in custom made DB
 	public void deleteCustDB(){
-		String path = "./../data/ml/ann/cust/train/";
+		String path = AhrIO.uniPath("./../data/ml/ann/cust/train/");
 		ArrayList<String> fnames = AhrIO.getFilesInPath(path);
 		for(int i = 0; i < fnames.size(); i++){
 			File file = new File(path+fnames.get(i));
 			file.delete();
 		}
-		path = "./../data/ml/ann/cust/test/";
+		path = AhrIO.uniPath("./../data/ml/ann/cust/test/");
 		fnames = AhrIO.getFilesInPath(path);
 		for(int i = 0; i < fnames.size(); i++){
 			File file = new File(path+fnames.get(i));

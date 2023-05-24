@@ -1,4 +1,5 @@
 package ahrweiler;
+import ahrweiler.util.AhrIO;
 
 //define globals for all of STAG3
 public class Globals {
@@ -30,13 +31,14 @@ public class Globals {
 						"appr_intra5", "appr_inter5", "appr_intra10", "appr_inter10"};
 	
 	//database paths
-	public static final String sbase_path = "./../../DB_Intrinio/Main/S_Base/";
-	public static final String sraw_path = "./../../DB_Intrinio/Main/S_Raw/";
-	public static final String snorm_path = "./../../DB_Intrinio/Main/S_Norm/";
-	public static final String ibase_path = "./../../DB_Intrinio/Main/I_Base/";
-	public static final String mbase_path = "./../../DB_Intrinio/Main/M_Base/";
-	public static final String bydate_path = "./../../DB_Intrinio/Clean/ByDate/";
-	public static final String bystock_path = "./../../DB_Intrinio/Clean/ByStock/";
+	public static final String intrinio_path = AhrIO.uniPath("./../../DB_Intrinio/Main/Intrinio/");
+	public static final String sbase_path = AhrIO.uniPath("./../../DB_Intrinio/Main/S_Base/");
+	public static final String sraw_path = AhrIO.uniPath("./../../DB_Intrinio/Main/S_Raw/");
+	public static final String snorm_path = AhrIO.uniPath("./../../DB_Intrinio/Main/S_Norm/");
+	public static final String ibase_path = AhrIO.uniPath("./../../DB_Intrinio/Main/I_Base/");
+	public static final String mbase_path = AhrIO.uniPath("./../../DB_Intrinio/Main/M_Base/");
+	public static final String bydate_path = AhrIO.uniPath("./../../DB_Intrinio/Clean/ByDate/");
+	public static final String bystock_path = AhrIO.uniPath("./../../DB_Intrinio/Clean/ByStock/");
 
     //database structure
 	public static final int intrinio_num = 11;				//num of columns in 1st form Intrinio files (before cleaning)

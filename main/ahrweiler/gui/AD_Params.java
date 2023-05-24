@@ -21,7 +21,7 @@ public class AD_Params {
 	//GUI for Database -> Stock Filter
 	public void drawGUI(){
 		//lists and structs
-		AttributesSK kattr = new AttributesSK("./../data/tmp/sk_attrs.txt");
+		AttributesSK kattr = new AttributesSK(AhrIO.uniPath("./../data/tmp/sk_attrs.txt"));
 
 		//layout components
 		JFrame frame = new JFrame();
@@ -123,7 +123,7 @@ public class AD_Params {
 				if(has_input_err){
 					JOptionPane.showMessageDialog(frame, errMessage, "Input Error", JOptionPane.ERROR_MESSAGE);
 				}else{
-					kattr.saveToFile("./../data/tmp/sk_attrs.txt");
+					kattr.saveToFile(AhrIO.uniPath("./../data/tmp/sk_attrs.txt"));
 					frame.dispose();
 				}
 			}

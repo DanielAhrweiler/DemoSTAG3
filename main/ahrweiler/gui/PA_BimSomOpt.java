@@ -233,9 +233,9 @@ public class PA_BimSomOpt {
 				String knum = cbKeyNum1.getSelectedItem().toString();
 				String bsPath = "";
 				if(rbSK1.isSelected()){
-					bsPath = "./../out/sk/baseis/"+bgmLC+"/"+bgmUC+"_"+knum+".txt";
+					bsPath = AhrIO.uniPath("./../out/sk/baseis/"+bgmLC+"/"+bgmUC+"_"+knum+".txt");
 				}else{
-					bsPath = "./../out/ak/baseis/"+bgmLC+"/"+bgmUC+"_"+knum+".txt";
+					bsPath = AhrIO.uniPath("./../out/ak/baseis/"+bgmLC+"/"+bgmUC+"_"+knum+".txt");
 				}
 				FCI fciBS = new FCI(false, bsPath);
 				ArrayList<ArrayList<String>> basis = AhrIO.scanFile(bsPath, ",");
@@ -251,14 +251,14 @@ public class PA_BimSomOpt {
 				String som = "ph";
 				String call = "0";
 				if(rbSK1.isSelected()){
-					String kpPath = "./../out/sk/log/"+bgmLC+"/keys_perf.txt";
+					String kpPath = AhrIO.uniPath("./../out/sk/log/"+bgmLC+"/keys_perf.txt");
 					FCI fciKP = new FCI(true, kpPath);
 					ArrayList<String> kpLine = AhrIO.scanRow(kpPath, ",", String.valueOf(knum));
 					call = kpLine.get(fciKP.getIdx("call"));
 					bim = kpLine.get(fciKP.getIdx("bim"));
 					som = kpLine.get(fciKP.getIdx("som"));
 					if(bim.equals("ph")){
-						String laPath = "./../out/ak/log/ak_log.txt";
+						String laPath = AhrIO.uniPath("./../out/ak/log/ak_log.txt");
 						FCI fciLA = new FCI(true, laPath);
 						ArrayList<ArrayList<String>> laFile = AhrIO.scanFile(laPath, ",");
 						for(int i = 0; i < laFile.size(); i++){
@@ -276,7 +276,7 @@ public class PA_BimSomOpt {
 						} 					
 					}
 				}else{
-					String laPath = "./../out/ak/log/ak_log.txt";
+					String laPath = AhrIO.uniPath("./../out/ak/log/ak_log.txt");
 					FCI fciLA = new FCI(true, laPath);
 					ArrayList<String> laLine = AhrIO.scanRow(laPath, ",", String.valueOf(knum));
 					call = laLine.get(fciLA.getIdx("call"));
@@ -594,9 +594,9 @@ public class PA_BimSomOpt {
 				String knum = cbKeyNum2.getSelectedItem().toString();
 				String bsPath = "";
 				if(rbSK2.isSelected()){
-					bsPath = "./../out/sk/baseis/"+bgmLC+"/"+bgmUC+"_"+knum+".txt";
+					bsPath = AhrIO.uniPath("./../out/sk/baseis/"+bgmLC+"/"+bgmUC+"_"+knum+".txt");
 				}else{
-					bsPath = "./../out/ak/baseis/"+bgmLC+"/"+bgmUC+"_"+knum+".txt";
+					bsPath = AhrIO.uniPath("./../out/ak/baseis/"+bgmLC+"/"+bgmUC+"_"+knum+".txt");
 				}
 				FCI fciBS = new FCI(false, bsPath);
 				ArrayList<ArrayList<String>> basis = AhrIO.scanFile(bsPath, ",");
@@ -653,7 +653,7 @@ public class PA_BimSomOpt {
 						data = akey.bsoMultiple(sdate, edate, ttvMask, is_min_trig, use_sk_bso);
 					}
 					//get full data from /data/bso
-					ArrayList<ArrayList<String>> fc = AhrIO.scanFile("./../data/tmp/bso_multiple.txt", ",");
+					ArrayList<ArrayList<String>> fc = AhrIO.scanFile(AhrIO.uniPath("./../data/tmp/bso_multiple.txt"), ",");
 					int worstIdx = -1;
 					double worstYoy = Double.MAX_VALUE;
 					double avgYoy = 0.0;
@@ -685,6 +685,7 @@ public class PA_BimSomOpt {
 			public void actionPerformed(ActionEvent e){
 				int xdim = 500;
 				int ydim = 500;
+				
 				String bgmUC = cbBgm2.getSelectedItem().toString();
 				String bgmLC = bgmUC.toLowerCase();
 				String knum = cbKeyNum2.getSelectedItem().toString();
@@ -698,10 +699,13 @@ public class PA_BimSomOpt {
 				}
 				int plotIdx = cbDistnPlot.getSelectedIndex();
 				if(plotIdx == 0){
-					String plotPath = "./../resources/pa_bso_heat.png";
+					String plotPath = AhrIO.uniPath("./../resources/pa_bso_heat.png");
+					String dataPath = AhrIO.uniPath("./../data/r/rdata/pa_bso_heat.csv");
+					String scriptPath = AhrIO.uniPath("./../data/r/rscripts/pa_bso_heat.R");
 					//get BSO Mult data and write to R csv file
-					FCI fciBM = new FCI(false, "./../data/tmp/bso_multiple.txt");
-					ArrayList<ArrayList<String>> fc = AhrIO.scanFile("./../data/tmp/bso_multiple.txt", ",");
+					String bmPath = AhrIO.uniPath("./../data/tmp/bso_multiple.txt");
+					FCI fciBM = new FCI(false, bmPath);
+					ArrayList<ArrayList<String>> fc = AhrIO.scanFile(bmPath, ",");
 					ArrayList<ArrayList<String>> rfile = new ArrayList<ArrayList<String>>();
 					ArrayList<String> header = AhrAL.toAL(new String[]{"xvals", "yvals", "data"});
 					rfile.add(header);
@@ -712,16 +716,16 @@ public class PA_BimSomOpt {
 						line.add(fc.get(i).get(fciBM.getIdx("yoy")));
 						rfile.add(line);
 					}
-					AhrIO.writeToFile("./../data/r/rdata/pa_bso_heat.csv", rfile, ",");
+					AhrIO.writeToFile(dataPath, rfile, ",");
 					//create heatmap plot
 					RCode rcHeat = new RCode();
 					rcHeat.setXLabel("Buy-In Multiple");
 					rcHeat.setYLabel("Sell-Out Multiple");
 					rcHeat.setTitle("Heatmap of "+kmonik+" YoY %s For Each BIM/SOM Combination");
-					rcHeat.createHeatmap("./../data/r/rdata/pa_bso_heat.csv", "./../resources/pa_bso_heat.png", xdim, ydim);
+					rcHeat.createHeatmap(dataPath, plotPath, xdim, ydim);
 					//rcHeat.printCode();
-					rcHeat.writeCode("./../data/r/rscripts/pa_bso_heat.R");
-					rcHeat.runScript("./../data/r/rscripts/pa_bso_heat.R");
+					rcHeat.writeCode(scriptPath);
+					rcHeat.runScript(scriptPath);
 					//show plot on new popout frame
 					JFrame rframe = new JFrame();
 					rframe.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
@@ -797,14 +801,14 @@ public class PA_BimSomOpt {
 		ArrayList<String> nums = new ArrayList<String>();
 		String fpath = "";
 		if(is_sk){
-			fpath = "./../out/sk/log/"+bgm.toLowerCase()+"/keys_struct.txt";
+			fpath = AhrIO.uniPath("./../out/sk/log/"+bgm.toLowerCase()+"/keys_struct.txt");
 			FCI fciKS = new FCI(true, fpath);
 			ArrayList<ArrayList<String>> fc = AhrIO.scanFile(fpath, ",");
 			for(int i = 1; i < fc.size(); i++){
 				nums.add(fc.get(i).get(fciKS.getIdx("sk_num")));
 			}
 		}else{
-			fpath = "./../out/ak/log/ak_log.txt";
+			fpath = AhrIO.uniPath("./../out/ak/log/ak_log.txt");
 			FCI fciLA = new FCI(true, fpath);
 			ArrayList<ArrayList<String>> fc = AhrIO.scanFile(fpath, ",");
 			for(int i = 1; i < fc.size(); i++){

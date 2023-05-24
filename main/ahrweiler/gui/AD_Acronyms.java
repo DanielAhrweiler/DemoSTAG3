@@ -15,7 +15,8 @@ public class AD_Acronyms {
 	private String[][] tableData;
 
 	public AD_Acronyms(){
-		tableData = AhrAL.toArr2D(AhrIO.scanFile("./../in/acronym_ref_table.txt", "~"));
+		String artPath = AhrIO.uniPath("./../in/acronym_ref_table.txt");
+		tableData = AhrAL.toArr2D(AhrIO.scanFile(artPath, "~"));
 		splitLines(tableData);
 		drawGUI();
 	}
@@ -49,7 +50,6 @@ public class AD_Acronyms {
 		topRenderer.setVerticalAlignment(JLabel.TOP);
 		DefaultTableCellRenderer wrapRenderer = new DefaultTableCellRenderer();
 		wrapRenderer.setBackground(Color.YELLOW);
-		//TableCellRenderer altColRenderer = new AltColorCellRenderer();
 
 		//components
 		String[] refSheetHeader = new String[]{"Acronym", "Full Name", "Description"};

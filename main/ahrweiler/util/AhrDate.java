@@ -58,9 +58,10 @@ public class AhrDate {
 	//get list of dates (in stock DB) inbetween (and including) a start and end date
 	public static ArrayList<String> getDatesBetween(String sdate, String edate){
 		ArrayList<String> dates = new ArrayList<String>();
-		FCI fciOD = new FCI(false, "./../in/open_dates.txt");
+		String odPath = AhrIO.uniPath("./../in/open_dates.txt");
+		FCI fciOD = new FCI(false, odPath);
 		int didx = fciOD.getIdx("date");
-		ArrayList<String> odates = AhrIO.scanCol("./../in/open_dates.txt", ",", didx);
+		ArrayList<String> odates = AhrIO.scanCol(odPath, ",", didx);
 		for(int i = 0; i < odates.size(); i++){
 			String itrDate = odates.get(i);
 			if(compareDates(itrDate, sdate) == 0 || compareDates(itrDate, sdate) == -1){
@@ -127,8 +128,9 @@ public class AhrDate {
 
 	//given any date, return closest date in open_dates.txt
 	public static String closestDate(String inDate){
-		FCI fciOD = new FCI(false, "./../in/open_dates.txt");
-		ArrayList<ArrayList<String>> fc = AhrIO.scanFile("./../in/open_dates.txt", ",");
+		String odPath = AhrIO.uniPath("./../in/open_dates.txt");
+		FCI fciOD = new FCI(false, odPath);
+		ArrayList<ArrayList<String>> fc = AhrIO.scanFile(odPath, ",");
 		int sstate = compareDates(fc.get(0).get(fciOD.getIdx("date")), inDate);//starting state
 		if(sstate == 1){
 			return fc.get(0).get(fciOD.getIdx("date"));
@@ -292,8 +294,9 @@ public class AhrDate {
 	//get list opf dates that passes market mask
 	public static ArrayList<String> getDatesThatPassMarketMask(ArrayList<String> dates, String msMask){
 		ArrayList<String> mdates = new ArrayList<String>();
-		ArrayList<ArrayList<String>> mstates = AhrIO.scanFile("./../in/mstates.txt", ",");
-		FCI fciMS = new FCI(false, "./../in/mstates.txt");
+		String msPath = AhrIO.uniPath("./../in/mstates.txt");
+		ArrayList<ArrayList<String>> mstates = AhrIO.scanFile(msPath, ",");
+		FCI fciMS = new FCI(false, msPath);
 		for(int i = 0; i < mstates.size(); i++){
 			String itrDate = mstates.get(i).get(fciMS.getIdx("date"));
 			String itrMask = mstates.get(i).get(fciMS.getIdx("ms_mask"));

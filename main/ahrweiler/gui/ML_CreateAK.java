@@ -164,7 +164,7 @@ public class ML_CreateAK {
 			public void actionPerformed(ActionEvent e){
 				String bgm = cbBGM.getSelectedItem().toString();
 				bgm = bgm.toLowerCase();
-				String ksPath = "./../out/sk/log/"+bgm+"/keys_struct.txt";
+				String ksPath = AhrIO.uniPath("./../out/sk/log/"+bgm+"/keys_struct.txt");
 				FCI fciKS = new FCI(true, ksPath);
 				ArrayList<ArrayList<String>> ksFile = AhrIO.scanFile(ksPath, ",");
 				if(ksFile.size() <= 1){
@@ -304,8 +304,8 @@ public class ML_CreateAK {
 					frame.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
 					String bgm = cbBGM.getSelectedItem().toString();
 					String[] skeys = taBestKeys.getText().replaceAll("\\s+","").split(",");
-					String kpPath = "./../out/sk/log/"+bgm.toLowerCase()+"/keys_perf.txt";
-					String alPath = "./../out/ak/log/ak_log.txt";
+					String kpPath = AhrIO.uniPath("./../out/sk/log/"+bgm.toLowerCase()+"/keys_perf.txt");
+					String alPath = AhrIO.uniPath("./../out/ak/log/ak_log.txt");
 					FCI fciKP = new FCI(true, kpPath);
 					FCI fciAL = new FCI(true, alPath);
 					String bestKeys = "";
@@ -374,7 +374,7 @@ public class ML_CreateAK {
 					//calc basic perf data
 					ArrayList<String> perfMetrics = new ArrayList<String>();
 					//System.out.print("--> Calculating Basic AK Performance ... ");
-					String basisPath = "./../out/ak/baseis/ann/ANN_"+String.valueOf(newID)+".txt";
+					String basisPath = AhrIO.uniPath("./../out/ak/baseis/ann/ANN_"+String.valueOf(newID)+".txt");
 					ArrayList<String> perf = akey.perfFromBasisFile(basisPath);
 					perfMetrics.add(perf.get(3));
 					perfMetrics.add(perf.get(4));
@@ -448,7 +448,7 @@ public class ML_CreateAK {
 	public ArrayList<ArrayList<String>> getMatchingKeys(String bgm, boolean isLong, String method, String sdate, 
 											String edate, String spd, String tvi, String narMask, String indMask){
 		//get data from keys_struct
-		String ksPath = "./../out/sk/log/"+bgm.toLowerCase()+"/keys_struct.txt";
+		String ksPath = AhrIO.uniPath("./../out/sk/log/"+bgm.toLowerCase()+"/keys_struct.txt");
 		FCI fciKS = new FCI(true, ksPath);
 		ArrayList<ArrayList<String>> fc = AhrIO.scanFile(ksPath, ",");
 		ArrayList<ArrayList<String>> goodLines = new ArrayList<ArrayList<String>>();
@@ -496,7 +496,7 @@ public class ML_CreateAK {
 
 	//calc best SKs from selected SKs that give 100% of market states
 	public ArrayList<ArrayList<String>> calcCovKeys(String bgm, boolean isLong, ArrayList<String> keys){
-		String bpath = "./../out/sk/log/"+bgm.toLowerCase()+"/";
+		String bpath = AhrIO.uniPath("./../out/sk/log/"+bgm.toLowerCase()+"/");
 		FCI fciKS = new FCI(true, bpath+"keys_struct.txt");
 		FCI fciKP = new FCI(true, bpath+"keys_perf.txt");
 		ArrayList<ArrayList<String>> ksFile = AhrIO.scanFile(bpath+"keys_struct.txt", ",");
