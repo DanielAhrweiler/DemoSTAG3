@@ -2,6 +2,7 @@ package ahrweiler.gui;
 import ahrweiler.Globals;
 import ahrweiler.util.*;
 import ahrweiler.support.FCI;
+import ahrweiler.support.OrderSim;
 import ahrweiler.bgm.*;
 import ahrweiler.bgm.ann.Network;
 import ahrweiler.bgm.ann.Node;
@@ -311,7 +312,7 @@ public class ML_CreateAK {
 					String bestKeys = "";
 					String skBimSom = "";
 					for(int i = 0; i < skeys.length; i++){
-						//System.out.println("--> SK"+skeys[i]);
+						System.out.println("--> SK"+skeys[i]);
 						ArrayList<String> kpRow = AhrIO.scanRow(kpPath, ",", skeys[i]);
 						String bim = kpRow.get(fciKP.getIdx("bim"));
 						String som = kpRow.get(fciKP.getIdx("som"));
@@ -368,27 +369,27 @@ public class ML_CreateAK {
 					AhrIO.writeToFile(alPath, alFile, ",");
 					//write basis file
 					BGM_Manager akey = new BGM_Manager(newID);
-					//System.out.print("--> Generating Basis File ... ");
+					System.out.print("--> Generating Basis File ... ");
 					akey.genBasisAK();
-					//System.out.println("DONE");
+					System.out.println("DONE");
 					//calc basic perf data
 					ArrayList<String> perfMetrics = new ArrayList<String>();
-					//System.out.print("--> Calculating Basic AK Performance ... ");
+					System.out.print("--> Calculating Basic AK Performance ... ");
 					String basisPath = AhrIO.uniPath("./../out/ak/baseis/ann/ANN_"+String.valueOf(newID)+".txt");
 					ArrayList<String> perf = akey.perfFromBasisFile(basisPath);
 					perfMetrics.add(perf.get(3));
 					perfMetrics.add(perf.get(4));
 					akey.perfToFileAK(perf);
-					//System.out.println("DONE");
+					System.out.println("DONE");
 					//calc ak_bso and replace in ak_log
-					//System.out.print("--> Calculating BSO AK Performance ... ");
-					akey.bsoPerfToFileAK(true, false);
+					System.out.print("--> Calculating BSO AK Performance ... ");
+					akey.bsoPerfToFileAK((new OrderSim(newID)), false);
 					perfMetrics.add(AhrIO.scanCell(alPath, ",", String.valueOf(newID), fciAL.getIdx("bso_test_apapt")));
-					//System.out.println("DONE");				
+					System.out.println("DONE");				
 					//add all SKs in AK to score_percentiles
-					//System.out.print("--> Calculating Score Percentiles ... ");
+					System.out.print("--> Calculating Score Percentiles ... ");
 					akey.calcScorePercentiles();
-
+					System.out.println("DONE");
 					//display done w/ JOptionPane
 					frame.setCursor(null);
 					String message = "AK"+String.valueOf(newID)+" created successfully."+
@@ -396,7 +397,7 @@ public class ML_CreateAK {
 									"\n   > Plateau APAPT = "+perfMetrics.get(0)+
 									"\n   > True APAPT    = "+perfMetrics.get(1)+
 									"\n   > BSO APAPT     = "+perfMetrics.get(2)+ 
-									"\nIts parameters and full performance metrics can be seen at :"+
+									"\n\nIts parameters and full performance metrics can be seen at :"+
 									"\n   Machine Learning -> SK, AK, Basis Info -> Aggregate Keys";
 					JOptionPane.showMessageDialog(frame, message, "Key Created", JOptionPane.PLAIN_MESSAGE);
 					//System.out.println("DONE");

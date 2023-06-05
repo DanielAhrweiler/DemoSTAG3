@@ -10,6 +10,100 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
 import java.util.ArrayList;
+import java.util.List;
+import java.io.File;
+
+//sk worker thread
+class SKWorker extends SwingWorker<ArrayList<String>, String>{
+	private ANN ann;
+	private int shortID;
+	private int longID;
+	private JLabel label;
+	private JButton button;
+	private JFrame frame;
+	SKWorker(ANN inann, JLabel inLabel, JButton inButton, JFrame inFrame){
+		this.ann = inann;
+		this.shortID = inann.getID();
+		this.longID = inann.getID()+1;
+		this.label = inLabel;
+		this.button = inButton;
+		this.frame = inFrame;
+	}
+	@Override
+	protected ArrayList<String> doInBackground(){
+		//init keys_perf vars
+		String kpPath = AhrIO.uniPath("./../out/sk/log/ann/keys_perf.txt");
+		FCI fciKP = new FCI(true, kpPath);
+		//run the ANN
+		publish("Step 1 of 7 : Running ANN Algorithm");
+		long time1 = System.currentTimeMillis();
+		ann.calcSK();
+		//create basis file
+		publish("Step 2 of 7 : Generating short SK Basis File");
+		long time2 = System.currentTimeMillis();
+		BGM_Manager skShort = new BGM_Manager("ANN", shortID);
+		skShort.genBasisSK(shortID);
+		//calc perf for short SK
+		publish("Step 3 of 7 : Calculating short SK Performance");
+		long time3 = System.currentTimeMillis();
+		ArrayList<String> perfMetrics = new ArrayList<String>();
+		String shortBasisPath = AhrIO.uniPath("./../out/sk/baseis/ann/ANN_"+String.valueOf(shortID)+".txt");
+		ArrayList<String> shortPerf = skShort.perfFromBasisFile(shortBasisPath);
+		perfMetrics.add(shortPerf.get(3));
+		perfMetrics.add(shortPerf.get(4));
+		skShort.perfToFileSK(shortPerf);			//save short basic SK perf to keys_perf
+		publish("Step 4 of 7 : Calculating short SK BSO");
+		skShort.bsoPerfToFileSK(true, false);		//save short BSO perf to keys_perf
+		perfMetrics.add(AhrIO.scanCell(kpPath, ",", String.valueOf(shortID), fciKP.getIdx("bso_test_apapt")));
+		//calc perf for long SK
+		publish("Step 5 of 7 : Generating long SK Basis File");
+		long time4 = System.currentTimeMillis();
+		BGM_Manager skLong = new BGM_Manager("ANN", longID);
+		skLong.genBasisSK(longID);
+		publish("Step 6 of 7 : Calculating long SK Performance");
+		long time5 = System.currentTimeMillis();
+		String longBasisPath = AhrIO.uniPath("./../out/sk/baseis/ann/ANN_"+String.valueOf(longID)+".txt");
+		ArrayList<String> longPerf = skLong.perfFromBasisFile(longBasisPath);
+		perfMetrics.add(longPerf.get(3));
+		perfMetrics.add(longPerf.get(4));
+		skLong.perfToFileSK(longPerf);				//save long basic SK perf to keys_perf
+		publish("Step 7 of 7 : Calculating long  SK BSO");
+		skLong.bsoPerfToFileSK(true, false);		//save long BSO perf to keys_perf
+		perfMetrics.add(AhrIO.scanCell(kpPath, ",", String.valueOf(longID), fciKP.getIdx("bso_test_apapt")));
+		long time6 = System.currentTimeMillis();
+		publish("Step 7 of 7 : DONE");
+		return perfMetrics;
+	}
+	@Override
+	protected void process(List<String> desc){
+		for(int i = 0; i < desc.size(); i++){
+			label.setText(desc.get(i));
+		}
+	}
+	@Override
+	protected void done(){
+		try{
+			ArrayList<String> perfMetrics = get();
+			button.setEnabled(true);
+			String message = "SK"+String.valueOf(shortID)+" (short) created successfully."+
+						"\nSome test dataset metrics ..."+
+						"\n   > Plateau APAPT = "+perfMetrics.get(0)+" %"+
+						"\n   > True APAPT    = "+perfMetrics.get(1)+" %"+
+						"\n   > BSO APAPT     = "+perfMetrics.get(2)+" %"+
+						"\n\nSK"+String.valueOf(longID)+" (long) created successfully."+
+						"\nSome test dataset metrics ..."+
+						"\n   > Plateau APAPT = "+perfMetrics.get(3)+" %"+
+						"\n   > True APAPT    = "+perfMetrics.get(4)+" %"+
+						"\n   > BSO APAPT     = "+perfMetrics.get(5)+" %"+
+						"\n\nTheir parameters and full performance metrics can be seen at :"+
+						"\n   Machine Learning -> SK, AK, Basis Info -> Single Keys";
+			JOptionPane.showMessageDialog(frame, message, "Key Created", JOptionPane.PLAIN_MESSAGE);
+		}catch(Exception e){
+			e.printStackTrace();
+		}
+	}
+
+}
 
 public class ML_CreateSK {
 
@@ -36,17 +130,22 @@ public class ML_CreateSK {
 		}
 
 		//layout components
+		int xdim = 550;
+		int ydim = 490;
+		if(File.separator.equals("\\")){
+			xdim += 15;
+		}
 		JFrame frame = new JFrame();
 		frame.setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
 		frame.setTitle("Basis Generating Methods: Single Key");
-		frame.setSize(550, 500);
+		frame.setSize(xdim, ydim);
 		frame.setLayout(null);
 		JPanel pANN = new JPanel();
 		pANN.setLayout(null);
 		JPanel pGenetic = new JPanel();
 		pGenetic.setLayout(null);
 		JTabbedPane tpBGM = new JTabbedPane();
-		tpBGM.setBounds(0, 0, 550, 550);
+		tpBGM.setBounds(0, 0, xdim, ydim-37);
 		
 		
 		/*----------------------------------------------------------
@@ -79,9 +178,9 @@ public class ML_CreateSK {
 		JLabel lbLearnRate1 = new JLabel("Learn Rate: ");
 		JTextField tfLearnRate1 = new JTextField("0.10");
 		JLabel lbSDate1 = new JLabel("Start Date:");			//DB State Panel
-		JTextField tfSDate1 = new JTextField("2009-01-01");
+		JTextField tfSDate1 = new JTextField("2016-01-01");
 		JLabel lbEDate1 = new JLabel("End Date:");
-		JTextField tfEDate1 = new JTextField("2019-12-31");
+		JTextField tfEDate1 = new JTextField("2020-12-31");
 		JLabel lbMsMask1 = new JLabel("MS Mask:");
 		JTextField tfMsMask1 = new JTextField("xxxxxxxx");
 		JLabel lbNarMask1 = new JLabel("NAR Mask: ");
@@ -90,6 +189,7 @@ public class ML_CreateSK {
 		JTextArea taIndMask1 = new JTextArea(defIndMask, 2, 40);
 		JButton bListInds1 = new JButton("List");
 		JButton bCalcSK1 = new JButton("Calculate SK");
+		JLabel lbSteps = new JLabel("");
 
 		//bounds of components
 		lbMethod1.setBounds(10, 20, 65, 25);				//Basic Panel
@@ -114,7 +214,8 @@ public class ML_CreateSK {
 		lbIndMask1.setBounds(10, 95, 300, 25);
 		taIndMask1.setBounds(10, 120, 420, 50);
 		bListInds1.setBounds(440, 130, 60, 30);
-		bCalcSK1.setBounds(200, 370, 150, 40);
+		bCalcSK1.setBounds(20, 360, 150, 30);
+		lbSteps.setBounds(20, 400, 300, 25);
 
 		//basic functionality
 		rbContRange1.setFont(plainFont);
@@ -149,7 +250,9 @@ public class ML_CreateSK {
 		bCalcSK1.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				//System.out.println("--> Calculate SK for ANN");
-				frame.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
+				//frame.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
+				bCalcSK1.setEnabled(false);
+
 				//set up algo info
 				String ksPath = AhrIO.uniPath("./../out/sk/log/ann/keys_struct.txt");
 				String kpPath = AhrIO.uniPath("./../out/sk/log/ann/keys_perf.txt");
@@ -196,6 +299,11 @@ public class ML_CreateSK {
 					}
 				}
 				algo.setIndMask(indMask);
+				//run worker thread
+				SKWorker skwork = new SKWorker(algo, lbSteps, bCalcSK1, frame);
+				skwork.execute();
+
+				/*
 				//run the ANN
 				//System.out.println("--> In ML_CreateSK, calc SK"+id+" and SK"+(id+1));
 				long time1 = System.currentTimeMillis();
@@ -205,8 +313,8 @@ public class ML_CreateSK {
 				BGM_Manager skShort = new BGM_Manager("ANN", id);
 				skShort.genBasisSK(id);
 				//calc perf for short SK
-				ArrayList<String> perfMetrics = new ArrayList<String>();
 				long time3 = System.currentTimeMillis();
+				ArrayList<String> perfMetrics = new ArrayList<String>();
 				String shortBasisPath = AhrIO.uniPath("./../out/sk/baseis/ann/ANN_"+String.valueOf(id)+".txt");
 				ArrayList<String> shortPerf = skShort.perfFromBasisFile(shortBasisPath);
 				perfMetrics.add(shortPerf.get(3));
@@ -227,6 +335,7 @@ public class ML_CreateSK {
 				skLong.bsoPerfToFileSK(true, false);		//save long BSO perf to keys_perf
 				perfMetrics.add(AhrIO.scanCell(kpPath, ",", String.valueOf(id+1), fciKP.getIdx("bso_test_apapt")));
 				long time6 = System.currentTimeMillis();
+				lbSteps.setText(steps[7]);
 
 
 				//System.out.println("******* Time Marks *****\n"+
@@ -238,19 +347,20 @@ public class ML_CreateSK {
 
 				//display sk info
 				frame.setCursor(null);
-				String message = "SK"+String.valueOf(id)+" created successfully."+
+				String message = "SK"+String.valueOf(id)+" (short) created successfully."+
 								"\nSome test dataset metrics ..."+
 								"\n   > Plateau APAPT = "+perfMetrics.get(0)+
 								"\n   > True APAPT    = "+perfMetrics.get(1)+
 								"\n   > BSO APAPT     = "+perfMetrics.get(2)+ 
-								"\nSK"+String.valueOf(id+1)+" created successfully."+
+								"\n\nSK"+String.valueOf(id+1)+" (long) created successfully."+
 								"\nSome test dataset metrics ..."+
 								"\n   > Plateau APAPT = "+perfMetrics.get(3)+
 								"\n   > True APAPT    = "+perfMetrics.get(4)+
 								"\n   > BSO APAPT     = "+perfMetrics.get(5)+
-								"\nTheir parameters and full performance metrics can be seen at :"+
+								"\n\nTheir parameters and full performance metrics can be seen at :"+
 								"\n   Machine Learning -> SK, AK, Basis Info -> Single Keys";
 				JOptionPane.showMessageDialog(frame, message, "Key Created", JOptionPane.PLAIN_MESSAGE);
+				*/
 			}
 		});
 
@@ -326,7 +436,7 @@ public class ML_CreateSK {
 		lbIndMask2.setBounds(10, 50, 300, 25);
 		taIndMask2.setBounds(10, 85, 420, 50);
 		bListInds2.setBounds(440, 90, 60, 40);
-		bCalcSK2.setBounds(200, 370, 150, 40);			//Calc SK button
+		bCalcSK2.setBounds(20, 365, 150, 30);			//Calc SK button
 		
 		//basic functionality
 		setButtonStyle(bListInds2);
@@ -397,6 +507,7 @@ public class ML_CreateSK {
 		pANN.add(pBasic1);
 		pANN.add(pDBS1);
 		pANN.add(bCalcSK1);
+		pANN.add(lbSteps);
 		pGenetic.add(lbBgm2);
 		pGenetic.add(cbBgm2);
 		pGenetic.add(pBasic2);

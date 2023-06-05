@@ -366,11 +366,13 @@ public class StockFilter {
 	public void applyMarketCapFilter(){
 		if(Globals.uses_mysql_source){
 			ArrayList<String> colNames = AhrAL.toAL(new String[]{"ticker", "market_cap"});
-			SQLCode sqlc = new SQLCode("aws");
+			SQLCode sqlc = new SQLCode(Globals.default_source);
 			sqlc.setDB("sbase");
 			sqlc.addWhereCond("WHERE `date` = '2022-05-27' AND `market_cap` BETWEEN "+this.mcRange.getStartVal()+
 								" AND "+this.mcRange.getEndVal());
+			sqlc.connect();
 			ArrayList<ArrayList<String>> dataMC = sqlc.selectUnion(tickers, colNames);
+			sqlc.close();
 			ArrayList<String> passMC = new ArrayList<String>();
 			for(int i = 0; i < dataMC.size(); i++){
 				String itrTick = dataMC.get(i).get(0);
@@ -422,10 +424,12 @@ public class StockFilter {
 		FCI fciBD = new FCI(false, bdPath);
 		ArrayList<ArrayList<String>> bdFile = new ArrayList<ArrayList<String>>();
 		if(Globals.uses_mysql_source){
-			SQLCode sqlc = new SQLCode("aws");
+			SQLCode sqlc = new SQLCode(Globals.default_source);
 			sqlc.setDB("bydate");
 			//sqlc.setWhereCond("WHERE `date` = '"+date+"'");
+			sqlc.connect();
 			bdFile = sqlc.selectAll("2022-05-27", fciBD.getTags());
+			sqlc.close();
 		}else{
 			bdFile = AhrIO.scanFile(bdPath+date+".txt", "~");
 		}

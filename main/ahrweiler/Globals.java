@@ -6,13 +6,12 @@ public class Globals {
 
 	//MySQL data source
 	public static final boolean uses_mysql_source = true;
+	public static final String default_source = "aws";
 	public static final String mysql_sbase_path = "jdbc:mysql://danielahrweiler.com:3306/daniela5_sbase";
 	public static final String mysql_snorm_path = "jdbc:mysql://danielahrweiler.com:3306/daniela5_snorm";
 	public static final String mysql_ibase_path = "jdbc:mysql://danielahrweiler.com:3306/daniela5_ibase";
 	public static final String mysql_mbase_path = "jdbc:mysql://danielahrweiler.com:3306/daniela5_mbase";
 	public static final String mysql_bydate_path = "jdbc:mysql://danielahrweiler.com:3306/daniela5_bydate";
-	public static final String mysql_username = "daniela5_daniel";
-	public static final String mysql_password = "mill138squid.";
 	public static final String[] mysql_sbase_cols = new String[]{"date", "open", "high", "low", "close", "vol",
 						"daily_market_cap", "market_cap", "ticker"};
 	public static final String[] mysql_snorm_cols = new String[]{"date", "ind0", "ind1", "ind2", "ind3", "ind4",
@@ -28,7 +27,7 @@ public class Globals {
 						"ind5", "ind6", "ind7", "ind8", "ind9", "ind10", "ind11", "ind12", "ind13", "ind14",
 						 "ind15", "ind16", "ind17", "ind18", "ind19", "ind20", "ind21", "ind22", "ind23", "nar_mask",
 						"appr_intra1", "appr_inter1", "appr_intra2", "appr_inter2", "appr_intra3", "appr_inter3",
-						"appr_intra5", "appr_inter5", "appr_intra10", "appr_inter10"};
+						"appr_intra5", "appr_inter5", "appr_intra10", "appr_inter10", "date"};
 	
 	//database paths
 	public static final String intrinio_path = AhrIO.uniPath("./../../DB_Intrinio/Main/Intrinio/");

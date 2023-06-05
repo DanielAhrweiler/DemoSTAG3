@@ -278,11 +278,21 @@ public class AhrIO {
 		}
 		return names;
 	}
-
+	//delete all files in a given path
+	public static void deleteFilesInPath(String path){
+		path = uniPath(path);
+		ArrayList<String> files = getFilesInPath(path);
+		for(int i = 0; i < files.size(); i++){
+			File itrFile = new File(path+files.get(i));
+			if(itrFile.exists()){
+				itrFile.delete();
+			}
+		}
+	}
 	//translate linux path to universal path
 	public static String uniPath(String path){
 		String fs = File.separator;
-		return path.replaceAll("/", fs);
+		return path.replace("/", fs);
 	}
     
 }

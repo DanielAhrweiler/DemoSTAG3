@@ -14,8 +14,10 @@ public class DB_Charting {
 
 	Font plainFont = new Font(Font.SANS_SERIF, Font.PLAIN, 12);
 	RCode rcode = new RCode();
+	SQLCode sqlc = new SQLCode(Globals.default_source);
 
 	public DB_Charting(){
+		sqlc.connect();
 		drawGUI();
 	}
 	
@@ -38,7 +40,7 @@ public class DB_Charting {
 		if(fr_plot.exists()){
 			fr_plot.delete();
 		}
-
+		ArrayList<String> tickList = getTickerList();
 
 		//layout components
 		JFrame frame = new JFrame();
@@ -286,14 +288,18 @@ public class DB_Charting {
 				if(rbStock.isSelected()){
 					//set column names
 					String ticker = tfStockTicker.getText().toUpperCase();
-					String dbPath = AhrIO.uniPath(Globals.intrinio_path+ticker+".txt");
 					int indIdx = cbStockInds.getSelectedIndex();
 					String dbColName = "adj_close";
 					csvColName = ticker;
-					File tickFile = new File(dbPath);
-					if(tickFile.exists()){
+					if(tickList.contains(ticker)){
+						String dbPath = "";
+						FCI fciDB;
 						if(indIdx > 2){
 							dbPath = AhrIO.uniPath(Globals.snorm_path+ticker+".txt");
+							fciDB = new FCI(false, Globals.snorm_path);
+						}else{
+							dbPath = AhrIO.uniPath(Globals.intrinio_path+ticker+".txt");
+							fciDB = new FCI(false, Globals.intrinio_path);
 						}
 						if(indIdx == 1){
 							dbColName = "adj_vol";
@@ -307,9 +313,22 @@ public class DB_Charting {
 						}
 						if(rbQuantYes.isSelected()){
 							quantmod_used = true;
+							String qmPath = AhrIO.uniPath("./../data/tmp/db_chart_qm.txt");
+							if(Globals.uses_mysql_source){
+								sqlc.setDB("sbase");
+								ArrayList<String> mysqlColNames = AhrAL.toAL(Globals.mysql_sbase_cols);
+								ArrayList<ArrayList<String>> qmData = sqlc.selectAll(ticker, mysqlColNames);
+								//TODO: transform to QM format and save
+								//for(int i = 0; i < qmData.size(); i++){
+								//	
+								//}
+								AhrIO.writeToFile(qmPath, qmData, ",");
+							}else{
+								qmPath = Globals.intrinio_path+ticker+".txt";
+							}
 							RCode rcodeQM = new RCode();
 							rcodeQM.addPackage("quantmod");
-							rcodeQM.addCode("df <- read.delim.zoo(\""+dbPath+"\", "+
+							rcodeQM.addCode("df <- read.delim.zoo(\""+qmPath+"\", "+
 										"format=\"%Y-%m-%d\", sep=\"~\", header=FALSE)");
 							rcodeQM.addCode("df <- df[,c(1,2,3,4,5,9)]");
 							rcodeQM.addCode("colnames(df) <- c(\""+ticker+".Open\",\""+ticker+".High\",\""+ticker+
@@ -327,16 +346,18 @@ public class DB_Charting {
 							frame.setVisible(true);
 							ii.getImage().flush();	
 						}else{
-							FCI fciDB = new FCI(false, dbPath);
-							int colIdx = fciDB.getIdx(dbColName);
 							if(Globals.uses_mysql_source){
 								String mysqlCol = "close";
 								if(indIdx == 1){
 									mysqlCol = "vol";
 								}
 								ArrayList<String> colNames = AhrAL.toAL(new String[]{"date", mysqlCol});
+								long time1 = System.currentTimeMillis();
 								newData = getWebSBaseDataForPlot(ticker, colNames, sdate, edate, sma);
+								long time2 = System.currentTimeMillis();
+								System.out.println("--> Web fetch 2 time elapse : "+(time2-time1)+" ms");
 							}else{
+								int colIdx = fciDB.getIdx(dbColName);
 								newData = getLocalDataForPlot(dbPath, sdate, edate, colIdx, sma);
 							}
 							if(newData.size() < 1){
@@ -723,7 +744,7 @@ public class DB_Charting {
 		btn.setBorder(BorderFactory.createLineBorder(Color.GRAY));
 	}
 
-	//getdata from local disk to chart
+	//get data from local disk to chart
 	public ArrayList<ArrayList<String>> getLocalDataForPlot(String dbPath, String sdate, String edate, int colIdx, int sma){
 		dbPath = AhrIO.uniPath(dbPath);
 		FCI fciDB = new FCI(false, dbPath);
@@ -768,7 +789,6 @@ public class DB_Charting {
 	//gets data from MySQL (SBase db) web server to chart
 	public ArrayList<ArrayList<String>> getWebSBaseDataForPlot(String tname, ArrayList<String> colNames,
 																String sdate, String edate, int sma){
-		SQLCode sqlc = new SQLCode("aws");
 		sqlc.setDB("sbase");
 		sqlc.setDateRange(sdate, edate);
 		ArrayList<ArrayList<String>> data = sqlc.selectCols(tname, colNames);
@@ -784,7 +804,6 @@ public class DB_Charting {
 	//gets data from MySQL (SNorm db) web server to chart
 	public ArrayList<ArrayList<String>> getWebSNormDataForPlot(String tname, ArrayList<String> colNames,
 														String sdate, String edate, String narMask, int sma){
-		SQLCode sqlc = new SQLCode("aws");
 		sqlc.setDB("snorm");
 		sqlc.setDateRange(sdate, edate);
 		ArrayList<ArrayList<String>> data = sqlc.selectCols(tname, colNames);
@@ -800,7 +819,6 @@ public class DB_Charting {
 	//gets data from MySQL (IMBase) web server to chart
 	public ArrayList<ArrayList<String>> getWebIBaseDataForPlot(String tname, ArrayList<String> colNames, String sdate,
 																String edate, int sma){
-		SQLCode sqlc = new SQLCode("aws");
 		sqlc.setDB("ibase");
 		sqlc.setDateRange(sdate, edate);
 		ArrayList<ArrayList<String>> data = sqlc.selectCols(tname, colNames);
@@ -816,7 +834,6 @@ public class DB_Charting {
 	//gets data from MySQL (IMBase) web server to chart
 	public ArrayList<ArrayList<String>> getWebMBaseDataForPlot(String tname, ArrayList<String> colNames, String sdate,
 																						String edate, int sma){
-		SQLCode sqlc = new SQLCode("aws");
 		sqlc.setDB("mbase");
 		sqlc.setDateRange(sdate, edate);
 		ArrayList<ArrayList<String>> data = sqlc.selectCols(tname, colNames);
@@ -898,6 +915,21 @@ public class DB_Charting {
 			indsInSec[i+1] = uniqInds.get(i);
 		}
 		return indsInSec;
+	}
+
+	//calc ticker list that can be graphed
+	public ArrayList<String> getTickerList(){
+		ArrayList<String> tickList = new ArrayList<String>();
+		if(Globals.uses_mysql_source){
+			long time1 = System.currentTimeMillis();
+			sqlc.setDB("sbase");
+			tickList = sqlc.getTables();
+			long time2 = System.currentTimeMillis();
+			System.out.println("--> Web fetch 1 time elapse : "+(time2-time1)+" ms");
+		}else{
+			tickList = AhrIO.getNamesInPath(Globals.intrinio_path);
+		}
+		return tickList;
 	}
 
 }

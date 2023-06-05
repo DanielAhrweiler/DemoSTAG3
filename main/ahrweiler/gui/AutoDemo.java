@@ -59,7 +59,7 @@ class BenchmarkWorker extends SwingWorker<ArrayList<ArrayList<Double>>, ArrayLis
 				kattr.setBGM("rnd");
 				//create rnd basis (using saved key params)
 				BGM_Manager bgmm = new BGM_Manager(kattr);
-				bgmm.genBasisRnd(0.75);
+				bgmm.genBasisRnd(0.55);
 				//get rnd data back from file
 				ArrayList<ArrayList<String>> kpFile = AhrIO.scanFile(kpPath, ",");
 				double itrAPAPT = 0.0;
@@ -402,6 +402,7 @@ class BimSomOptWorker extends SwingWorker<Void, String>{
 		String shortScriptPath = AhrIO.uniPath("./../data/r/rscripts/demo_short_heat.R");
 		//[1] calc BSO
 		publish("Calculating BIM/SOM Optimization for "+sakName+" (short calls) ...");
+		System.out.print("--> Calculating BSO for "+sakName+" ... ");
 		BGM_Manager akShort = new BGM_Manager(shortID);
 		OrderSim osimShort = new OrderSim(shortID);
 		osimShort.setTtvMask("010");
@@ -411,7 +412,8 @@ class BimSomOptWorker extends SwingWorker<Void, String>{
 		firstLine.add(String.format("%.2f", osimShort.getYoyAppr()));
 		orderlist.add(0, firstLine);
 		AhrIO.writeToFile(AhrIO.uniPath("./../data/tmp/ad_ol_short_bso.txt"), orderlist, ",");
-		akShort.bsoPerfToFileAK(osimShort);
+		akShort.bsoPerfToFileAK(osimShort, true);
+		System.out.println("DONE");
 		progress += progressSteps[1];
 		setProgress(progress);
 		//[2] write data needed for R plot to file
@@ -433,6 +435,7 @@ class BimSomOptWorker extends SwingWorker<Void, String>{
 		String longScriptPath = AhrIO.uniPath("./../data/r/rscripts/demo_long_heat.R");
 		//[1] calc BIM/SOM Opt (BSO)
 		publish("Calculating BIM/SOM Optimization for "+lakName+" (long calls) ...");
+		System.out.print("--> Calculating BSO for "+lakName+" ... ");
 		BGM_Manager akLong = new BGM_Manager(longID);
 		OrderSim osimLong = new OrderSim(longID);
 		osimLong.setTtvMask("010");
@@ -442,7 +445,8 @@ class BimSomOptWorker extends SwingWorker<Void, String>{
 		firstLine.add(String.format("%.2f", osimLong.getYoyAppr()));
 		orderlist.add(0, firstLine);
 		AhrIO.writeToFile(AhrIO.uniPath("./../data/tmp/ad_ol_long_bso.txt"), orderlist, ",");
-		akLong.bsoPerfToFileAK(osimLong);
+		akLong.bsoPerfToFileAK(osimLong, true);
+		System.out.println("DONE");
 		progress += progressSteps[2];
 		setProgress(progress);
 		//[2] write data needed for R plot to file
@@ -986,7 +990,7 @@ public class AutoDemo {
 				pPlots.setVisible(false);
 				pTrades.setVisible(false);
 
-				//remove lines from rnd keys_Struct & keys_perf
+				//remove lines from rnd keys_struct & keys_perf
 				String ksPath = AhrIO.uniPath("./../out/sk/log/rnd/keys_struct.txt");
 				String kpPath = AhrIO.uniPath("./../out/sk/log/rnd/keys_perf.txt");
 				ArrayList<String> ksRow = AhrIO.scanRow(ksPath, ",", 0);

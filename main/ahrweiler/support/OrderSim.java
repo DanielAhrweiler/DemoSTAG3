@@ -260,10 +260,12 @@ public class OrderSim {	//simulates ordering in reality
 
 	//techBuffer is 3D string AL that holds the basic tech data needed to calc an order around a date
 	//a 1-day order only needs 2 lines of tech data while a 3-day needs more
-	public void calcBuffer(){
+	public void calcBufferLocal(){
 		this.orders = new ArrayList<ArrayList<String>>();
 		ArrayList<ArrayList<String>> slist = new ArrayList<ArrayList<String>>();
 		ArrayList<ArrayList<String>> basis = AhrIO.scanFile(this.bfPath, ",");
+		String itPath = Globals.intrinio_path;
+		FCI fciIT = new FCI(false, itPath);
 		//add lines of dates in range and according to ttvMask
 		int startRowIdx = 0;
 		if(fciBF.getHasHeader()){
@@ -281,8 +283,29 @@ public class OrderSim {	//simulates ordering in reality
 				}
 			}
 		}
+		//# of lines needed in the buffer
+		this.techLen = 0;
+		if(this.tvi == 0 || this.tvi == 1){//1-day
+			this.techLen = 2;
+		}
+		if(this.tvi == 2 || this.tvi == 3){//2-day
+			this.techLen = 3;
+		}
+		if(this.tvi == 4 || this.tvi == 5){//3-day
+			this.techLen = 4;
+		}
+		if(this.tvi == 6 || this.tvi == 7){//5-day
+			this.techLen = 6;
+		}
+		if(this.tvi == 8 || this.tvi == 9){//10-day
+			this.techLen = 11;
+		}
 		//itr thru each passed line and calc order line
+		//System.out.println("***** Itr Thru Basis File *****");
 		for(int i = 0; i < slist.size(); i++){
+			if(i%100 == 0){
+				//System.out.println("   "+i+" out of "+slist.size());
+			}
 			String date = slist.get(i).get(0);
 			String tick = slist.get(i).get(1);
 			String dbPath = Globals.intrinio_path+tick+".txt";
@@ -297,44 +320,33 @@ public class OrderSim {	//simulates ordering in reality
 			line.add("ph");								// [7] % appr from method
 			line.add("ph");								// [8] # of days cash needs to be reserved
 			this.orders.add(line);
-			//# of lines needed in the buffer
-			this.techLen = 0;
-			if(this.tvi == 0 || this.tvi == 1){//1-day
-				this.techLen = 2;
-			}
-			if(this.tvi == 2 || this.tvi == 3){//2-day
-				this.techLen = 3;
-			}
-			if(this.tvi == 4 || this.tvi == 5){//3-day
-				this.techLen = 4;
-			}
-			if(this.tvi == 6 || this.tvi == 7){//5-day
-				this.techLen = 6;
-			}
-			if(this.tvi == 8 || this.tvi == 9){//10-day
-				this.techLen = 11;
-			}
 			//read files til you get to date
 			ArrayList<ArrayList<String>> stockBuf = new ArrayList<ArrayList<String>>();
-			String[] plArr = {""};	//prev line array (more recent)
 			String[] clArr = {""};	//curr line array (less recent)
 			try{
 				BufferedReader br = new BufferedReader(new FileReader(dbPath));
 				boolean date_reached = false;
 				while(br.ready() && !date_reached){
 					String fline = br.readLine();
-					plArr = clArr;
 					clArr = fline.split("~");
+					ArrayList<String> clAL = new ArrayList<String>();
+					clAL.add(clArr[fciIT.getIdx("adj_open")]);
+					clAL.add(clArr[fciIT.getIdx("adj_high")]);
+					clAL.add(clArr[fciIT.getIdx("adj_low")]);
+					clAL.add(clArr[fciIT.getIdx("adj_close")]);
 					if(stockBuf.size() == 0){
-						//System.out.println("PL Array Length: " + plArr.length);
-						stockBuf = AhrAL.addArrayToAL(stockBuf, clArr);
-						stockBuf = AhrAL.addArrayToAL(stockBuf, clArr);
+						//stockBuf = AhrAL.addArrayToAL(stockBuf, clArr);
+						//stockBuf = AhrAL.addArrayToAL(stockBuf, clArr);
+						stockBuf.add(clAL);
+						stockBuf.add(clAL);
 					}else{
 						//AhrAL.print(stockBuf);
 						if(stockBuf.size() < this.techLen){
-							stockBuf = AhrAL.addArrayToAL(stockBuf, clArr);
+							//stockBuf = AhrAL.addArrayToAL(stockBuf, clArr);
+							stockBuf.add(clAL);
 						}else{
-							stockBuf = AhrAL.addArrayToAL(stockBuf, clArr);
+							//stockBuf = AhrAL.addArrayToAL(stockBuf, clArr);
+							stockBuf.add(clAL);
 							stockBuf.remove(0);
 						}
 					}
@@ -343,23 +355,28 @@ public class OrderSim {	//simulates ordering in reality
 					}
 				}
 				br.close();
-				//if date as not reached, zero the values in buffer
+				//if date is not reached, zero the values in buffer
 				if(!date_reached){
 					for(int x = 0; x < stockBuf.size(); x++){
-						for(int y = 1; y <= 10; y++){
-							stockBuf.get(x).set(0, date);
-							stockBuf.get(x).set(y, "0.0");
-						}
+						//for(int y = 1; y <= 10; y++){
+						//	stockBuf.get(x).set(0, date);
+						//	stockBuf.get(x).set(y, "0.0");
+						//}
+						stockBuf.get(x).set(0, "0.0");//open
+						stockBuf.get(x).set(1, "0.0");//high
+						stockBuf.get(x).set(2, "0.0");//low
+						stockBuf.get(x).set(3, "0.0");//close
 					}		
 				}
 			}catch(FileNotFoundException e){
 				//System.out.println("FileNotFoundException: " + e+"\n-> Ticker = "+tick+"  |  Date = "+date);
 				for(int x = 0; x < this.techLen; x++){
-					ArrayList<String> sbLine = new ArrayList<String>();
-					sbLine.add(date);
-					for(int y = 0; y < 10; y++){
-						sbLine.add("0.0");
-					}
+					//ArrayList<String> sbLine = new ArrayList<String>();
+					//sbLine.add(date);
+					//for(int y = 0; y < 10; y++){
+					//	sbLine.add("0.0");
+					//}
+					ArrayList<String> sbLine = AhrAL.toAL(new String[]{"0.0", "0.0", "0.0", "0.0"});
 					stockBuf.add(sbLine);
 				}
 			}catch(IOException e){
@@ -378,14 +395,120 @@ public class OrderSim {	//simulates ordering in reality
 		}
 		AhrIO.writeToFile(AhrIO.uniPath("./../data/tmp/os_techbuf.txt"), tfTechBuf, ",");
 	}
+	public void calcBufferWeb(){
+		this.orders = new ArrayList<ArrayList<String>>();
+		ArrayList<ArrayList<String>> slist = new ArrayList<ArrayList<String>>();
+		ArrayList<ArrayList<String>> basis = AhrIO.scanFile(this.bfPath, ",");
+		//init things for later
+		String odPath = AhrIO.uniPath("./../in/open_dates.txt");
+		FCI fciOD = new FCI(false, odPath);
+		ArrayList<String> odDates = AhrIO.scanCol(odPath, ",", fciOD.getIdx("date"));
+		Collections.reverse(odDates);
+		//System.out.println("odDates: " + odDates);
+		SQLCode sqlc = new SQLCode(Globals.default_source);
+		sqlc.setDB("sbase");
+		sqlc.connect();
+		//add lines of dates in range and according to ttvMask
+		int startRowIdx = 0;
+		if(fciBF.getHasHeader()){
+			startRowIdx = 1;
+		}
+		for(int i = startRowIdx; i < basis.size(); i++){
+			String itrDate = basis.get(i).get(fciBF.getIdx("date"));
+			if(AhrDate.isDateInPeriod(itrDate, sdate, edate)){
+				String ticker = basis.get(i).get(fciBF.getIdx("ticker"));
+				ArrayList<String> line = new ArrayList<String>();
+				if(checkTTV(basis.get(i).get(fciBF.getIdx("ttv_code")))){
+					line.add(itrDate);
+					line.add(ticker);
+					slist.add(line);
+				}
+			}
+		}
+		//# of lines needed in the buffer
+		this.techLen = 0;
+		if(this.tvi == 0 || this.tvi == 1){//1-day
+			this.techLen = 2;
+		}
+		if(this.tvi == 2 || this.tvi == 3){//2-day
+			this.techLen = 3;
+		}
+		if(this.tvi == 4 || this.tvi == 5){//3-day
+			this.techLen = 4;
+		}
+		if(this.tvi == 6 || this.tvi == 7){//5-day
+			this.techLen = 6;
+		}
+		if(this.tvi == 8 || this.tvi == 9){//10-day
+			this.techLen = 11;
+		}
+		//itr thru each passed line and calc order line
+		String focusDate = "";
+		//System.out.println("***** Itr Thru Basis File *****");
+		for(int i = 0; i < slist.size(); i++){
+			if(i%100 == 0){
+				//System.out.println("   "+i+" out of "+slist.size());
+			}
+			String itrDate = slist.get(i).get(0);
+			String itrTick = slist.get(i).get(1);
+			ArrayList<String> line = new ArrayList<String>();
+			line.add(itrDate);							// [0] date
+			line.add(itrTick);							// [1] ticker
+			line.add("ph");								// [2] % appr over order (from close before pred)
+			line.add("ph");								// [3] % appr over order (from open at start of pred)
+			line.add("ph");								// [4] Time when bought (OPEN, DAY, or NO)
+			line.add("ph");								// [5] $ val bought in at
+			line.add("ph");								// [6] $ val sold at
+			line.add("ph");								// [7] % appr from method
+			line.add("ph");								// [8] # of days cash needs to be reserved
+			this.orders.add(line);
+
+			//if date has changed, need to change WHERE sql clause
+			if(!itrDate.equals(focusDate)){
+				int sdIdx = odDates.indexOf(itrDate);
+				String whereCond = "WHERE ";
+				for(int j = sdIdx; j < (sdIdx+this.techLen); j++){
+					whereCond += "`date` = '"+odDates.get(j)+"'";
+					if(j != (sdIdx+this.techLen-1)){
+						whereCond += " OR ";
+					}
+				}
+				sqlc.setWhereCond(whereCond, this.techLen); 
+				focusDate = itrDate;
+			}
+			ArrayList<String> sbaseCols = AhrAL.toAL(new String[]{"open", "high", "low", "close"});
+			ArrayList<ArrayList<String>> stockBuf = sqlc.selectCols(itrTick, sbaseCols);
+			//if techBuf is not full len set to 0
+			if(stockBuf.size() != this.techLen){
+				stockBuf = new ArrayList<ArrayList<String>>();
+				for(int j = 0; j < this.techLen; j++){
+					stockBuf.add(AhrAL.toAL(new String[]{"0.0", "0.0", "0.0", "0.0"}));
+				}
+			}
+			this.techBuf.add(stockBuf);
+		}
+		sqlc.close();
+		//log tech to file for debugging
+		ArrayList<ArrayList<String>> tfTechBuf = new ArrayList<ArrayList<String>>();
+		for(int i = 0; i < this.techBuf.size(); i++){
+			for(int j = 0; j < this.techBuf.get(i).size(); j++){
+				tfTechBuf.add(this.techBuf.get(i).get(j));
+			}
+		}
+		AhrIO.writeToFile(AhrIO.uniPath("./../data/tmp/os_techbuf.txt"), tfTechBuf, ",");
+	}	
 
 	public void calcOrderList(){
 		if(this.techBuf.size() < 1){
-			calcBuffer();
+			if(Globals.uses_mysql_source){
+				calcBufferWeb();
+			}else{
+				calcBufferLocal();
+			}
 		}else{
 			//System.out.println("TechBuf size = " + techBuf.size());
 		}
-		FCI fciTB = new FCI(false, Globals.intrinio_path);
+		//FCI fciTB = new FCI(false, Globals.intrinio_path);
 		this.trigAppr = 0.0;
 		this.tpr = 0.0;
 		this.posPer = 0.0;
@@ -393,17 +516,23 @@ public class OrderSim {	//simulates ordering in reality
 		int somCount = 0;
 		//System.out.println("***** Calculating Order List *****");
 		for(int i = 0; i < this.techBuf.size(); i++){
-			if(i%500==0){
-				//System.out.println("   "+i+" out of "+this.techBuf.size());
-			}
+			//System.out.println("--> Itr "+i);
+			//System.out.println("--> order line = "+this.orders.get(i));
+			//System.out.println("--> techBuf (size = "+this.techBuf.get(i).size()+") ...");
+			//AhrAL.print(this.techBuf.get(i));
+			//start calc
 			ArrayList<Double> opens = new ArrayList<Double>();
 			ArrayList<Double> highs = new ArrayList<Double>();
 			ArrayList<Double> lows = new ArrayList<Double>();
-			for(int x = 0; x < this.techBuf.get(i).size(); x++){
+			for(int j = 0; j < this.techBuf.get(i).size(); j++){
 				//System.out.println("Idx "+x+" = "+this.techBuf.get(i).get(x).get(0));
-				opens.add(Double.parseDouble(this.techBuf.get(i).get(x).get(fciTB.getIdx("adj_open"))));
-				highs.add(Double.parseDouble(this.techBuf.get(i).get(x).get(fciTB.getIdx("adj_high"))));
-				lows.add(Double.parseDouble(this.techBuf.get(i).get(x).get(fciTB.getIdx("adj_low"))));
+				//opens.add(Double.parseDouble(this.techBuf.get(i).get(x).get(fciTB.getIdx("adj_open"))));
+				//highs.add(Double.parseDouble(this.techBuf.get(i).get(x).get(fciTB.getIdx("adj_high"))));
+				//lows.add(Double.parseDouble(this.techBuf.get(i).get(x).get(fciTB.getIdx("adj_low"))));
+				opens.add(Double.parseDouble(this.techBuf.get(i).get(j).get(0)));
+				highs.add(Double.parseDouble(this.techBuf.get(i).get(j).get(1)));
+				lows.add(Double.parseDouble(this.techBuf.get(i).get(j).get(2)));
+	
 			}
 			//AhrAL.print(this.techBuf.get(i));
 			//System.out.println("");
@@ -411,8 +540,10 @@ public class OrderSim {	//simulates ordering in reality
 			double firstHi = highs.get(highs.size()-2);
 			double firstLo = lows.get(lows.size()-2);
 			int llIdx = this.techBuf.get(i).size()-1;	//last line idx
-			double lastClose = Double.parseDouble(this.techBuf.get(i).get(llIdx).get(fciTB.getIdx("adj_close")));
-			double endClose = Double.parseDouble(this.techBuf.get(i).get(0).get(fciTB.getIdx("adj_close")));
+			//double lastClose = Double.parseDouble(this.techBuf.get(i).get(llIdx).get(fciTB.getIdx("adj_close")));
+			//double endClose = Double.parseDouble(this.techBuf.get(i).get(0).get(fciTB.getIdx("adj_close")));
+			double lastClose = Double.parseDouble(this.techBuf.get(i).get(llIdx).get(3));
+			double endClose = Double.parseDouble(this.techBuf.get(i).get(0).get(3));
 			double buyPrice = lastClose * this.bim;	//price bought at (if buy triggered)
 			double sellPrice = buyPrice * this.som;	//price sold at (if buy triggered)
 			boolean bim_triggered = true;

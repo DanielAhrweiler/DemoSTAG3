@@ -292,49 +292,10 @@ public class ANN {
 		String dbsPath = AhrIO.uniPath("./../data/ml/ann/cust/db_sizes.txt");
 		String trainPath = AhrIO.uniPath("./../data/ml/ann/cust/train/");
 		String testPath = AhrIO.uniPath("./../data/ml/ann/cust/test/");
-		//print out basic info
-		/*
-		System.out.println("================= In calcSK ==================");
-		System.out.println("========== Algo Info ==========");
-		if(is_cr_method){
-			System.out.println(" --> Method Type: Continuous Range");
-		}else{
-			System.out.println(" --> Method Type: Binomial Distribution");
-		}
-		System.out.println(" --> Date Range: ["+sdate+" - "+edate+"]");
-		System.out.println(" --> TV Index  : " + tvi);
-		System.out.println(" --> Plateau % : " + plateau);
-		System.out.println(" --> Ind Mask  : " + indMask);
-		System.out.println(" --> MS Mask   : " + msMask);
-		System.out.println(" --> NAR Mask  : " + narMask);
-		System.out.println("===============================\n");
-		*/
-		//create the cust DB (if relv info is same keep DB)
+		//create new custom DB for ML algo
+		deleteCustDB();
+		createCustDB(secSize);
 		ArrayList<ArrayList<String>> cdbs = AhrIO.scanFile(dbsPath, ",");
-		boolean keep_db = false;
-		if(msMask.equals(cdbs.get(0).get(0)) && indMask.equals(cdbs.get(0).get(1))){
-			String tvStr = String.valueOf(tvi);
-			boolean is_cont_range;
-			if(cdbs.get(0).get(3).equals("0")){
-				is_cont_range = true;
-			}else{
-				is_cont_range = false;
-			}
-			if(tvStr.equals(cdbs.get(0).get(2)) && is_cr_method == is_cont_range){
-				keep_db = true;
-			}
-		}
-		if(true){//TODO: change back to !keep_db
-			deleteCustDB();
-			createCustDB(secSize);
-		}else{
-			//System.out.println("Using same CUST DB");
-		}
-		cdbs = AhrIO.scanFile(dbsPath, ",");
-		//System.out.println("--> Total DB Train Lines    : " + cdbs.get(2).get(0));
-		//System.out.println("--> Total DB Train Sections : " + cdbs.get(3).get(0));
-		//System.out.println("--> Total DB Test  Lines    : " + cdbs.get(2).get(1));
-		//System.out.println("--> Total DB Test  Sections : " + cdbs.get(3).get(1));
 		//initialize
 		ArrayList<Integer> hiddenDims = new ArrayList<Integer>();
 		hiddenDims.add(activeIndNum+2);
@@ -813,9 +774,10 @@ public class ANN {
 			}
 		}
 		//get data from a group of train dates
-		SQLCode sqlc = new SQLCode("aws");
+		SQLCode sqlc = new SQLCode(Globals.default_source);
 		sqlc.setDB("bydate");
 		sqlc.setUsesAllCols(true);
+		sqlc.connect();
 		for(int i = 0; i < groupedTrainDates.size(); i++){
 			ArrayList<ArrayList<String>> data = sqlc.selectUnion(groupedTrainDates.get(i), bdCols);
 			for(int j = 0; j < data.size(); j++){
@@ -853,9 +815,6 @@ public class ANN {
 			}
 		}
 		//get data from a group of test dates
-		sqlc = new SQLCode("aws");
-		sqlc.setDB("bydate");
-		sqlc.setUsesAllCols(true);
 		for(int i = 0; i < groupedTestDates.size(); i++){
 			ArrayList<ArrayList<String>> data = sqlc.selectUnion(groupedTestDates.get(i), bdCols);
 			for(int j = 0; j < data.size(); j++){
@@ -880,6 +839,7 @@ public class ANN {
 				}
 			}
 		}
+		sqlc.close();
 		//write info to file
 		ArrayList<ArrayList<String>> toFile = new ArrayList<ArrayList<String>>();
 		ArrayList<String> line1 = new ArrayList<String>();
@@ -1088,9 +1048,10 @@ public class ANN {
 			}
 		}
 		//get data from a group of train dates
-		SQLCode sqlc = new SQLCode("aws");
+		SQLCode sqlc = new SQLCode(Globals.default_source);
 		sqlc.setDB("bydate");
 		sqlc.setUsesAllCols(true);
+		sqlc.connect();
 		for(int i = 0; i < groupedTrainDates.size(); i++){
 			ArrayList<ArrayList<String>> data = sqlc.selectUnion(groupedTrainDates.get(i), bdCols);
 			for(int j = 0; j < data.size(); j++){
@@ -1115,6 +1076,7 @@ public class ANN {
 				}
 			}
 		}
+		sqlc.close();
 		//write info to file
 		ArrayList<ArrayList<String>> dbSizes = new ArrayList<ArrayList<String>>();
 		ArrayList<String> line1 = new ArrayList<String>();
@@ -1277,9 +1239,10 @@ public class ANN {
 			}
 		}
 		//get data from a group of test dates
-		SQLCode sqlc = new SQLCode("aws");
+		SQLCode sqlc = new SQLCode(Globals.default_source);
 		sqlc.setDB("bydate");
 		sqlc.setUsesAllCols(true);
+		sqlc.connect();
 		for(int i = 0; i < groupedTestDates.size(); i++){
 			ArrayList<ArrayList<String>> data = sqlc.selectUnion(groupedTestDates.get(i), bdCols);
 			for(int j = 0; j < data.size(); j++){
@@ -1304,6 +1267,7 @@ public class ANN {
 				}
 			}
 		}
+		sqlc.close();
 		//add test info to db_sizes.txt file
 		String dbsPath = AhrIO.uniPath("./../data/ml/ann/cust/db_sizes.txt");
 		ArrayList<ArrayList<String>> dbSizes = AhrIO.scanFile(dbsPath, ",");

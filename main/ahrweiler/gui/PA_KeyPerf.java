@@ -5,6 +5,7 @@ import ahrweiler.support.FCI;
 import ahrweiler.support.RCode;
 import ahrweiler.support.OrderSim;
 import ahrweiler.support.StockFilter;
+import ahrweiler.support.SQLCode;
 import ahrweiler.bgm.BGM_Manager;
 import ahrweiler.bgm.AttributesSK;
 import javax.swing.*;
@@ -1431,7 +1432,15 @@ public class PA_KeyPerf {
 		header.add("(2) ttv_code");
 		tf.add(header);
 		String bdPath = Globals.bydate_path;
-		ArrayList<String> bdFiles = AhrIO.getNamesInPath(bdPath);
+		ArrayList<String> bdFiles = new ArrayList<String>();
+		SQLCode sqlc = new SQLCode(Globals.default_source);
+		if(Globals.uses_mysql_source){
+			sqlc.setDB("bydate");
+			sqlc.connect();
+			bdFiles = sqlc.getTables();
+		}else{
+			bdFiles = AhrIO.getNamesInPath(bdPath);
+		}
 		FCI fciBD = new FCI(false, bdPath);
 		ArrayList<String> dates = new ArrayList<String>();
 		for(int i = 0; i < bdFiles.size(); i++){
@@ -1446,8 +1455,13 @@ public class PA_KeyPerf {
 				if(i%50 == 0){
 					//System.out.println("--> Rnd Basis File progress: "+i+" out of "+dates.size());
 				}
-				ArrayList<String> tickers = AhrIO.scanCol(bdPath+dates.get(i)+".txt",
-											"~", fciBD.getIdx("ticker"));
+				ArrayList<String> tickers = new ArrayList<String>();
+				if(Globals.uses_mysql_source){
+					ArrayList<String> colNames = AhrAL.toAL(new String[]{"ticker"});
+					tickers = AhrAL.getCol(sqlc.selectAll(dates.get(i), colNames), 0);
+				}else{
+					tickers = AhrIO.scanCol(bdPath+dates.get(i)+".txt","~", fciBD.getIdx("ticker"));
+				}
 				int flexibleSS = sampleSize;
 				if(tickers.size() < sampleSize){
 					flexibleSS = tickers.size();

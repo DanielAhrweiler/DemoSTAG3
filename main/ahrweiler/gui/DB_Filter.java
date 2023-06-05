@@ -358,7 +358,9 @@ public class DB_Filter {
 		bApply.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e){
 				frame.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
-				String mrDate = AhrDate.mostRecentDate(AhrIO.getNamesInPath(Globals.bydate_path));
+				String odPath = AhrIO.uniPath("./../in/open_dates.txt");
+				FCI fciOD = new FCI(false, odPath);
+				String mrDate = AhrIO.scanCell(odPath, ",", 0, fciOD.getIdx("date"));
 				sf.applyFilter(mrDate);
 				ArrayList<ArrayList<String>> res = sf.getResults();
 				lbStockNum.setText("Number of Stocks: "+res.size()+" results");

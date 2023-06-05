@@ -39,30 +39,61 @@ public class ML_Basis {
 		//lists and overaching structs
 		int prefX = 700;
 		int prefY = 700;
+		String[] colsFromKP = new String[]{"bim", "som", "bso_train_apapt", "bso_test_apapt", "plat_train_apapt",
+										"plat_test_apapt", "true_train_apapt", "true_test_apapt"};
+
 
 		//get data from files for init table data
 		String ksPath = AhrIO.uniPath("./../out/sk/log/ann/keys_struct.txt");
-		FCI fciSK = new FCI(true, ksPath);
-		ArrayList<ArrayList<String>> skLog = AhrIO.scanFile(ksPath, ",");
-		skLog.remove(0);
+		String kpPath = AhrIO.uniPath("./../out/sk/log/ann/keys_perf.txt");
+		FCI fciKS = new FCI(true, ksPath);
+		FCI fciKP = new FCI(true, kpPath);
+		ArrayList<ArrayList<String>> ksFile = AhrIO.scanFile(ksPath, ",");
+		ArrayList<ArrayList<String>> kpFile = AhrIO.scanFile(kpPath, ",");
+		ksFile.remove(0);
+		kpFile.remove(0);
 		String skColMask = "100111111111110";
 		ArrayList<ArrayList<String>> skData = new ArrayList<ArrayList<String>>();
-		for(int i = 0; i < skLog.size(); i++){
+		for(int i = 0; i < ksFile.size(); i++){
+			//add parts from keys_struct
 			ArrayList<String> line = new ArrayList<String>();
 			for(int j = 0; j < skColMask.length(); j++){
 				if(skColMask.charAt(j) == '1'){
-					line.add(skLog.get(i).get(j));
+					line.add(ksFile.get(i).get(j));
 				}
+			}
+			//add parts from keys_perf
+			ArrayList<String> kpRow = AhrAL.getRow(kpFile, line.get(0));
+			for(int j = 0; j < colsFromKP.length; j++){
+				line.add(kpRow.get(fciKP.getIdx(colsFromKP[j])));
 			}
 			skData.add(line);
 		}
 		ArrayList<String> skHeader = new ArrayList<String>();
-		ArrayList<String> skTags = fciSK.getTags();
+		ArrayList<String> skTags = fciKS.getTags();
 		for(int i = 0; i < skColMask.length(); i++){
 			if(skColMask.charAt(i) == '1'){
 				skHeader.add(skTags.get(i));
 			}
-		}	
+		}
+		for(int i = 0; i < colsFromKP.length; i++){
+			skHeader.add(colsFromKP[i]);
+		}
+		//replace calls from 0 & 1 to short & long
+		int callColIdx = -1;
+		for(int i = 0; i < skHeader.size(); i++){
+			if(skHeader.get(i).equals("call")){
+				callColIdx = i;
+				break;
+			}
+		}
+		for(int i = 0; i < skData.size(); i++){
+			if(skData.get(i).get(callColIdx).equals("0")){
+				skData.get(i).set(callColIdx, "short");
+			}else{
+				skData.get(i).set(callColIdx, "long");
+			}
+		}
 
 		
 		ksPath = AhrIO.uniPath("./../out/ak/log/ak_log.txt");

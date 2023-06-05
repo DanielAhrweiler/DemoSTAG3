@@ -6,6 +6,7 @@ import ahrweiler.bgm.ann.Node;
 import ahrweiler.bgm.ann.Network;
 import ahrweiler.support.FCI;
 import ahrweiler.support.OrderSim;
+import ahrweiler.support.SQLCode;
 import java.util.*;
 
 //Buy-In & Order List Manager
@@ -318,6 +319,7 @@ public class BGM_Manager {
 		if(getFocusSK() != skID){
 			setFocusSK(skID);
 		}
+		//System.out.println("--> make pred for SK"+skID+" on "+date);
 		//get relv info
 		boolean isLong = kattr.getCall();
 		int spd = kattr.getSPD();
@@ -331,7 +333,16 @@ public class BGM_Manager {
 		String bdPath = AhrIO.uniPath(Globals.bydate_path);
 		String bdPathFull = AhrIO.uniPath(bdPath+date+".txt");
 		FCI fciBD = new FCI(false, bdPath);
-		ArrayList<ArrayList<String>> allClean = AhrIO.scanFile(bdPathFull, "~");
+		ArrayList<ArrayList<String>> allClean = new ArrayList<ArrayList<String>>();
+		if(Globals.uses_mysql_source){
+			SQLCode sqlc = new SQLCode(Globals.default_source);
+			sqlc.setDB("bydate");
+			sqlc.connect();
+			allClean = sqlc.selectAll(date, AhrAL.toAL(Globals.mysql_bydate_cols));
+			sqlc.close();
+		}else{
+			allClean = AhrIO.scanFile(bdPathFull, "~");
+		}
 		ArrayList<ArrayList<String>> narClean = new ArrayList<ArrayList<String>>();
 		for(int i = 0; i < allClean.size(); i++){
 			String narMaskTmp = narMask;
@@ -452,6 +463,145 @@ public class BGM_Manager {
 		}
 		return dbuf;
 	}
+	private ArrayList<ArrayList<String>> makePred_ANN(int skID, String date, SQLCode sqlc){
+		if(getFocusSK() != skID){
+			setFocusSK(skID);
+		}
+		//System.out.println("--> make pred for SK"+skID+" on "+date);
+		//get relv info
+		boolean isLong = kattr.getCall();
+		int spd = kattr.getSPD();
+		int tvi = kattr.getTVI();
+		int tvn = Globals.target_var_num;
+		double plateau = kattr.getPlateau();
+		String narMask = kattr.getNarMask();
+		String indMask = kattr.getIndMask();
+		Network network = new Network("./../out/sk/log/ann/structure/struct_"+String.valueOf(skID)+".txt");
+		//get lines from Clean DB for this date (that also pass NAR)
+		String bdPath = AhrIO.uniPath(Globals.bydate_path);
+		String bdPathFull = AhrIO.uniPath(bdPath+date+".txt");
+		FCI fciBD = new FCI(false, bdPath);
+		ArrayList<ArrayList<String>> allClean = sqlc.selectAll(date, AhrAL.toAL(Globals.mysql_bydate_cols));
+		ArrayList<ArrayList<String>> narClean = new ArrayList<ArrayList<String>>();
+		for(int i = 0; i < allClean.size(); i++){
+			String narMaskTmp = narMask;
+			String narItr = allClean.get(i).get(fciBD.getIdx("nar_mask"));
+			while(narMaskTmp.length() < narItr.length()){
+				narMaskTmp += "x";
+			}
+			if(AhrGen.compareMasks(narMaskTmp, narItr)){
+				narClean.add(allClean.get(i));
+			}
+		}
+		//init day buffer
+		ArrayList<ArrayList<String>> dbuf = new ArrayList<ArrayList<String>>();
+		for(int i = 0; i < spd; i++){
+			ArrayList<String> line = new ArrayList<String>();
+			line.add("tick");								// [0] ticker
+			if(isLong){										// [1] score
+				line.add("0.0");
+			}else{
+				line.add(String.valueOf(Double.MAX_VALUE));
+			}
+			line.add("0.0");								// [2] 1-day Intra %
+			line.add("0.0");								// [3] 1-day Inter %
+			line.add("0.0");								// [4] 2-day Intra %
+			line.add("0.0");								// [5] 2-day Inter %
+			line.add("0.0");								// [6] 3-day Intra %
+			line.add("0.0");								// [7] 3-day Inter %
+			line.add("0.0");								// [8] 5-day Intra %
+			line.add("0.0");								// [9] 5-day Inter %
+			line.add("0.0");								// [10] 10-day Intra %
+			line.add("0.0");								// [11] 10-day Inter %
+			dbuf.add(line);
+		}	
+		//calc score
+		//itr thru all clean lines of this date, getting all lines with best score
+		String tvColName = Globals.tvi_names[tvi];
+		for(int i = 0; i < narClean.size(); i++){
+			//create data line of normalized ind vals [0-65535] to [0-1]
+			ArrayList<String> dline = new ArrayList<String>();
+			for(int j = 0; j < indMask.length(); j++){
+				String indCol = "ind"+String.valueOf(j);
+				double pval = Double.parseDouble(narClean.get(i).get(fciBD.getIdx(indCol)));
+				pval = pval * (1.0/65535.0);
+				dline.add(String.valueOf(pval));
+			}
+			//get plateaued target val appr, normalize target val appr and add to dline
+			double tvAppr = 0.0;
+			if(!narClean.get(i).get(fciBD.getIdx(tvColName)).equals("tbd")){
+				tvAppr = Double.parseDouble(narClean.get(i).get(fciBD.getIdx(tvColName)));
+			}
+			if(tvAppr > plateau){
+				tvAppr = plateau;
+			}
+			if(tvAppr < (plateau * -1.0)){
+				tvAppr = (plateau * -1.0);
+			}
+			tvAppr = tvAppr + plateau;
+			tvAppr = tvAppr * (1.0 / (plateau * 2.0));
+			dline.add(String.valueOf(tvAppr));
+			//calc score for 1 line
+			double score = 0.0;
+			Network tnet = network;	//tmp network so no change happens to main network
+			tnet.feedForward(dline);
+			for(int j = 0; j < tnet.outputLayer.size(); j++){
+				score += tnet.outputLayer.get(j).getValue();
+			}
+			//update day buffer
+			int llIdx = dbuf.size()-1;
+			if(isLong){
+				if(score > Double.parseDouble(dbuf.get(llIdx).get(1))){
+					String ticker = narClean.get(i).get(fciBD.getIdx("ticker"));
+					dbuf.get(llIdx).set(0, ticker);
+					dbuf.get(llIdx).set(1, String.format("%.7f", score));
+					for(int j = 0; j < tvn; j++){
+						String itrColName = Globals.tvi_names[j];
+						String apprStr = narClean.get(i).get(fciBD.getIdx(itrColName));
+						double appr = 0.0;
+						try{
+							appr = Double.parseDouble(apprStr);
+						}catch(NumberFormatException e){
+						}
+						dbuf.get(llIdx).set(2+j, String.format("%.4f", appr));
+					}
+					Collections.sort(dbuf, new Comparator<ArrayList<String>>(){
+						@Override
+						public int compare(ArrayList<String> obj1, ArrayList<String> obj2){
+							double dcomp1 = Double.parseDouble(obj1.get(1));
+							double dcomp2 = Double.parseDouble(obj2.get(1));
+							return (Double.compare(dcomp1, dcomp2) * -1);//descending
+						}
+					});
+				}
+			}else{
+				if(score < Double.parseDouble(dbuf.get(llIdx).get(1))){
+					String ticker = narClean.get(i).get(fciBD.getIdx("ticker"));
+					dbuf.get(llIdx).set(0, ticker);
+					dbuf.get(llIdx).set(1, String.format("%.7f", score));
+					for(int j = 0; j < tvn; j++){
+						String itrColName = Globals.tvi_names[j];
+						String apprStr = narClean.get(i).get(fciBD.getIdx(itrColName));
+						double appr = 0.0;
+						try{
+							appr = Double.parseDouble(apprStr);
+						}catch(NumberFormatException e){
+						}
+						dbuf.get(llIdx).set(2+j, String.format("%.4f", appr));
+					}
+					Collections.sort(dbuf, new Comparator<ArrayList<String>>(){
+						@Override
+						public int compare(ArrayList<String> obj1, ArrayList<String> obj2){
+							double dcomp1 = Double.parseDouble(obj1.get(1));
+							double dcomp2 = Double.parseDouble(obj2.get(1));
+							return Double.compare(dcomp1, dcomp2);//ascending
+						}
+					});
+				}			
+			}
+		}
+		return dbuf;
+	}	
 
 	//CONTROLLER FUNCT: return set of predicted stocks for a given date
 	public ArrayList<ArrayList<String>> makePredictions(int skID, String date, int inSPD){
@@ -492,7 +642,16 @@ public class BGM_Manager {
 		String bdPath = Globals.bydate_path;
 		String bdPathFull = AhrIO.uniPath(bdPath+date+".txt");
 		FCI fciBD = new FCI(false, bdPath);
-		ArrayList<ArrayList<String>> allClean = AhrIO.scanFile(bdPathFull, "~");
+		ArrayList<ArrayList<String>> allClean = new ArrayList<ArrayList<String>>();
+		if(Globals.uses_mysql_source){
+			SQLCode sqlc = new SQLCode(Globals.default_source);
+			sqlc.setDB("bydate");
+			sqlc.connect();
+			allClean = sqlc.selectAll(date, fciBD.getTags());
+			sqlc.close();
+		}else{
+			allClean = AhrIO.scanFile(bdPathFull, "~");
+		}	
 		ArrayList<ArrayList<String>> narClean = new ArrayList<ArrayList<String>>();
 		for(int i = 0; i < allClean.size(); i++){
 			String narMaskTmp = narMask;
@@ -649,7 +808,16 @@ public class BGM_Manager {
 		ArrayList<String> dline = new ArrayList<String>();
 		//find line in Clean/ByDate that matches stock and date
 		String bdPath = Globals.bydate_path;
-		ArrayList<ArrayList<String>> bdFile = AhrIO.scanFile(bdPath+date+".txt", "~");
+		ArrayList<ArrayList<String>> bdFile = new ArrayList<ArrayList<String>>();
+		if(Globals.uses_mysql_source){
+			SQLCode sqlc = new SQLCode(Globals.default_source);
+			sqlc.setDB("bydate");
+			sqlc.connect();
+			bdFile = sqlc.selectAll(date, AhrAL.toAL(Globals.mysql_bydate_cols));
+			sqlc.close();
+		}else{
+			bdFile = AhrIO.scanFile(bdPath+date+".txt", "~");
+		}
 		FCI fciBD = new FCI(false, bdPath);
 		ArrayList<String> bdLine = new ArrayList<String>();
 		for(int i = 0; i < bdFile.size(); i++){
@@ -1047,26 +1215,28 @@ public class BGM_Manager {
 		AhrIO.writeToFile(laPath, laFile, ",");
 	}
 	//write BIM/SOM Opt values to file when given an OrderSim obj, assumes BIM/SOM is already calced
-	public void bsoPerfToFileAK(OrderSim osim){
+	public void bsoPerfToFileAK(OrderSim osim, boolean test_bso_already_calced){
 		//get row from ak_log
 		String laPath = AhrIO.uniPath("./../out/ak/log/ak_log.txt");
 		FCI fciLA = new FCI(true, laPath);
 		ArrayList<ArrayList<String>> laFile = AhrIO.scanFile(laPath, ",");		
 		ArrayList<String> laRow = AhrAL.getRow(laFile, String.valueOf(osim.getID()));
 		int rowIdx = AhrAL.getRowIdx(laFile, String.valueOf(id));
-		//combine BIM and SOM and add to file
+		//calc test data
+		if(!test_bso_already_calced){
+			osim.setTtvMask("010");
+			osim.calcBSO();
+		}
+		laRow.set(fciLA.getIdx("bso_test_apapt"), String.format("%.5f", osim.getTrigAppr())); 
+		laRow.set(fciLA.getIdx("bso_test_posp"), String.format("%.3f", (osim.getPosPer()*100.0)));
 		String akBSO = String.format("%.3f", osim.getBIM()) +"|"+ String.format("%.3f", osim.getSOM());
 		laRow.set(fciLA.getIdx("ak_bso"), akBSO);
-		//calc train data
+		//calc train data (uses test BIM/SOM vals!)
 		osim.setTtvMask("100");
 		osim.calcOrderList();
 		laRow.set(fciLA.getIdx("bso_train_apapt"), String.format("%.5f", osim.getTrigAppr())); 
 		laRow.set(fciLA.getIdx("bso_train_posp"), String.format("%.3f", (osim.getPosPer()*100.0)));
-		//calc test data
-		osim.setTtvMask("010");
-		osim.calcOrderList();
-		laRow.set(fciLA.getIdx("bso_test_apapt"), String.format("%.5f", osim.getTrigAppr())); 
-		laRow.set(fciLA.getIdx("bso_test_posp"), String.format("%.3f", (osim.getPosPer()*100.0)));
+
 		//update ak_log
 		laFile.set(rowIdx, laRow);
 		AhrIO.writeToFile(laPath, laFile, ",");
@@ -1186,7 +1356,7 @@ public class BGM_Manager {
 		return data;
 	}
 	public ArrayList<String> bsoMultiple(OrderSim osim){
-		//System.out.println("===> Calculating all BIM SOM Combinations ...");
+		//System.out.println("\n==> Calculating all BIM SOM Combinations ...");
 		//init values
 		ArrayList<ArrayList<String>> allVals = new ArrayList<ArrayList<String>>();
 		ArrayList<Double> bestVals = new ArrayList<Double>();
@@ -1315,7 +1485,6 @@ public class BGM_Manager {
 		data.add(String.format("%.3f", yoyAppr));		//[1] APY %
 		data.add(String.format("%.3f", posp));			//[2] Pos %
 		return data;
-
 	}
 
 	//convert ttvMask to old ttSwitch (-1 = Train only, 1 = Test only, 0 = both)
@@ -1344,7 +1513,11 @@ public class BGM_Manager {
 		}else if(bgm.equals("gab3")){
 			genBasisSK_GAB3(skID);
 		}else if(bgm.equals("ann")){
-			genBasisSK_ANN(skID);
+			if(Globals.uses_mysql_source){
+				genBasisWebSK_ANN(skID);
+			}else{
+				genBasisLocalSK_ANN(skID);
+			}
 		}else{
 			System.out.println("ERR: Invalid BGM in generateBasis()");
 		}
@@ -1355,7 +1528,7 @@ public class BGM_Manager {
 	private void genBasisSK_GAB3(int skID){
 		//redacted
 	}
-	public void genBasisSK_ANN(int skID){
+	public void genBasisLocalSK_ANN(int skID){
 		if(getFocusSK() != skID || true){
 			//System.out.print("--> Changed focus from "+getFocusSK());
 			setFocusSK(skID);
@@ -1385,6 +1558,40 @@ public class BGM_Manager {
 		}
 		AhrIO.writeToFile(AhrIO.uniPath("./../out/sk/baseis/ann/ANN_"+String.valueOf(skID)+".txt"), basis, ",");
 	}
+	public void genBasisWebSK_ANN(int skID){
+		if(getFocusSK() != skID || true){
+			//System.out.print("--> Changed focus from "+getFocusSK());
+			setFocusSK(skID);
+			//System.out.println(" to " + getFocusSK());
+		}
+		String sdate = kattr.getSDate();
+		String edate = AhrDate.getTodaysDate();
+		int tvi = kattr.getTVI();
+		String msMask = kattr.getMsMask();
+		ArrayList<String> dates = AhrDate.getDatesBetween(sdate, edate);
+		ArrayList<String> mdates = AhrDate.getDatesThatPassMarketMask(dates, msMask);
+		Collections.reverse(mdates);
+		//get dbuf for each date, format, then add to their basis file 
+		ArrayList<ArrayList<String>> basis = new ArrayList<ArrayList<String>>();
+		SQLCode sqlc = new SQLCode(Globals.default_source);
+		sqlc.setDB("bydate");
+		sqlc.connect();
+		for(int i = 0; i < mdates.size(); i++){
+			ArrayList<ArrayList<String>> dbuf = makePred_ANN(skID, mdates.get(i), sqlc);
+			for(int j = 0; j < dbuf.size(); j++){
+				ArrayList<String> tfLine = new ArrayList<String>();
+				tfLine.add(mdates.get(i));							//[0] Date
+				tfLine.add(String.valueOf(skID));					//[1] Single Key #
+				tfLine.add(calcTTV(mdates.get(i)));					//[2] TTV Code
+				tfLine.add(dbuf.get(j).get(0));						//[3] Ticker
+				tfLine.add(dbuf.get(j).get(1));						//[4] Score
+				tfLine.add(dbuf.get(j).get(2+tvi));					//[5] TV Appr
+				basis.add(tfLine);
+			}
+		}
+		sqlc.close();
+		AhrIO.writeToFile(AhrIO.uniPath("./../out/sk/baseis/ann/ANN_"+String.valueOf(skID)+".txt"), basis, ",");
+	}
 
 	//CONTROLLER FUNCT: generate basis file for AK
 	public void genBasisAK(){
@@ -1393,7 +1600,11 @@ public class BGM_Manager {
 		}else if(bgm.equals("gab3")){
 			genBasisAK_GAB3();
 		}else if(bgm.equals("ann")){
-			genBasisAK_ANN();
+			if(Globals.uses_mysql_source){
+				genBasisWebAK_ANN();
+			}else{
+				genBasisLocalAK_ANN();
+			}
 		}else{
 			System.out.println("ERROR: Invalid BGM in generateBasis()");
 		}
@@ -1404,7 +1615,7 @@ public class BGM_Manager {
 	private void genBasisAK_GAB3(){
 		//redacted
 	}
-	private void genBasisAK_ANN(){
+	private void genBasisLocalAK_ANN(){
 		ArrayList<ArrayList<String>> basis = new ArrayList<ArrayList<String>>();
 		String alPath = AhrIO.uniPath("./../out/ak/log/ak_log.txt");
 		FCI fciAL = new FCI(true, alPath);
@@ -1439,6 +1650,56 @@ public class BGM_Manager {
 		String bfPath = AhrIO.uniPath("./../out/ak/baseis/ann/ANN_"+String.valueOf(this.id)+".txt");
 		AhrIO.writeToFile(bfPath, basis, ",");
 	}
+	private void genBasisWebAK_ANN(){
+		ArrayList<ArrayList<String>> basis = new ArrayList<ArrayList<String>>();
+		String alPath = AhrIO.uniPath("./../out/ak/log/ak_log.txt");
+		FCI fciAL = new FCI(true, alPath);
+		ArrayList<ArrayList<String>> alFile = AhrIO.scanFile(alPath, ",");
+		ArrayList<String> alRow = new ArrayList<String>();
+		for(int i = 1; i < alFile.size(); i++){
+			if(this.id == Integer.parseInt(alFile.get(i).get(fciAL.getIdx("ak_num")))){
+				alRow = alFile.get(i);
+			}
+		}
+		//get relv info
+		String sdate = kattr.getSDate();
+		String edate = AhrDate.getTodaysDate();
+		int tvi = kattr.getTVI();
+		ArrayList<String> dates = AhrDate.getDatesBetween(sdate, edate);
+		//itr thru all dates, match it to best SK, get predictions
+		//SQLCode sqlc = new SQLCode(Globals.default_source);
+		//sqlc.setDB("bydate");
+		//sqlc.connect();
+		for(int i = 0; i < dates.size(); i++){
+			int bkOfDate = getSK(dates.get(i));
+			setFocusSK(bkOfDate);
+			/*
+			ArrayList<ArrayList<String>> dbuf = makePred_ANN(bkOfDate, dates.get(i), sqlc);
+			for(int j = 0; j < dbuf.size(); j++){
+				ArrayList<String> tfLine = new ArrayList<String>();
+				tfLine.add(dates.get(i));								//[0] Date
+				tfLine.add(String.valueOf(bkOfDate));					//[1] Single Key #
+				tfLine.add(calcTTV(dates.get(i)));						//[2] TTV Code
+				tfLine.add(dbuf.get(j).get(0));							//[3] ticker
+				tfLine.add(dbuf.get(j).get(1));							//[4] Score
+				tfLine.add(dbuf.get(j).get(2+tvi));						//[5] TV Appr
+				basis.add(tfLine);
+			}
+			*/
+			//get data straight from SK basis files
+			String skbPath = AhrIO.uniPath("./../out/sk/baseis/ann/ANN_"+String.valueOf(bkOfDate)+".txt");
+			FCI fciSKB = new FCI(false, AhrIO.uniPath("./../out/sk/baseis/"));
+			int dateIdx = fciSKB.getIdx("date");
+			ArrayList<ArrayList<String>> skBasis = AhrIO.scanSelectRows(skbPath, ",", dates.get(i), dateIdx);
+	
+			for(int j = 0; j < skBasis.size(); j++){
+				basis.add(skBasis.get(j));
+			}
+		}
+		//sqlc.close();
+		String akbPath = AhrIO.uniPath("./../out/ak/baseis/ann/ANN_"+String.valueOf(this.id)+".txt");
+		AhrIO.writeToFile(akbPath, basis, ",");
+	}
 	//generate basis file for random sampling
 	//probability is val b/w [0-1], is chance of a file added for sampling (slims down files and computation)
 	public void genBasisRnd(double probability){
@@ -1453,7 +1714,16 @@ public class BGM_Manager {
 		String narMask = kattr.getNarMask();
 		//get all possible dates from Clean/ByDate
 		String bdPath = Globals.bydate_path;
-		ArrayList<String> bdFilesAll = AhrIO.getNamesInPath(bdPath);
+		ArrayList<String> bdFilesAll = new ArrayList<String>();
+		if(Globals.uses_mysql_source){
+			SQLCode sqlc = new SQLCode(Globals.default_source);
+			sqlc.setDB("bydate");
+			sqlc.connect();
+			bdFilesAll = sqlc.getTables();
+			sqlc.close();
+		}else{
+			bdFilesAll = AhrIO.getNamesInPath(bdPath);
+		}
 		//only get dates that fit market mask and within date range
 		bdFilesAll = AhrDate.getDatesThatPassMarketMask(bdFilesAll, msMask);
 		Collections.sort(bdFilesAll);
@@ -1465,40 +1735,54 @@ public class BGM_Manager {
 				}
 			}
 		}
-		//itr thru dates, get lines from Clean DB that fit narMask
+		//get data for basis file from web or local
 		FCI fciBD = new FCI(false, bdPath);
-		for(int i = 0; i < bdFiles.size(); i++){
-			ArrayList<ArrayList<String>> bdFC = AhrIO.scanFile(bdPath+bdFiles.get(i)+".txt", "~");
-			ArrayList<ArrayList<String>> rndLines = new ArrayList<ArrayList<String>>();
-			while(rndLines.size() < spd){
-				int rndIdx = rnd.nextInt(bdFC.size());
-				String itrTick = bdFC.get(rndIdx).get(fciBD.getIdx("ticker"));
-				String itrNar = bdFC.get(rndIdx).get(fciBD.getIdx("nar_mask"));
-				String tvColName = Globals.tvi_names[tvi]; 
-				String itrAppr = bdFC.get(rndIdx).get(fciBD.getIdx(tvColName));
-				boolean add_line = true;
-				if(!AhrGen.compareMasks(narMask, itrNar)){
-					add_line = false;
+		String tvColName = Globals.tvi_names[tvi];	
+		if(Globals.uses_mysql_source){
+			SQLCode sqlc = new SQLCode(Globals.default_source);
+			sqlc.setDB("bydate");
+			sqlc.connect();
+			basis = sqlc.genBasisRnd(bdFiles, tvColName, spd);
+			sqlc.close();
+
+		}else{
+			System.out.println("*** Create RND Basis ***");
+			for(int i = 0; i < bdFiles.size(); i++){
+				if(i%100 == 0){
+					System.out.println("   "+i+" out of "+bdFiles.size());
 				}
-				if(AhrAL.getCol(rndLines, 0).contains(itrTick)){
-					add_line = false;	
+				ArrayList<ArrayList<String>> bdFC = AhrIO.scanFile(bdPath+bdFiles.get(i)+".txt", "~");
+				ArrayList<ArrayList<String>> rndLines = new ArrayList<ArrayList<String>>();
+				while(rndLines.size() < spd){
+					int rndIdx = rnd.nextInt(bdFC.size());
+					String itrTick = bdFC.get(rndIdx).get(fciBD.getIdx("ticker"));
+					String itrNar = bdFC.get(rndIdx).get(fciBD.getIdx("nar_mask"));
+					String itrAppr = bdFC.get(rndIdx).get(fciBD.getIdx(tvColName));
+					boolean add_line = true;
+					if(!AhrGen.compareMasks(narMask, itrNar)){
+						add_line = false;
+					}
+					if(AhrAL.getCol(rndLines, 0).contains(itrTick)){
+						add_line = false;	
+					}
+					if(add_line){
+						ArrayList<String> line = new ArrayList<String>();
+						line.add(bdFiles.get(i));						//[0] date
+						line.add("0");									//[1] SK 
+						line.add(calcTTV(bdFiles.get(i)));				//[2] TTV
+						line.add(itrTick);								//[3] Ticker
+						line.add(String.valueOf(rndLines.size()));		//[4] Score (rank)
+						line.add(itrAppr);								//[5] TVIs % Appr
+						rndLines.add(line);
+					}
 				}
-				if(add_line){
-					ArrayList<String> line = new ArrayList<String>();
-					line.add(bdFiles.get(i));						//[0] date
-					line.add("0");									//[1] SK 
-					line.add(calcTTV(bdFiles.get(i)));				//[2] TTV
-					line.add(itrTick);								//[3] Ticker
-					line.add(String.valueOf(rndLines.size()));		//[4] Score (rank)
-					line.add(itrAppr);								//[5] TVIs % Appr
-					rndLines.add(line);
+				//translate rndLines over to basis
+				for(int j = 0; j < rndLines.size(); j++){
+					basis.add(rndLines.get(j));
 				}
-			}
-			//translate rndLines over to basis
-			for(int j = 0; j < rndLines.size(); j++){
-				basis.add(rndLines.get(j));
 			}
 		}
+
 		//write RND SK data to keys_struct
 		String ksPath = AhrIO.uniPath("./../out/sk/log/rnd/keys_struct.txt");
 		FCI fciKS = new FCI(true, ksPath);
@@ -1511,8 +1795,9 @@ public class BGM_Manager {
 			}
 		}
 		skNum++;
+		String skNumStr = String.valueOf(skNum);
 		ArrayList<String> ksRow = new ArrayList<String>();
-		ksRow.add(String.valueOf(skNum));							//[0] SK Num
+		ksRow.add(skNumStr);										//[0] SK Num
 		ksRow.add("IT");											//[1] DB Used
 		ksRow.add(AhrDate.getTodaysDate());							//[2] Date Ran
 		ksRow.add(sdate);											//[3] Start Date
@@ -1524,10 +1809,16 @@ public class BGM_Manager {
 		ksRow.add(narMask);											//[9] NAR Mask
 		ksFile.add(ksRow);
 		AhrIO.writeToFile(ksPath, ksFile, ",");
-		//calc APAPT and Pos % of basis lines
+		//itr thru basis, update it and calc perf
 		double apapt = 0.0;
 		double posp = 0.0;
 		for(int i = 0; i < basis.size(); i++){
+			//sqlc does not provide all info, fill in rest
+			if(Globals.uses_mysql_source){
+				basis.get(i).set(1, skNumStr);
+				basis.get(i).set(2, calcTTV(basis.get(i).get(0)));
+			}
+			//calc APAPT and Pos % of basis lines
 			double itrAppr = 0.0;
 			try{
 				itrAppr = Double.parseDouble(basis.get(i).get(5));
